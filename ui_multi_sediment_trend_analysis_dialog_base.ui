@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>641</width>
+    <height>326</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralwidget"/>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>641</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>File</string>
+    </property>
+    <addaction name="actionFileImport"/>
+    <addaction name="separator"/>
+    <addaction name="actionAppQuit"/>
+   </widget>
+   <widget class="QMenu" name="menuVariables">
+    <property name="title">
+     <string>Variables</string>
+    </property>
+    <widget class="QMenu" name="menuModifyVariables">
+     <property name="title">
+      <string>Modify</string>
+     </property>
+     <addaction name="actionModifyVariablesName"/>
+     <addaction name="actionModifyVariablesUnits"/>
+     <addaction name="actionVModifyVariablesRange"/>
+     <addaction name="actionModifyVariableResearchArea"/>
+    </widget>
+    <widget class="QMenu" name="menuDelete">
+     <property name="title">
+      <string>Delete</string>
+     </property>
+     <addaction name="actionDeleteAllVariables"/>
+     <addaction name="actionDeleteVariablesSelection"/>
+    </widget>
+    <widget class="QMenu" name="menuList_2">
+     <property name="title">
+      <string>List</string>
+     </property>
+     <addaction name="actionListAllVariables"/>
+     <addaction name="actionVariablesSelection"/>
+    </widget>
+    <addaction name="menuList_2"/>
+    <addaction name="menuModifyVariables"/>
+    <addaction name="menuDelete"/>
+   </widget>
+   <widget class="QMenu" name="menuTrends">
+    <property name="title">
+     <string>Trends</string>
+    </property>
+    <widget class="QMenu" name="menuList">
+     <property name="title">
+      <string>List</string>
+     </property>
+     <addaction name="actionListAllTrends"/>
+     <addaction name="actionTrendsSelection"/>
+    </widget>
+    <widget class="QMenu" name="menuDeleteTrends">
+     <property name="title">
+      <string>Delete</string>
+     </property>
+     <addaction name="actionDeleteAllTrends"/>
+     <addaction name="actionDeleteTrendsSelection"/>
+    </widget>
+    <addaction name="menuList"/>
+    <addaction name="actionModifyTrends"/>
+    <addaction name="menuDeleteTrends"/>
+    <addaction name="separator"/>
+    <addaction name="actionGSTALikeTrend"/>
+   </widget>
+   <widget class="QMenu" name="menuSettings">
+    <property name="title">
+     <string>Settings</string>
+    </property>
+    <addaction name="actionSetWorkingDirectory"/>
+   </widget>
+   <widget class="QMenu" name="menuHelp">
+    <property name="title">
+     <string>Help</string>
+    </property>
+    <addaction name="actionAbout"/>
+   </widget>
+   <widget class="QMenu" name="menuRun">
+    <property name="title">
+     <string>Run</string>
+    </property>
+    <addaction name="actionMSTA"/>
+    <addaction name="actionGSTA"/>
+   </widget>
+   <addaction name="menuFile"/>
+   <addaction name="menuSettings"/>
+   <addaction name="menuVariables"/>
+   <addaction name="menuTrends"/>
+   <addaction name="menuRun"/>
+   <addaction name="menuHelp"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <action name="actionFileImport">
+   <property name="text">
+    <string>Import...</string>
+   </property>
+  </action>
+  <action name="actionModifyVariablesName">
+   <property name="text">
+    <string>Name...</string>
+   </property>
+  </action>
+  <action name="actionModifyVariablesUnits">
+   <property name="text">
+    <string>Units...</string>
+   </property>
+  </action>
+  <action name="actionVModifyVariablesRange">
+   <property name="text">
+    <string>Range...</string>
+   </property>
+  </action>
+  <action name="actionModifyVariableResearchArea">
+   <property name="text">
+    <string>Research area...</string>
+   </property>
+  </action>
+  <action name="actionDeleteAllVariables">
+   <property name="text">
+    <string>All...</string>
+   </property>
+  </action>
+  <action name="actionDeleteVariablesSelection">
+   <property name="text">
+    <string>Selection...</string>
+   </property>
+  </action>
+  <action name="actionAppQuit">
+   <property name="text">
+    <string>Quit</string>
+   </property>
+  </action>
+  <action name="actionListAllTrends">
+   <property name="text">
+    <string>All</string>
+   </property>
+  </action>
+  <action name="actionTrendsSelection">
+   <property name="text">
+    <string>Selection...</string>
+   </property>
+  </action>
+  <action name="actionListAllVariables">
+   <property name="text">
+    <string>All</string>
+   </property>
+  </action>
+  <action name="actionVariablesSelection">
+   <property name="text">
+    <string>Selection...</string>
+   </property>
+  </action>
+  <action name="actionModifyTrends">
+   <property name="text">
+    <string>Modify...</string>
+   </property>
+  </action>
+  <action name="actionDeleteAllTrends">
+   <property name="text">
+    <string>All</string>
+   </property>
+  </action>
+  <action name="actionDeleteTrendsSelection">
+   <property name="text">
+    <string>Selection...</string>
+   </property>
+  </action>
+  <action name="actionSetWorkingDirectory">
+   <property name="text">
+    <string>Set working directory...</string>
+   </property>
+   <property name="toolTip">
+    <string>Set working directory</string>
+   </property>
+  </action>
+  <action name="actionAbout">
+   <property name="checkable">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>About</string>
+   </property>
+  </action>
+  <action name="actionGSTALikeTrend">
+   <property name="text">
+    <string>GSTA like trend...</string>
+   </property>
+  </action>
+  <action name="actionGSTA">
+   <property name="text">
+    <string>GSTA...</string>
+   </property>
+  </action>
+  <action name="actionMSTA">
+   <property name="text">
+    <string>MSTA...</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
