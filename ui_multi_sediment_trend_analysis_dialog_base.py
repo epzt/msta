@@ -87,6 +87,8 @@ class Ui_MainWindow(object):
         self.actionGSTALikeVariable.setObjectName("actionGSTALikeVariable")
         self.actionList = QtWidgets.QAction(MainWindow)
         self.actionList.setObjectName("actionList")
+        self.actionVariableList = QtWidgets.QAction(MainWindow)
+        self.actionVariableList.setObjectName("actionVariableList")
         self.menuFile.addAction(self.actionFileImport)
         self.menuFile.addSeparator()
         self.menuFile.addAction(self.actionAppQuit)
@@ -98,6 +100,7 @@ class Ui_MainWindow(object):
         self.menuVariableDelete.addAction(self.actionDeleteVariables)
         self.menuVariableSelect.addAction(self.actionSelectAllVariables)
         self.menuVariableSelect.addAction(self.actionSelectVariables)
+        self.menuVariables.addAction(self.actionVariableList)
         self.menuVariables.addAction(self.menuVariableSelect.menuAction())
         self.menuVariables.addAction(self.menuVariableModify.menuAction())
         self.menuVariables.addAction(self.menuVariableDelete.menuAction())
@@ -160,4 +163,5 @@ class Ui_MainWindow(object):
         self.actionMSTA.setText(_translate("MainWindow", "MSTA..."))
         self.actionGSTALikeVariable.setText(_translate("MainWindow", "GSTA like variables..."))
         self.actionList.setText(_translate("MainWindow", "List"))
+        self.actionVariableList.setText(_translate("MainWindow", "List"))
 

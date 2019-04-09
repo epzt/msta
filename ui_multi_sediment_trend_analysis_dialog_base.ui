@@ -58,6 +58,7 @@
      <addaction name="actionSelectAllVariables"/>
      <addaction name="actionSelectVariables"/>
     </widget>
+    <addaction name="actionVariableList"/>
     <addaction name="menuVariableSelect"/>
     <addaction name="menuVariableModify"/>
     <addaction name="menuVariableDelete"/>
@@ -220,6 +221,11 @@
    </property>
   </action>
   <action name="actionList">
+   <property name="text">
+    <string>List</string>
+   </property>
+  </action>
+  <action name="actionVariableList">
    <property name="text">
     <string>List</string>
    </property>
