@@ -26,7 +26,7 @@ import os
 import numpy as np
 
 from PyQt5 import uic
-from PyQt5.QtWidgets import QMainWindow, QAction, QApplication, QDialog, QDockWidget
+from PyQt5.QtWidgets import QMainWindow, QAction, QApplication, QDialog, QDockWidget, QTextEdit, QPlainTextEdit
 from PyQt5.QtGui import QFileDialog, QMessageBox
 from PyQt5.QtCore import QVariant, QFileInfo
 
@@ -36,6 +36,7 @@ from qgis.utils import *
 
 from .pyMstaTextFileAnalysisDialog import pyMstaTextFileAnalysisDialog
 from .mstaCoreClass import mstaPoint as mp
+from .mstaCoreClass import mstaVariable as mv
 from .ui_about_msta import Ui_AboutDlg as AboutDlg
 
 Ui_MainWindow, _ = uic.loadUiType(os.path.join(
@@ -66,8 +67,13 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         self.iface = _iface
         self.workingDir = os.path.expanduser("~")
         self.points = []
-        self.dataset = np.zeros((1,1)) # Just for initialisation
-        self.coordsset = np.zeros((1,1)) # Just for initialisation
+        self.variablesName = []
+        self.textwidget = QTextEdit()
+        # "Central Widget" expands to fill all available space
+        self.setCentralWidget(self.textwidget)
+        self.textwidget.setEnabled(False)
+        #self.dataset = np.zeros((1,1)) # Just for initialisation
+        #self.coordsset = np.zeros((1,1)) # Just for initialisation
 
     def DisplayAboutMSTA(self):
         AboutDlg().exec_()
@@ -92,50 +98,65 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
                 # get the lists of information
                 coordsids,coordsnames,varids,varnames=importDlg.getVariableNameList()
                 # get the data (variables values)
-                self.dataset = np.recfromtxt(fullPathFileName,
+                dataset = np.recfromtxt(fullPathFileName,
                                 delimiter=importDlg.currentSeparator,
                                 skip_header=importDlg.getNumberOfFirstLineToSkip(),
                                 names=tuple(varnames),
                                 usecols=tuple(varids)
                                 )
                 # get the coordinates
-                self.coordsset = np.recfromtxt(fullPathFileName,
+                coordsset = np.recfromtxt(fullPathFileName,
                                 delimiter=importDlg.currentSeparator,
                                 skip_header=importDlg.getNumberOfFirstLineToSkip(),
                                 names=tuple(coordsnames),
                                 usecols=tuple(coordsids)
                                 )
-                QMessageBox.information(self, "Import data...", f'{self.dataset.shape[0]} rows have been imported.')
+                QMessageBox.information(self, "Import data...", f'{dataset.shape[0]} rows have been imported.')
             except ValueError:
                 QMessageBox.critical(self, "Load data file error", "An error occured while reading data file.\nNo data imported")
                 return
 
         # Create a temporary layer and add it to the current project
+        # Create the database use for computations
         try:
-            self.CreateTemporaryLayer(varnames, coordsnames, QFileInfo(fullPathFileName).baseName())
+            self.CreateTemporaryLayer(dataset, varnames, coordsset, coordsnames, QFileInfo(fullPathFileName).baseName())
         except:
             QMessageBox.critical(self, "Temporary layer error", "An error occured while creating temporary layer.")
+            return
+        try:
+            self.createDB(dataset, varnames, coordsset, coordsnames)
+        except:
+            QMessageBox.critical(self, "Database initialisation error", "An error occured during database creation")
+            return
+
+        # Save information before living
+        self.variablesName = varnames
 
         return
-    
-    def CreateTemporaryLayer(self, varnames, coordsnames, filename):
+
+    # _dataset: np.array of n samples lines and m variables columns
+    # _varnames: list of the variables names
+    # _coordsnames: list of the two coordinates variables
+    # _coordsset: np.array of n samples lines and two coordinates
+    # _filename: name of the text file (without extension) which contains the original data
+    def CreateTemporaryLayer(self, _dataset, _varnames, _coordsset, _coordsnames, _filename):
         # create the temporary layer
         URI=f'point?crs={QgsProject.instance().crs().authid()}'
-        vl = QgsVectorLayer(URI, f'msta_{filename}_Layer', "memory")
+        vl = QgsVectorLayer(URI, f'msta_{_filename}_Layer', "memory")
         pr = vl.dataProvider()
         
         # create fields
-        for i in range(len(varnames)):
+        for i in range(len(_varnames)):
             # TODO: modify this to manage various QVariant types: string, int and double
-            pr.addAttributes([QgsField(varnames[i], QVariant.Double)]) # double by default
+            pr.addAttributes([QgsField(_varnames[i], QVariant.Double)]) # double by default
             vl.updateFields() # tell the vector layer to fetch changes from the provider
 
         # add features
-        for i in range(self.dataset.shape[0]):
+        for i in range(_dataset.shape[0]):
             fet = QgsFeature()
-            fet.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(self.coordsset[coordsnames[0]][i],self.coordsset[coordsnames[1]][i])))
+            fet.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(_coordsset[_coordsnames[0]][i],_coordsset[_coordsnames[1]][i])))
             # cast numpy.float64 so that it can store in a QVariant.Double
-            fet.setAttributes(list(map(float, list(self.dataset[i]))))
+            fet.setAttributes(list(map(float, list(_dataset[i]))))
             pr.addFeatures([fet])
 
         # update layer's extent when new features have been added
@@ -145,4 +166,51 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         QgsProject.instance().addMapLayer(vl)
 
         return
+
+    # _points: np.array of n samples lines and two coordinates
+    # _variables: np.array of n samples lines and m variables columns
+    # _coordnames: list of the two coordinates variables
+    # _varnames: list of the variables namess
+    def createDB(self, _variables, _varnames, _points, _coordnames):
+        # first loop over the points
+        for i in range(_points.shape[0]):
+            # mp is mstaPoint
+            newpt = mp(_points[_coordnames[0]][i], _points[_coordnames[1]][i])
+            newpt.setID(i+1)
+            for j in range(len(_varnames)):
+                # mv is mstaVariable
+                newvar = mv()
+                newvar.setID(j+1)
+                newvar.setName(_varnames[j])
+                newvar.setUnit('')
+                newvar.setValue(_variables[i][j])
+                newvar.setRange(0.0,0.0)
+                newpt.addVariable(newvar)
+            self.points.append(newpt)
+
+    def variablesListAll(self):
+            #if not self.variablesName:
+            #    QMessageBox.information(self, "Variable", "No variables defined yet.")
+            #    return
+            # Create text entry box
+        #text_edit_widget = QPlainTextEdit()
+        #text_edit_widget = QTextEdit()
+
+        # Change font, colour of text entry box
+        #text_edit_widget.setStyleSheet(
+        #        """QPlainTextEdit {background-color: #333;
+        #        color: #00FF00;
+        #        text-decoration: underline;
+        #        font-family: Courier;}""")
+
+        # "Central Widget" expands to fill all available space
+        #self.setCentralWidget(text_edit_widget)
+
+        # Print text to console whenever it changes
+        #text_edit_widget.textChanged.connect(
+        #        lambda: print(text_edit_widget.document().toPlainText()))
+
+        # Set initial value of text
+        for i in self.points:
+            self.textwidget.setText(f'{i}\n')
 

@@ -35,7 +35,7 @@
     <property name="title">
      <string>Variables</string>
     </property>
-    <widget class="QMenu" name="menuModifyVariables">
+    <widget class="QMenu" name="menuVariableModify">
      <property name="title">
       <string>Modify</string>
      </property>
@@ -44,35 +44,30 @@
      <addaction name="actionVModifyVariablesRange"/>
      <addaction name="actionModifyVariableResearchArea"/>
     </widget>
-    <widget class="QMenu" name="menuDelete">
+    <widget class="QMenu" name="menuVariableDelete">
      <property name="title">
       <string>Delete</string>
      </property>
      <addaction name="actionDeleteAllVariables"/>
-     <addaction name="actionDeleteVariablesSelection"/>
+     <addaction name="actionDeleteVariables"/>
     </widget>
-    <widget class="QMenu" name="menuList_2">
+    <widget class="QMenu" name="menuVariableSelect">
      <property name="title">
-      <string>List</string>
+      <string>Select</string>
      </property>
-     <addaction name="actionListAllVariables"/>
-     <addaction name="actionVariablesSelection"/>
+     <addaction name="actionSelectAllVariables"/>
+     <addaction name="actionSelectVariables"/>
     </widget>
-    <addaction name="menuList_2"/>
-    <addaction name="menuModifyVariables"/>
-    <addaction name="menuDelete"/>
+    <addaction name="menuVariableSelect"/>
+    <addaction name="menuVariableModify"/>
+    <addaction name="menuVariableDelete"/>
+    <addaction name="separator"/>
+    <addaction name="actionGSTALikeVariable"/>
    </widget>
    <widget class="QMenu" name="menuTrends">
     <property name="title">
      <string>Trends</string>
     </property>
-    <widget class="QMenu" name="menuList">
-     <property name="title">
-      <string>List</string>
-     </property>
-     <addaction name="actionListAllTrends"/>
-     <addaction name="actionTrendsSelection"/>
-    </widget>
     <widget class="QMenu" name="menuDeleteTrends">
      <property name="title">
       <string>Delete</string>
@@ -80,7 +75,7 @@
      <addaction name="actionDeleteAllTrends"/>
      <addaction name="actionDeleteTrendsSelection"/>
     </widget>
-    <addaction name="menuList"/>
+    <addaction name="actionList"/>
     <addaction name="actionModifyTrends"/>
     <addaction name="menuDeleteTrends"/>
     <addaction name="separator"/>
@@ -143,9 +138,9 @@
     <string>All...</string>
    </property>
   </action>
-  <action name="actionDeleteVariablesSelection">
+  <action name="actionDeleteVariables">
    <property name="text">
-    <string>Selection...</string>
+    <string>One or more...</string>
    </property>
   </action>
   <action name="actionAppQuit">
@@ -163,14 +158,14 @@
     <string>Selection...</string>
    </property>
   </action>
-  <action name="actionListAllVariables">
+  <action name="actionSelectAllVariables">
    <property name="text">
     <string>All</string>
    </property>
   </action>
-  <action name="actionVariablesSelection">
+  <action name="actionSelectVariables">
    <property name="text">
-    <string>Selection...</string>
+    <string>One or more...</string>
    </property>
   </action>
   <action name="actionModifyTrends">
@@ -185,7 +180,7 @@
   </action>
   <action name="actionDeleteTrendsSelection">
    <property name="text">
-    <string>Selection...</string>
+    <string>One or more...</string>
    </property>
   </action>
   <action name="actionSetWorkingDirectory">
@@ -217,6 +212,16 @@
   <action name="actionMSTA">
    <property name="text">
     <string>MSTA...</string>
+   </property>
+  </action>
+  <action name="actionGSTALikeVariable">
+   <property name="text">
+    <string>GSTA like variables...</string>
+   </property>
+  </action>
+  <action name="actionList">
+   <property name="text">
+    <string>List</string>
    </property>
   </action>
  </widget>

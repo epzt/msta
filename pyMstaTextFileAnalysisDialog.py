@@ -67,79 +67,79 @@ class pyMstaTextFileAnalysisDialog(QtWidgets.QDialog, Ui_msta_text_file_analysis
         
     #----------------------------------------------------
     # Set of functions related to widgets connection
-    def spaceToggled(self, value):
-        if not value:
+    def spaceToggled(self, _value):
+        if not _value:
             return
         self.currentSeparator = ' '
         self.updateTableView()
         
-    def tabulationToggled(self, value):
-        if not value:
+    def tabulationToggled(self, _value):
+        if not _value:
             return
         self.currentSeparator = '\t'
         self.updateTableView()
     
-    def commaToggled(self, value):
-        if not value:
+    def commaToggled(self, _value):
+        if not _value:
             return
         self.currentSeparator = ','
         self.updateTableView()
         
-    def similiconToggled(self, value):
-        if not value:
+    def similiconToggled(self, _value):
+        if not _value:
             return
         self.currentSeparator = ';'
         self.updateTableView()
         
-    def pipeToggled(self, value):
-        if not value:
+    def pipeToggled(self, _value):
+        if not _value:
             return
         self.currentSeparator = '|'
         self.updateTableView()
         
-    def otherToggled(self, value):
-        if not value:
+    def otherToggled(self, _value):
+        if not _value:
             return
         separator = self.lineEditOther.text()
         if separator != "":
             self.currentSeparator = separator
             self.updateTableView()
         
-    def headerToggled(self, value):
-        self.firstLineAsHeader = value
+    def headerToggled(self, _value):
+        self.firstLineAsHeader = _value
         self.updateTableView()
     
-    def lineToSkip(self, newValue):
+    def lineToSkip(self, _value):
         linestoread = self.numberofLinesToRead.value()
-        if self.numberLineToSkip < newValue:
+        if self.numberLineToSkip < _value:
             self.numberofLinesToRead.setValue(linestoread+1)
         else:
             self.numberofLinesToRead.setValue(linestoread-1)
-        self.numberLineToSkip = newValue
+        self.numberLineToSkip = _value
         self.updateTableView()
         
-    #def linesToAnalyse(self, newValue):
-    #    self.numberLinesToAnalyse = newValue
+    #def linesToAnalyse(self, _value):
+    #    self.numberLinesToAnalyse = _value
     #    self.updateTableView()
         
-    def separatorOther(self, other):
-        if other != "":
-            self.currentSeparator = other
+    def separatorOther(self, _other):
+        if _other != "":
+            self.currentSeparator = _other
             self.updateTableView()
 
-    def commaSeparatorToggled(self, value):
-        self.commaDecimalSeparator = value
+    def commaSeparatorToggled(self, _value):
+        self.commaDecimalSeparator = _value
         self.updateTableView()
             
-    def setXCoord(self, value):
-       if len(value) == 0:
+    def setXCoord(self, _value):
+       if len(_value) == 0:
           return
-       self.xCoordinatesIndex = IDNAME(self.xCoordComboBox.currentIndex(), value)
+       self.xCoordinatesIndex = IDNAME(self.xCoordComboBox.currentIndex(), _value)
         
-    def setYCoord(self, value):
-        if len(value) == 0:
+    def setYCoord(self, _value):
+        if len(_value) == 0:
             return
-        self.yCoordinatesIndex = IDNAME(self.yCoordComboBox.currentIndex(), value)
+        self.yCoordinatesIndex = IDNAME(self.yCoordComboBox.currentIndex(), _value)
 
     def getXIndex(self):
         return self.xCoordinatesIndex.getID()
@@ -181,8 +181,8 @@ class pyMstaTextFileAnalysisDialog(QtWidgets.QDialog, Ui_msta_text_file_analysis
                     self.yCoordinatesIndex.setNAME(self.yCoordComboBox.currentText())
                     break
 
-    def sampleNameGroupToggled(self, value):
-        if value:
+    def sampleNameGroupToggled(self, _value):
+        if _value:
             self.sampleNameIndex = IDNAME(self.sampleNameComboBox.currentIndex(),self.sampleNameComboBox.currentText())
         else:
             self.sampleNameIndex = IDNAME(-1,'')
@@ -193,7 +193,7 @@ class pyMstaTextFileAnalysisDialog(QtWidgets.QDialog, Ui_msta_text_file_analysis
     def getSampleNameName(self):
         return self.sampleNameIndex.getNAME()
 
-    def setNumberofLinesToRead(self, newValue):
+    def setNumberofLinesToRead(self, _value):
         self.updateTableView()
 
     def setAllLinesToRead(self):
@@ -290,8 +290,11 @@ class pyMstaTextFileAnalysisDialog(QtWidgets.QDialog, Ui_msta_text_file_analysis
         textFile.close()
 
     #----------------------------------------------------
-    # Return the list of variable names without coordinates variables 
-    #  and eventualy samples name variable     
+    # Return the list of :
+    # - Coordinates 
+    # - Coordinates name
+    # - variables ID
+    # - Variables name      
     def getVariableNameList(self):
         retListVarNames = []
         retListVarIds = []

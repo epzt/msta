@@ -23,6 +23,7 @@
 """
 
 from qgis.core import QgsPoint
+import numpy as np
 
 # Trend operations
 TREND = {
@@ -46,6 +47,9 @@ class RANGE():
       self.min = _min
       self.max = _max
 
+   def __repr__(self):
+      return(f'min: {self.min} - max: {self.max}')
+
    def getMin(self):
       return self.min
 
@@ -55,16 +59,37 @@ class RANGE():
    def getDeltaRange(self):
       return(self.max - self.min)
 
+#############################################################################
+## class RANGE: manage variables range                                     ##
+#############################################################################
+
+class RADIUS():
+   def __init__(self, _a, _b):
+      self.major = _b
+      self.minor = _a
+
+   def getMinor(self):
+      return self.minor
+
+   def getMajor(self):
+      return self.major
+
+   def isCircle(self):
+      return((self.major-self.minor) == 0)
 
 #############################################################################
 ## class mstaPoint: manage data points                                     ##
 #############################################################################
 
 class mstaPoint(QgsPoint):
-   def __init__(self):
+   def __init__(self, _x, _y):
       """Constructor."""
+      super().__init__(_x,_y)
       self.ID = 0
       self.variables = []
+
+   def __repr__(self):
+      return(f'ID: {self.ID}, {super().asWkt()}\n\t{[i for i in  self.variables]}')
 
    def setID(self,_ID):
       self.ID = _ID
@@ -72,29 +97,34 @@ class mstaPoint(QgsPoint):
    def getID(self):
       return self.ID
 
-   def addVariable(self,newvar):
-      # Check if newvar is still present the variable list at this point
-      if newvar in self.variables:
+   def addVariable(self, _newvar):
+      # Check if _newvar is still present the variable list at this point
+      if _newvar in self.variables:
          return False
-      self.variables.append(newvar)
+      self.variables.append(_newvar)
       return(True)
 
-   def getVariableByName(self, varname):
-      retValue = False
+   def getVariableByName(self, _varname):
+      retValue = None
       for i in self.variables:
-         if i.getName() == varname:
+         if i.getName() == _varname:
             retValue = i
             break
       return retValue
 
-   def getVariableByID(self, varid):
-      retValue = False
+   def getVariableByID(self, _varid):
+      retValue = None
       for i in self.variables:
-         if i.getID() == varid:
+         if i.getID() == _varid:
             retValue = i
             break
       return retValue
       
+   def getVariableValueByName(self, _varname):
+      getVariableByName(_varname).getValue()
+
+   def getVariableValueByID(self, _varid):
+      getVariableByID(_varid).getValue()
 
 
 #############################################################################
@@ -108,96 +138,100 @@ class mstaVariable():
       self.unit = ""
       self.value = 0.0
       self.range = RANGE(0.0,0.0)
-      self.search = []
+      self.search = RADIUS(0.0,0.0)
 
    # Default operations
    # +
-   def __add__(self,other):
+   def __add__(self,_other):
       res = mstaVariable()
-      if not other.__class__ is mstaVariable:
+      if not _other.__class__ is mstaVariable:
          return NotImplemented
-      if self.getUnit() != other.getUnit():
+      if self.getUnit() != _other.getUnit():
          return NotImplemented
       else:
          res.setUnit(self.getUnit())
-      if self.getName() != other.getName():
+      if self.getName() != _other.getName():
          res.setName("")
       else:
          res.setName(self.getName())
       res = mstaVariable()
-      res.range = RANGE(self.getMin()+self.other.getMin(),self.getMax()+self.other.getMax())
+      res.range = RANGE(self.getMin()+self._other.getMin(),self.getMax()+self._other.getMax())
       res.setValue(res.getDeltaRange()/2.0)
       return res
-   def __iadd__(self,other):
-      self.range = RANGE(self.getMin()+self.other.getMin(),self.getMax()+self.other.getMax())
+   def __iadd__(self,_other):
+      self.range = RANGE(self.getMin()+self._other.getMin(),self.getMax()+self._other.getMax())
       self.setValue(self.range.getDeltaRange()/2.0)
       return self
    # -
-   def __sub__(self,other):
+   def __sub__(self,_other):
       res = mstaVariable()
-      if not other.__class__ is mstaVariable:
+      if not _other.__class__ is mstaVariable:
          return NotImplemented
-      if self.getUnit() != other.getUnit():
+      if self.getUnit() != _other.getUnit():
          return NotImplemented
       else:
          res.setUnit(self.getUnit())
-      if self.getName() != other.getName():
+      if self.getName() != _other.getName():
          res.setName("")
       else:
          res.setName(self.getName())
       res = mstaVariable()
-      res.range = RANGE(self.getMin()-self.other.getMax(),self.getMax()-self.other.getMin())
+      res.range = RANGE(self.getMin()-self._other.getMax(),self.getMax()-self._other.getMin())
       res.setValue(res.range.getDeltaRange()/2.0)
       return res
-   def __isub__(self,other):
-      self.range = RANGE(self.getMin()-self.other.getMax(),self.getMax()-self.other.getMin())
+   def __isub__(self,_other):
+      self.range = RANGE(self.getMin()-self._other.getMax(),self.getMax()-self._other.getMin())
       self.setValue(self.range.getDeltaRange()/2.0)
       return self
    # *
-   def __mul__(self,other):
+   def __mul__(self,_other):
       res = mstaVariable()
-      if not other.__class__ is mstaVariable:
+      if not _other.__class__ is mstaVariable:
          return NotImplemented
-      if self.getUnit() != other.getUnit():
+      if self.getUnit() != _other.getUnit():
          return NotImplemented
       else:
          res.setUnit(self.getUnit())
-      if self.getName() != other.getName():
+      if self.getName() != _other.getName():
          res.setName("")
       else:
          res.setName(self.getName())
       res = mstaVariable()
-      lvalues = [self.getMin()*self.other.getMin(),self.getMin()*self.other.getMax(),self.getMax()*self.other.getMin(),self.getMax()*self.other.getMax()]
+      lvalues = [self.getMin()*self._other.getMin(),self.getMin()*self._other.getMax(),self.getMax()*self._other.getMin(),self.getMax()*self._other.getMax()]
       res.range = RANGE(min(lvalues),max(lvalues))
       res.setValue(res.getDeltaRange()/2.0)
       return res
-   def __imul__(self,other):
-      lvalues = [self.getMin()*self.other.getMin(),self.getMin()*self.other.getMax(),self.getMax()*self.other.getMin(),self.getMax()*self.other.getMax()]
+   def __imul__(self,_other):
+      lvalues = [self.getMin()*self._other.getMin(),self.getMin()*self._other.getMax(),self.getMax()*self._other.getMin(),self.getMax()*self._other.getMax()]
       self.range = RANGE(min(lvalues),max(lvalues))
       self.setValue(self.getDeltaRange()/2.0)
       return self
    # ==
-   def __eq__(self,other):
-      if self.isInRange(other.getValue()) or other.isInRange(self.getValue()):
+   def __eq__(self,_other):
+      if self.isInRange(_other.getValue()) or _other.isInRange(self.getValue()):
          return True
       else:
          return False
    # !=
-   def __ne__(self,other):
-      if not self.isInRange(other.getValue()) and not other.isInRange(self.getValue()):
+   def __ne__(self,_other):
+      if not self.isInRange(_other.getValue()) and not _other.isInRange(self.getValue()):
          return True
       else:
          return False
    # <
-   def __lt__(self,other):
-      return(self.getMax() < other.getMin())
-   def __le__(self,other):
-      return(self.range.getMax() <= other.getMin())
+   def __lt__(self,_other):
+      return(self.getMax() < _other.getMin())
+   def __le__(self,_other):
+      return(self.range.getMax() <= _other.getMin())
    # >
-   def __gt__(self,other):
-      return(self.getMin() > other.getMax())
-   def __ge__(self,other):
-      return(self.getMin() >= other.getMax())
+   def __gt__(self,_other):
+      return(self.getMin() > _other.getMax())
+   def __ge__(self,_other):
+      return(self.getMin() >= _other.getMax())
+
+   # Print itself
+   def __repr__(self):
+      return(f'Name: {self.name}, unit: {self.unit}, value: {self.value}, range: {self.range}')
 
    def setID(self,_ID):
       self.ID = _ID   
@@ -231,8 +265,13 @@ class mstaVariable():
       else:
          return self.search
 
-   def isInRange(self, value):
-      return(value >= self.getMin() and value <= self.getMax())
+   def setRange(self, _min, _max):
+      self.range = RANGE(_min, _max)
+   def getRange(self):
+      return(self.range)
+
+   def isInRange(self, _value):
+      return(_value >= self.getMin() and _value <= self.getMax())
 
 #############################################################################
 ## class mstaTrendCase: manage trend case                                  ##
