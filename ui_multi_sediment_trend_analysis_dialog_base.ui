@@ -76,7 +76,7 @@
      <addaction name="actionDeleteAllTrends"/>
      <addaction name="actionDeleteTrendsSelection"/>
     </widget>
-    <addaction name="actionList"/>
+    <addaction name="actionTrendList"/>
     <addaction name="actionModifyTrends"/>
     <addaction name="menuDeleteTrends"/>
     <addaction name="separator"/>
@@ -229,7 +229,7 @@
     <string>GSTA like variables...</string>
    </property>
   </action>
-  <action name="actionList">
+  <action name="actionTrendList">
    <property name="text">
     <string>List</string>
    </property>

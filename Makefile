@@ -40,7 +40,7 @@ SOURCES = \
 	__init__.py \
 	multi_sediment_trend_analysis.py multi_sediment_trend_analysis_dialog.py \
 	mstaCoreClass.py ui_multi_sediment_trend_analysis_dialog_base.py pyMstaTextFileAnalysisDialog.py \
-	ui_msta_text_file_analysis.py ui_about_msta.py ui_gsta_trend_definition.py
+	ui_msta_text_file_analysis.py ui_about_msta.py ui_gsta_trend_definition.py mstaUtilsClass.py
 
 PLUGINNAME = multi_sediment_trend_analysis
 
@@ -48,7 +48,7 @@ PY_FILES = \
 	__init__.py \
 	multi_sediment_trend_analysis.py multi_sediment_trend_analysis_dialog.py \
 	mstaCoreClass.py ui_multi_sediment_trend_analysis_dialog_base.py pyMstaTextFileAnalysisDialog.py \
-	ui_msta_text_file_analysis.py ui_about_msta.py ui_gsta_trend_definition.py
+	ui_msta_text_file_analysis.py ui_about_msta.py ui_gsta_trend_definition.py mstaUtilsClass.py
 
 UI_FILES = ui_multi_sediment_trend_analysis_dialog_base.ui \
 			  ui_msta_text_file_analysis.ui \

@@ -26,9 +26,9 @@ import os
 import numpy as np
 
 from PyQt5 import uic
-from PyQt5.QtWidgets import QMainWindow, QAction, QApplication, QDialog, QDockWidget, QTextEdit, QInputDialog
-from PyQt5.QtGui import QFileDialog, QMessageBox, QColor
-from PyQt5.QtCore import QVariant, QFileInfo
+from PyQt5.QtWidgets import *
+from PyQt5.QtGui import *
+from PyQt5.QtCore import *
 
 from qgis.core import *
 from qgis.gui import *
@@ -37,6 +37,9 @@ from qgis.utils import *
 from .pyMstaTextFileAnalysisDialog import pyMstaTextFileAnalysisDialog
 from .mstaCoreClass import mstaPoint as mp
 from .mstaCoreClass import mstaVariable as mv
+from .mstaCoreClass import mstaTrendCase as trend
+from .mstaCoreClass import mstaComposedTrendCase as cpdtrend
+from .mstaUtilsClass import setGSTAVariables as GSTAV
 from .ui_about_msta import Ui_AboutDlg as AboutDlg
 
 CONTEXTINFO = {1:"Variable(s) information", 2:"Trend(s) information", 3:"GSTA variable information", 4:"GSTA trend(s) information"}
@@ -74,7 +77,8 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         self.iface = _iface
         self.workingDir = os.path.expanduser("~")
         self.points = []
-        self.variablesName = []
+        self.variablesName = [] # A list of all the variables in the current dataset
+        self.GSTAVariables = {} # A dict defining the three GSTA variables on the current dataset
         self.textwidget = QTextEdit()
         # "Central Widget" expands to fill all available space
         self.setCentralWidget(self.textwidget)
@@ -239,8 +243,10 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         #self.textwidget.setText(f'{[i for i in self.variablesName]}\n')
 
     def TrendsListAll(self):
-        self.updateLogViewPort(2, self.variablesName)
-    # Select one variable in the cuurent variable list and retunr it
+        varList = [self.GSTAVariables['mean'],self.GSTAVariables['sorting'],self.GSTAVariables['skewness']]
+        self.updateLogViewPort(2, varList)
+
+    # Select one variable in the cuurent variable list and return it
     def SelectVariables(self):
         if not self.variablesName:
             QMessageBox.information(self, "Variable", "No variables defined yet.")
@@ -249,11 +255,15 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         theSelectedVarDlg.setCancelButtonText("Cancel")
         theSelectedVarDlg.setOkButtonText("Select")
         theSelectedVarDlg.setOption(QInputDialog.UseListViewForComboBoxItems)
-        theSelectedVar, ok = theSelectedVarDlg.getItem(self,"Selection","Select a variable",self.variablesName)
+        theSelectedVar, ok = theSelectedVarDlg.getItem(self,"Selection","Select a variable",self.variablesName,0,False)
         if ok and theSelectedVar:
             self.selectedVariables.append(theSelectedVar)
 
     def SetGSTAVariables(self):
+        if not self.variablesName:
+            QMessageBox.information(self, "Variable", "No variables defined yet.")
+            return
+        dlg = GSTAV(self.variablesName)
         return
 
     def SetClearText(self):
