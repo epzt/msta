@@ -26,8 +26,8 @@ import os
 import numpy as np
 
 from PyQt5 import uic
-from PyQt5.QtWidgets import QMainWindow, QAction, QApplication, QDialog, QDockWidget, QTextEdit, QPlainTextEdit
-from PyQt5.QtGui import QFileDialog, QMessageBox
+from PyQt5.QtWidgets import QMainWindow, QAction, QApplication, QDialog, QDockWidget, QTextEdit, QInputDialog
+from PyQt5.QtGui import QFileDialog, QMessageBox, QColor
 from PyQt5.QtCore import QVariant, QFileInfo
 
 from qgis.core import *
@@ -38,6 +38,8 @@ from .pyMstaTextFileAnalysisDialog import pyMstaTextFileAnalysisDialog
 from .mstaCoreClass import mstaPoint as mp
 from .mstaCoreClass import mstaVariable as mv
 from .ui_about_msta import Ui_AboutDlg as AboutDlg
+
+CONTEXTINFO = {1:"Variable(s) information", 2:"Trend(s) information", 3:"GSTA variable information", 4:"GSTA trend(s) information"}
 
 Ui_MainWindow, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'ui_multi_sediment_trend_analysis_dialog_base.ui'))
@@ -59,6 +61,11 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         self.actionFileImport.triggered.connect(self.DataFileImport)
         self.actionAbout.triggered.connect(self.DisplayAboutMSTA)
         self.actionSetWorkingDirectory.triggered.connect(self.SetWorkingDirectory)
+        self.actionVariableListAll.triggered.connect(self.VariablesListAll)
+        self.actionSelectVariables.triggered.connect(self.SelectVariables)
+        self.actionGSTALikeVariable.triggered.connect(self.SetGSTAVariables)
+        self.actionClearViewText.triggered.connect(self.SetClearText)
+        self.actionTrendList.triggered.connect(self.TrendsListAll)
 
         self.setGeometry(10, 10, 400, 400)
         self.setWindowTitle('Multi Sediment Trend Analysis') 
@@ -72,8 +79,12 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         # "Central Widget" expands to fill all available space
         self.setCentralWidget(self.textwidget)
         self.textwidget.setEnabled(False)
+        self.textwidget.setTextColor(QColor("black"))
+        fontWeight = self.textwidget.currentFont().weight()
+        self.textwidget.setTabStopWidth(fontWeight )
         #self.dataset = np.zeros((1,1)) # Just for initialisation
         #self.coordsset = np.zeros((1,1)) # Just for initialisation
+        self.selectedVariables = []
 
     def DisplayAboutMSTA(self):
         AboutDlg().exec_()
@@ -188,11 +199,24 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
                 newpt.addVariable(newvar)
             self.points.append(newpt)
 
-    def variablesListAll(self):
-            #if not self.variablesName:
-            #    QMessageBox.information(self, "Variable", "No variables defined yet.")
-            #    return
-            # Create text entry box
+    # Add _text information on the viewport of the application
+    # base on _context (see CONTEXTINFO dict definition)
+    def updateLogViewPort(self, _context, _text):
+        self.textwidget.append(f'{CONTEXTINFO[_context]}:')
+        if not _text:
+            self.textwidget.append("\tNone")
+        if isinstance(_text, list):
+            for i in _text:
+                self.textwidget.append(f'\t{i}')
+        else:
+            self.textwidget.append(f'\t{_text}')
+
+    def VariablesListAll(self):
+        #if not self.variablesName:
+        #    QMessageBox.information(self, "Variable", "No variables defined yet.")
+        #    return
+
+        # Create text entry box
         #text_edit_widget = QPlainTextEdit()
         #text_edit_widget = QTextEdit()
 
@@ -210,7 +234,27 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         #text_edit_widget.textChanged.connect(
         #        lambda: print(text_edit_widget.document().toPlainText()))
 
+        self.updateLogViewPort(1, self.variablesName)
         # Set initial value of text
-        for i in self.points:
-            self.textwidget.setText(f'{i}\n')
+        #self.textwidget.setText(f'{[i for i in self.variablesName]}\n')
 
+    def TrendsListAll(self):
+        self.updateLogViewPort(2, self.variablesName)
+    # Select one variable in the cuurent variable list and retunr it
+    def SelectVariables(self):
+        if not self.variablesName:
+            QMessageBox.information(self, "Variable", "No variables defined yet.")
+            return
+        theSelectedVarDlg = QInputDialog(self)
+        theSelectedVarDlg.setCancelButtonText("Cancel")
+        theSelectedVarDlg.setOkButtonText("Select")
+        theSelectedVarDlg.setOption(QInputDialog.UseListViewForComboBoxItems)
+        theSelectedVar, ok = theSelectedVarDlg.getItem(self,"Selection","Select a variable",self.variablesName)
+        if ok and theSelectedVar:
+            self.selectedVariables.append(theSelectedVar)
+
+    def SetGSTAVariables(self):
+        return
+
+    def SetClearText(self):
+        self.textwidget.clear()
