@@ -29,6 +29,7 @@ import numpy as np
 TREND = {
    'sup' : '>',
    'inf' : '<',
+   'none' : ''
 }
 
 # Operand operations
@@ -36,6 +37,7 @@ OPERAND = {
    'ou' : 'OR',
    'et' : 'AND',
    'xou' : 'XOR',
+   'none' : ''
 }
 
 #############################################################################
@@ -279,7 +281,21 @@ class mstaVariable():
 class mstaTrendCase():
    def __init__(self):
       """Constructor."""
-      self.trend = ""
+      self.trend = TREND['none']
+      self.variable = ''
+
+   def setOp(self, _op):
+      assert TREND[_op]
+      self.trend = TREND[_op]
+
+   def getOp(self):
+      return(self.trend)
+
+   def setVar(self, _var):
+      self.variable = _var
+
+   def getVar(self):
+      return(self.variable)
 
 
 #############################################################################
@@ -288,6 +304,18 @@ class mstaTrendCase():
 class mstaComposedTrendCase():
    def __init__(self):
       """Constructor."""
-      self.operand = ""
+      self.operand = []
+      self.trendList = []
+
+   def addTrendCase(self, _trendcase, _operand):
+      assert isinstance(_trendcase, mstaTrendCase)
+      if len(self.trendList) > 0:
+         assert _operand
+         assert OPERAND[_operand]
+
+      self.trendList.append(_trendcase)
+      self.operand.append(OPERAND[_operand])
+      # there must be (operand + 1) trend cases
+      assert len(self.trendList) == len(self.operand) + 1
 
    

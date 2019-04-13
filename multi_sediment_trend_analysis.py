@@ -31,7 +31,6 @@ from .resources import *
 from .multi_sediment_trend_analysis_dialog import mstaDialog
 import os.path
 
-
 class msta():
     """QGIS Plugin Implementation."""
 

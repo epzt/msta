@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>GSTADlgBase</class>
- <widget class="QDialog" name="GSTADlgBase">
+ <class>setGSTATrendCaseDialog</class>
+ <widget class="QDialog" name="setGSTATrendCaseDialog">
   <property name="enabled">
    <bool>true</bool>
   </property>
@@ -35,7 +35,10 @@
     <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
    </property>
   </widget>
-  <widget class="QGroupBox" name="groupBox">
+  <widget class="QGroupBox" name="GSTAGroup">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
    <property name="geometry">
     <rect>
      <x>10</x>
@@ -105,7 +108,7 @@ p, li { white-space: pre-wrap; }
      <string>&lt;&lt;</string>
     </property>
    </widget>
-   <widget class="QGroupBox" name="GSTATrendMean">
+   <widget class="QGroupBox" name="GSTATrendMeanGroup">
     <property name="geometry">
      <rect>
       <x>150</x>
@@ -117,8 +120,47 @@ p, li { white-space: pre-wrap; }
     <property name="title">
      <string>Mean</string>
     </property>
+    <property name="checkable">
+     <bool>false</bool>
+    </property>
+    <widget class="QWidget" name="">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>20</y>
+       <width>161</width>
+       <height>24</height>
+      </rect>
+     </property>
+     <layout class="QGridLayout" name="gridLayout">
+      <item row="0" column="0">
+       <widget class="QRadioButton" name="radioGSTAMeanFiner">
+        <property name="text">
+         <string>F</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QRadioButton" name="radioGSTAMeanCoarser">
+        <property name="text">
+         <string>C</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2">
+       <widget class="QRadioButton" name="radioGSTAMeanNone">
+        <property name="text">
+         <string>None</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
    </widget>
-   <widget class="QGroupBox" name="GSTATrendSorting">
+   <widget class="QGroupBox" name="GSTATrendSortingGroup">
     <property name="geometry">
      <rect>
       <x>150</x>
@@ -130,8 +172,44 @@ p, li { white-space: pre-wrap; }
     <property name="title">
      <string>Sorting</string>
     </property>
+    <widget class="QWidget" name="">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>20</y>
+       <width>161</width>
+       <height>24</height>
+      </rect>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_2">
+      <item row="0" column="0">
+       <widget class="QRadioButton" name="radioGSTASortingBetter">
+        <property name="text">
+         <string>B</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QRadioButton" name="radioGSTASortingPorer">
+        <property name="text">
+         <string>P</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2">
+       <widget class="QRadioButton" name="radioGSTASortingNone">
+        <property name="text">
+         <string>None</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
    </widget>
-   <widget class="QGroupBox" name="GSTATrendSkewness">
+   <widget class="QGroupBox" name="GSTATrendSkewnessGroup">
     <property name="geometry">
      <rect>
       <x>150</x>
@@ -143,121 +221,49 @@ p, li { white-space: pre-wrap; }
     <property name="title">
      <string>Skewness</string>
     </property>
-   </widget>
-   <widget class="QWidget" name="layoutWidget">
-    <property name="geometry">
-     <rect>
-      <x>160</x>
-      <y>60</y>
-      <width>161</width>
-      <height>24</height>
-     </rect>
-    </property>
-    <layout class="QHBoxLayout" name="horizontalLayout">
-     <item>
-      <widget class="QRadioButton" name="radioGSTAMeanFiner">
-       <property name="text">
-        <string>F</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QRadioButton" name="radioGSTAMeanCoarser">
-       <property name="text">
-        <string>C</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QRadioButton" name="radioGSTAMeanNone">
-       <property name="text">
-        <string>None</string>
-       </property>
-       <property name="checked">
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
-    </layout>
-   </widget>
-   <widget class="QWidget" name="layoutWidget_2">
-    <property name="geometry">
-     <rect>
-      <x>160</x>
-      <y>120</y>
-      <width>162</width>
-      <height>24</height>
-     </rect>
-    </property>
-    <layout class="QHBoxLayout" name="horizontalLayout_2">
-     <item>
-      <widget class="QRadioButton" name="radioGSTASortingBetter">
-       <property name="text">
-        <string>B</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QRadioButton" name="radioGSTASortingPorer">
-       <property name="text">
-        <string>P</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QRadioButton" name="radioGSTASortingNone">
-       <property name="text">
-        <string>None</string>
-       </property>
-       <property name="checked">
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
-    </layout>
-   </widget>
-   <widget class="QWidget" name="layoutWidget_3">
-    <property name="geometry">
-     <rect>
-      <x>161</x>
-      <y>180</y>
-      <width>157</width>
-      <height>24</height>
-     </rect>
-    </property>
-    <layout class="QHBoxLayout" name="horizontalLayout_3">
-     <item>
-      <widget class="QRadioButton" name="radioGSTASkewnessPositive">
-       <property name="text">
-        <string>+</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QRadioButton" name="radioGSTASkewnessNegative">
-       <property name="text">
-        <string>-</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QRadioButton" name="radioGSTASkewnessNone">
-       <property name="text">
-        <string>None</string>
-       </property>
-       <property name="checked">
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
-    </layout>
+    <widget class="QWidget" name="">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>20</y>
+       <width>161</width>
+       <height>24</height>
+      </rect>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_3">
+      <item row="0" column="0">
+       <widget class="QRadioButton" name="radioGSTASkewnessPlus">
+        <property name="text">
+         <string>+</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QRadioButton" name="radioGSTASkewnessMinus">
+        <property name="text">
+         <string>-</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2">
+       <widget class="QRadioButton" name="radioGSTASkewnessNone">
+        <property name="text">
+         <string>None</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
    </widget>
    <zorder>layoutWidget_2</zorder>
    <zorder>layoutWidget_3</zorder>
    <zorder>layoutWidget</zorder>
-   <zorder>GSTATrendSkewness</zorder>
-   <zorder>GSTATrendSorting</zorder>
-   <zorder>GSTATrendMean</zorder>
+   <zorder>GSTATrendSkewnessGroup</zorder>
+   <zorder>GSTATrendSortingGroup</zorder>
+   <zorder>GSTATrendMeanGroup</zorder>
    <zorder>gstaCaseListEdit</zorder>
    <zorder>buttonRemoveGSTATrendCase</zorder>
    <zorder>buttonAddGSTATrendCase</zorder>
@@ -268,7 +274,7 @@ p, li { white-space: pre-wrap; }
   <connection>
    <sender>buttonBox</sender>
    <signal>accepted()</signal>
-   <receiver>GSTADlgBase</receiver>
+   <receiver>setGSTATrendCaseDialog</receiver>
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -284,7 +290,7 @@ p, li { white-space: pre-wrap; }
   <connection>
    <sender>buttonBox</sender>
    <signal>rejected()</signal>
-   <receiver>GSTADlgBase</receiver>
+   <receiver>setGSTATrendCaseDialog</receiver>
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">

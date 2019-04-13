@@ -1,73 +1,86 @@
-from PyQt5.QtCore import *
-from PyQt5.QtGui import *
+from PyQt5.QtGui import QDialog, QInputDialog
 
+from .ui_about_msta import Ui_AboutDlg
+from .ui_set_gsta_variables_dialog import Ui_setGSTAVariablesDialog as setGSTAVarDlg
+from .ui_gsta_trend_definition import Ui_setGSTATrendCaseDialog as setGSTATrendDlg
 
-class setGSTAVariables(QWidget):
+from mstaCoreClass import mstaTrendCase, mstaComposedTrendCase
+
+#############################################################################
+# Just a class to print About information
+#############################################################################
+class aboutMSTA(QDialog, Ui_AboutDlg):
+    def __int__(self, parent=None):
+        super(aboutMSTA,self).__init__(parent)
+        self.setupUi(self)
+
+#############################################################################
+# GSTA variables definition from global variable list
+#############################################################################
+class setGSTAVariables(QDialog, setGSTAVarDlg):
     def __init__(self, _variablesList, parent=None):
-        super().__init__(parent)
-        #super(QWidget, self).__init__(parent)
+        super(setGSTAVariables,self).__init__(parent)
+        self.setupUi(self)
 
+        self.meanButton.clicked.connect(self.getMean)
+        self.sortingButton.clicked.connect(self.getSorting)
+        self.skewnessButton.clicked.connect(self.getSkewness)
+        # Initialisations
+        self.variablesDict = {'mean':'','sorting':'','skewness':''}
         self.items = _variablesList
-        self.initUI()
-
-    def initUI(self):
-        layout = QFormLayout()
-
-        self.btnMean = QPushButton("Choose mean")
-        self.btnMean.clicked.connect(self.getMean)
-        self.leMean = QLineEdit()
-        layout.addRow(self.btnMean, self.leMean)
-
-        self.btnSorting = QPushButton("Choose sorting")
-        self.btnSorting.clicked.connect(self.getSorting)
-        self.leSorting = QLineEdit()
-        layout.addRow(self.btnSorting, self.leSorting)
-
-        self.btnSkewness = QPushButton("Choose skewness")
-        self.btnSkewness.clicked.connect(self.getSkewness)
-        self.leSkewness = QLineEdit()
-        layout.addRow(self.btnSkewness, self.leSkewness)
-
-        self.setLayout(layout)
-        self.setWindowTitle("Select GSTA variables")
-
-        self.show()
 
     def getMean(self):
         item, ok = QInputDialog(self).getItem(self, "Select Mean",
                                         "List of available variables", self.items, 0, False)
         if ok and item:
-            self.leMean.setText(item)
+            for k in self.variablesDict:
+                if item == self.variablesDict[k]:
+                    return
+            self.variablesDict['mean'] = item
+            self.meanLineEdit.setText(item)
 
     def getSorting(self):
         item, ok = QInputDialog(self).getItem(self, "Select Sorting",
                                         "List of available variables", self.items, 0, False)
         if ok and item:
-            self.leSorting.setText(item)
+            for k in self.variablesDict:
+                if item == self.variablesDict[k]:
+                    return
+            self.variablesDict['sorting'] = item
+            self.sortingLineEdit.setText(item)
 
     def getSkewness(self):
         item, ok = QInputDialog(self).getItem(self, "Select Skewness",
                                         "List of available variables", self.items, 0, False)
         if ok and item:
-            self.leSkewness.setText(item)
+            for k in self.variablesDict:
+                if item == self.variablesDict[k]:
+                    return
+            self.variablesDict['skewness'] = item
+            self.skewnessLineEdit.setText(item)
 
     def getMeanVariable(self):
-        retValue = self.leMean.text()
-        if retValue:
-            return retValue
-        else:
-            return(None)
+        return(self.variablesDict['mean'])
 
     def getSortingVariable(self):
-        retValue = self.leSorting.text()
-        if retValue:
-            return retValue
-        else:
-            return(None)
+        return(self.variablesDict['sorting'])
 
     def getSkewnessVariable(self):
-        retValue = self.leSkewness.text()
-        if retValue:
-            return retValue
-        else:
-            return(None)
+        return(self.variablesDict['skewness'])
+
+#############################################################################
+# GSTA trend definnition
+#############################################################################
+class setGSTATrendCases(QDialog, setGSTATrendDlg):
+    def __init__(self, parent=None):
+        super(setGSTATrendCases,self).__init__(parent)
+        self.setupUi(self)
+
+        self.GSTATrendCase = mstaComposedTrendCase()
+        self.buttonAddGSTATrendCase.clicked.connect(self.addGSTATrendCase)
+
+
+    def addGSTATrendCase(self, _var):
+        return
+    
+

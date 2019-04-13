@@ -39,8 +39,8 @@ from .mstaCoreClass import mstaPoint as mp
 from .mstaCoreClass import mstaVariable as mv
 from .mstaCoreClass import mstaTrendCase as trend
 from .mstaCoreClass import mstaComposedTrendCase as cpdtrend
-from .mstaUtilsClass import setGSTAVariables as GSTAV
-from .ui_about_msta import Ui_AboutDlg as AboutDlg
+from .mstaUtilsClass import *
+
 
 CONTEXTINFO = {1:"Variable(s) information", 2:"Trend(s) information", 3:"GSTA variable information", 4:"GSTA trend(s) information"}
 
@@ -67,6 +67,7 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         self.actionVariableListAll.triggered.connect(self.VariablesListAll)
         self.actionSelectVariables.triggered.connect(self.SelectVariables)
         self.actionGSTALikeVariable.triggered.connect(self.SetGSTAVariables)
+        self.actionGSTALikeTrend.triggered.connect(self.SetGSTATrends)
         self.actionClearViewText.triggered.connect(self.SetClearText)
         self.actionTrendList.triggered.connect(self.TrendsListAll)
 
@@ -77,8 +78,10 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         self.iface = _iface
         self.workingDir = os.path.expanduser("~")
         self.points = []
-        self.variablesName = [] # A list of all the variables in the current dataset
-        self.GSTAVariables = {} # A dict defining the three GSTA variables on the current dataset
+        # A list of all the variables in the current dataset
+        self.variablesName = []
+        # A dict defining the three GSTA variables on the current dataset
+        self.GSTAVariables = {'mean':'','sorting':'','skewness':''}
         self.textwidget = QTextEdit()
         # "Central Widget" expands to fill all available space
         self.setCentralWidget(self.textwidget)
@@ -91,7 +94,8 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         self.selectedVariables = []
 
     def DisplayAboutMSTA(self):
-        AboutDlg().exec_()
+        about=aboutMSTA()
+        about.exec()
 
     def SetWorkingDirectory(self):
         self.workingDir = QFileDialog.getExistingDirectory(self, self.workingDir, "Select working directory...", QFileDialog.ShowDirsOnly)
@@ -216,31 +220,7 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
             self.textwidget.append(f'\t{_text}')
 
     def VariablesListAll(self):
-        #if not self.variablesName:
-        #    QMessageBox.information(self, "Variable", "No variables defined yet.")
-        #    return
-
-        # Create text entry box
-        #text_edit_widget = QPlainTextEdit()
-        #text_edit_widget = QTextEdit()
-
-        # Change font, colour of text entry box
-        #text_edit_widget.setStyleSheet(
-        #        """QPlainTextEdit {background-color: #333;
-        #        color: #00FF00;
-        #        text-decoration: underline;
-        #        font-family: Courier;}""")
-
-        # "Central Widget" expands to fill all available space
-        #self.setCentralWidget(text_edit_widget)
-
-        # Print text to console whenever it changes
-        #text_edit_widget.textChanged.connect(
-        #        lambda: print(text_edit_widget.document().toPlainText()))
-
         self.updateLogViewPort(1, self.variablesName)
-        # Set initial value of text
-        #self.textwidget.setText(f'{[i for i in self.variablesName]}\n')
 
     def TrendsListAll(self):
         varList = [self.GSTAVariables['mean'],self.GSTAVariables['sorting'],self.GSTAVariables['skewness']]
@@ -259,12 +239,26 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         if ok and theSelectedVar:
             self.selectedVariables.append(theSelectedVar)
 
+    def SetGSTATrends(self):
+        dlg = setGSTATrendCases()
+        dlg.exec()
+
     def SetGSTAVariables(self):
+        # Global variables should be defined
         if not self.variablesName:
             QMessageBox.information(self, "Variable", "No variables defined yet.")
             return
-        dlg = GSTAV(self.variablesName)
-        return
+        # Check if previous GSTA variables definition exists
+        if self.GSTAVariables['mean'] or self.GSTAVariables['sorting'] or self.GSTAVariables['skewness']:
+            msg = "Previous definition exist:\nmean:{} sorting:{}, skewness:{}\nDo you want to change ?".format(self.GSTAVariables['mean'],
+                                                                                      self.GSTAVariables['sorting'],
+                                                                                      self.GSTAVariables['skewness'])
+            if QMessageBox.information(self, "GSTA Variables", msg, QMessageBox.Yes | QMessageBox.No) == QMessageBox.No:
+                return
+        # Launch the dialog for definition of GSTA variables
+        dlg = setGSTAVariables(self.variablesName)
+        if dlg.exec():
+            self.GSTAVariables = dlg.variablesDict
 
     def SetClearText(self):
         self.textwidget.clear()
