@@ -42,7 +42,12 @@ from .mstaCoreClass import mstaComposedTrendCase as cpdtrend
 from .mstaUtilsClass import *
 
 
-CONTEXTINFO = {1:"Variable(s) information", 2:"Trend(s) information", 3:"GSTA variable information", 4:"GSTA trend(s) information"}
+CONTEXTINFO = {1:"Variable(s) information", \
+               2:"Trend(s) information", \
+               3:"GSTA variable information", \
+               4:"GSTA trend(s) information", \
+               5:"Current selected variable:", \
+               999:""}
 
 Ui_MainWindow, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'ui_multi_sediment_trend_analysis_dialog_base.ui'))
@@ -80,8 +85,8 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         self.points = []
         # A list of all the variables in the current dataset
         self.variablesName = []
-        # The list of the current used/selected variables
-        self.selectedVariables = []
+        # The list of the current selected variable names, i.e. the working variables
+        self.selectedVariableNames = []
         # A dict defining the three GSTA variables on the current dataset
         self.GSTAVariables = {'mean':'','sorting':'','skewness':''}
         # "Central Widget" expands to fill all available space
@@ -149,9 +154,9 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
             QMessageBox.critical(self, "Database initialisation error", "An error occured during database creation")
             return
 
-        # Save information before living
+        # Save information before living, just de names, variables are not created yet
         self.variablesName = varnames
-
+        self.updateLogViewPort(999, self.variablesName)
         return
 
     # _dataset: np.array of n samples lines and m variables columns
@@ -191,6 +196,7 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
     # _variables: np.array of n samples lines and m variables columns
     # _coordnames: list of the two coordinates variables
     # _varnames: list of the variables namess
+    # The variable names and values are stored at each point location
     def createDB(self, _variables, _varnames, _points, _coordnames):
         # first loop over the points
         for i in range(_points.shape[0]):
@@ -213,7 +219,7 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
     def updateLogViewPort(self, _context, _text):
         self.textwidget.append(f'{CONTEXTINFO[_context]}:')
         if not _text:
-            self.textwidget.append("\tNone")
+            self.textwidget.append("\t------")
         if isinstance(_text, list):
             for i in _text:
                 self.textwidget.append(f'\t{i}')
@@ -240,20 +246,21 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         theSelectedVarDlg.setOption(QInputDialog.UseListViewForComboBoxItems)
         theSelectedVar, ok = theSelectedVarDlg.getItem(self,"Selection","Select a variable",self.variablesName,0,False)
         if ok and theSelectedVar:
-            self.selectedVariables.append(theSelectedVar)
+            self.updateLogViewPort(5, theSelectedVar)
+            self.selectedVariableNames.append(theSelectedVar)
 
     # Definition of the trend case(s) for a GSTA analysis
     def SetGSTATrends(self):
         dlg = setGSTATrendCases()
         result = dlg.exec()
         if result and len(dlg.trendCaseList) > 0:
-            if len(self.selectedVariables) == 0:
+            if len(self.selectedVariableNames) == 0:
                 msg = "You just defined GSTA trend case(s) to study.\n" \
                       "You have now to defined the corresponding GSTA variables to use\n for mean, sorting and skewness"
                 QMessageBox.information(self, "GSTA Variables", msg)
             else:
                 # TODO: gérer la mise a jour de l'operand de chaque variable en fonction des cas choisis
-                #for v in self.selectedVariables:
+                #for v in self.selectedVariableNames:
                 return
 
     # Definition of the GSTA variables to use for mean, sorting and skewness
@@ -275,22 +282,12 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         if not result or not dlg.areGSTAVariablesSet():
             QMessageBox.information(self, "GSTA Variables", "No GSTA variables defined yet")
             return
-        # Treatment of the mean variable
-        theNewVar = mv()
-        theNewVar.setID(1) # Always ID 1 for mean variable
-        theNewVar.setName(dlg.variablesDict['mean'])
-        theNewVar.setRange(0.0,0.0) # No range by default
-        self.selectedVariables.append(theNewVar)
-        theNewVar = mv()
-        theNewVar.setID(2)  # Always ID 2 for sorting variable
-        theNewVar.setName(dlg.variablesDict['sorting'])
-        theNewVar.setRange(0.0, 0.0)  # No range by default
-        self.selectedVariables.append(theNewVar)
-        theNewVar = mv()
-        theNewVar.setID(3)  # Always ID 3 for skewness variable
-        theNewVar.setName(dlg.variablesDict['skewness'])
-        theNewVar.setRange(0.0, 0.0)  # No range by default
-        self.selectedVariables.append(theNewVar)
+        # Clear the names of the current variable list
+        self.selectedVariableNames.clear()
+        # construction of the new list of the working variable names
+        self.selectedVariableNames.append(dlg.variablesDict['mean'])
+        self.selectedVariableNames.append(dlg.variablesDict['sorting'])
+        self.selectedVariableNames.append(dlg.variablesDict['skewness'])
 
     def SetClearText(self):
         self.textwidget.clear()
