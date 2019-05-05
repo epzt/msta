@@ -123,10 +123,10 @@ class mstaPoint(QgsPoint):
       return retValue
       
    def getVariableValueByName(self, _varname):
-      getVariableByName(_varname).getValue()
+      self.getVariableByName(_varname).getValue()
 
    def getVariableValueByID(self, _varid):
-      getVariableByID(_varid).getValue()
+      self.getVariableByID(_varid).getValue()
 
 
 #############################################################################
@@ -141,6 +141,7 @@ class mstaVariable():
       self.value = 0.0
       self.range = RANGE(0.0,0.0)
       self.search = RADIUS(0.0,0.0)
+      self.trend = mstaTrendCase()
 
    # Default operations
    # +
@@ -275,6 +276,9 @@ class mstaVariable():
    def isInRange(self, _value):
       return(_value >= self.getMin() and _value <= self.getMax())
 
+   def setOperand(self, _op):
+      self.trend.setOp(_op)
+
 #############################################################################
 ## class mstaTrendCase: manage trend case                                  ##
 #############################################################################
@@ -282,7 +286,6 @@ class mstaTrendCase():
    def __init__(self):
       """Constructor."""
       self.trend = TREND['none']
-      self.variable = ''
 
    def setOp(self, _op):
       assert TREND[_op]
@@ -290,13 +293,6 @@ class mstaTrendCase():
 
    def getOp(self):
       return(self.trend)
-
-   def setVar(self, _var):
-      self.variable = _var
-
-   def getVar(self):
-      return(self.variable)
-
 
 #############################################################################
 ## class mstaComposedTrendCase: manage trend case                          ##

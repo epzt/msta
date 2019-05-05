@@ -80,10 +80,12 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         self.points = []
         # A list of all the variables in the current dataset
         self.variablesName = []
+        # The list of the current used/selected variables
+        self.selectedVariables = []
         # A dict defining the three GSTA variables on the current dataset
         self.GSTAVariables = {'mean':'','sorting':'','skewness':''}
-        self.textwidget = QTextEdit()
         # "Central Widget" expands to fill all available space
+        self.textwidget = QTextEdit()
         self.setCentralWidget(self.textwidget)
         self.textwidget.setEnabled(False)
         self.textwidget.setTextColor(QColor("black"))
@@ -91,7 +93,6 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         self.textwidget.setTabStopWidth(fontWeight )
         #self.dataset = np.zeros((1,1)) # Just for initialisation
         #self.coordsset = np.zeros((1,1)) # Just for initialisation
-        self.selectedVariables = []
 
     def DisplayAboutMSTA(self):
         about=aboutMSTA()
@@ -219,14 +220,16 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         else:
             self.textwidget.append(f'\t{_text}')
 
+    # Print the current defined variable(s)
     def VariablesListAll(self):
         self.updateLogViewPort(1, self.variablesName)
 
+    # Print the defined trend(s)
     def TrendsListAll(self):
         varList = [self.GSTAVariables['mean'],self.GSTAVariables['sorting'],self.GSTAVariables['skewness']]
         self.updateLogViewPort(2, varList)
 
-    # Select one variable in the cuurent variable list and return it
+    # Select one variable in the current variable list and return it
     def SelectVariables(self):
         if not self.variablesName:
             QMessageBox.information(self, "Variable", "No variables defined yet.")
@@ -239,14 +242,25 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         if ok and theSelectedVar:
             self.selectedVariables.append(theSelectedVar)
 
+    # Definition of the trend case(s) for a GSTA analysis
     def SetGSTATrends(self):
         dlg = setGSTATrendCases()
-        dlg.exec()
+        result = dlg.exec()
+        if result and len(dlg.trendCaseList) > 0:
+            if len(self.selectedVariables) == 0:
+                msg = "You just defined GSTA trend case(s) to study.\n" \
+                      "You have now to defined the corresponding GSTA variables to use\n for mean, sorting and skewness"
+                QMessageBox.information(self, "GSTA Variables", msg)
+            else:
+                # TODO: gérer la mise a jour de l'operand de chaque variable en fonction des cas choisis
+                #for v in self.selectedVariables:
+                return
 
+    # Definition of the GSTA variables to use for mean, sorting and skewness
     def SetGSTAVariables(self):
         # Global variables should be defined
         if not self.variablesName:
-            QMessageBox.information(self, "Variable", "No variables defined yet.")
+            QMessageBox.information(self, "Variable", "No variables loaded yet.")
             return
         # Check if previous GSTA variables definition exists
         if self.GSTAVariables['mean'] or self.GSTAVariables['sorting'] or self.GSTAVariables['skewness']:
@@ -257,8 +271,26 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
                 return
         # Launch the dialog for definition of GSTA variables
         dlg = setGSTAVariables(self.variablesName)
-        if dlg.exec():
-            self.GSTAVariables = dlg.variablesDict
+        result = dlg.exec()
+        if not result or not dlg.areGSTAVariablesSet():
+            QMessageBox.information(self, "GSTA Variables", "No GSTA variables defined yet")
+            return
+        # Treatment of the mean variable
+        theNewVar = mv()
+        theNewVar.setID(1) # Always ID 1 for mean variable
+        theNewVar.setName(dlg.variablesDict['mean'])
+        theNewVar.setRange(0.0,0.0) # No range by default
+        self.selectedVariables.append(theNewVar)
+        theNewVar = mv()
+        theNewVar.setID(2)  # Always ID 2 for sorting variable
+        theNewVar.setName(dlg.variablesDict['sorting'])
+        theNewVar.setRange(0.0, 0.0)  # No range by default
+        self.selectedVariables.append(theNewVar)
+        theNewVar = mv()
+        theNewVar.setID(3)  # Always ID 3 for skewness variable
+        theNewVar.setName(dlg.variablesDict['skewness'])
+        theNewVar.setRange(0.0, 0.0)  # No range by default
+        self.selectedVariables.append(theNewVar)
 
     def SetClearText(self):
         self.textwidget.clear()

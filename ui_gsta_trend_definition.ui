@@ -59,29 +59,6 @@
    <property name="flat">
     <bool>false</bool>
    </property>
-   <widget class="QTextEdit" name="gstaCaseListEdit">
-    <property name="enabled">
-     <bool>true</bool>
-    </property>
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>61</y>
-      <width>81</width>
-      <height>141</height>
-     </rect>
-    </property>
-    <property name="readOnly">
-     <bool>true</bool>
-    </property>
-    <property name="html">
-     <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Ubuntu'; font-size:10pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:11pt;&quot;&gt;&lt;br /&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-    </property>
-   </widget>
    <widget class="QPushButton" name="buttonRemoveGSTATrendCase">
     <property name="geometry">
      <rect>
@@ -123,7 +100,7 @@ p, li { white-space: pre-wrap; }
     <property name="checkable">
      <bool>false</bool>
     </property>
-    <widget class="QWidget" name="">
+    <widget class="QWidget" name="layoutWidget">
      <property name="geometry">
       <rect>
        <x>10</x>
@@ -172,7 +149,7 @@ p, li { white-space: pre-wrap; }
     <property name="title">
      <string>Sorting</string>
     </property>
-    <widget class="QWidget" name="">
+    <widget class="QWidget" name="layoutWidget">
      <property name="geometry">
       <rect>
        <x>10</x>
@@ -221,7 +198,7 @@ p, li { white-space: pre-wrap; }
     <property name="title">
      <string>Skewness</string>
     </property>
-    <widget class="QWidget" name="">
+    <widget class="QWidget" name="layoutWidget">
      <property name="geometry">
       <rect>
        <x>10</x>
@@ -258,15 +235,52 @@ p, li { white-space: pre-wrap; }
      </layout>
     </widget>
    </widget>
-   <zorder>layoutWidget_2</zorder>
-   <zorder>layoutWidget_3</zorder>
-   <zorder>layoutWidget</zorder>
+   <widget class="QLabel" name="labelTrendCase">
+    <property name="geometry">
+     <rect>
+      <x>17</x>
+      <y>40</y>
+      <width>71</width>
+      <height>181</height>
+     </rect>
+    </property>
+    <property name="cursor">
+     <cursorShape>IBeamCursor</cursorShape>
+    </property>
+    <property name="mouseTracking">
+     <bool>false</bool>
+    </property>
+    <property name="autoFillBackground">
+     <bool>true</bool>
+    </property>
+    <property name="frameShape">
+     <enum>QFrame::Panel</enum>
+    </property>
+    <property name="frameShadow">
+     <enum>QFrame::Sunken</enum>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+    <property name="scaledContents">
+     <bool>false</bool>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+    </property>
+    <property name="wordWrap">
+     <bool>false</bool>
+    </property>
+    <property name="textInteractionFlags">
+     <set>Qt::TextSelectableByKeyboard|Qt::TextSelectableByMouse</set>
+    </property>
+   </widget>
    <zorder>GSTATrendSkewnessGroup</zorder>
    <zorder>GSTATrendSortingGroup</zorder>
    <zorder>GSTATrendMeanGroup</zorder>
-   <zorder>gstaCaseListEdit</zorder>
    <zorder>buttonRemoveGSTATrendCase</zorder>
    <zorder>buttonAddGSTATrendCase</zorder>
+   <zorder>labelTrendCase</zorder>
   </widget>
  </widget>
  <resources/>
