@@ -27,17 +27,17 @@ import numpy as np
 
 # Trend operations
 TREND = {
-   'sup' : '>',
-   'inf' : '<',
-   'none' : ''
+    'sup' : '>',
+    'inf' : '<',
+    'none' : ''
 }
 
 # Operand operations
 OPERAND = {
-   'ou' : 'OR',
-   'et' : 'AND',
-   'xou' : 'XOR',
-   'none' : ''
+    'ou' : 'OR',
+    'et' : 'AND',
+    'xou' : 'XOR',
+    'none' : ''
 }
 
 #############################################################################
@@ -45,273 +45,295 @@ OPERAND = {
 #############################################################################
 
 class RANGE():
-   def __init__(self, _min, _max):
-      self.min = _min
-      self.max = _max
+    def __init__(self, _min, _max):
+        self.min = _min
+        self.max = _max
 
-   def __repr__(self):
-      return(f'min: {self.min} - max: {self.max}')
+    def __repr__(self):
+        return(f'min: {self.min} - max: {self.max}')
 
-   def getMin(self):
-      return self.min
+    def getMin(self):
+        return self.min
 
-   def getMax(self):
-      return self.max
+    def getMax(self):
+        return self.max
 
-   def getDeltaRange(self):
-      return(self.max - self.min)
+    def getDeltaRange(self):
+        return(self.max - self.min)
 
 #############################################################################
 ## class RANGE: manage variables range                                     ##
 #############################################################################
 
 class RADIUS():
-   def __init__(self, _a, _b):
-      self.major = _b
-      self.minor = _a
+    def __init__(self, _a, _b):
+        self.major = _b
+        self.minor = _a
 
-   def getMinor(self):
-      return self.minor
+    def getMinor(self):
+        return self.minor
 
-   def getMajor(self):
-      return self.major
+    def getMajor(self):
+        return self.major
 
-   def isCircle(self):
-      return((self.major-self.minor) == 0)
+    def isCircle(self):
+        return((self.major-self.minor) == 0)
 
 #############################################################################
 ## class mstaPoint: manage data points                                     ##
 #############################################################################
 
 class mstaPoint(QgsPoint):
-   def __init__(self, _x, _y):
-      """Constructor."""
-      super().__init__(_x,_y)
-      self.ID = 0
-      self.variables = []
+    def __init__(self, _x, _y):
+        """Constructor."""
+        super().__init__(_x,_y)
+        self.ID = 0
+        self.variables = []
 
-   def __repr__(self):
-      return(f'ID: {self.ID}, {super().asWkt()}\n\t{[i for i in  self.variables]}')
+    def __repr__(self):
+        return(f'ID: {self.ID}, {super().asWkt()}\n\t{[i for i in  self.variables]}')
 
-   def setID(self,_ID):
-      self.ID = _ID
-   
-   def getID(self):
-      return self.ID
+    def setID(self,_ID):
+        self.ID = _ID
 
-   def addVariable(self, _newvar):
-      # Check if _newvar is still present the variable list at this point
-      if _newvar in self.variables:
-         return False
-      self.variables.append(_newvar)
-      return(True)
+    def getID(self):
+        return self.ID
 
-   def getVariableByName(self, _varname):
-      retValue = None
-      for i in self.variables:
-         if i.getName() == _varname:
-            retValue = i
-            break
-      return retValue
+    def getVariablesName(self):
+        return self.variables
 
-   def getVariableByID(self, _varid):
-      retValue = None
-      for i in self.variables:
-         if i.getID() == _varid:
-            retValue = i
-            break
-      return retValue
-      
-   def getVariableValueByName(self, _varname):
-      self.getVariableByName(_varname).getValue()
+    def addVariable(self, _newvar):
+        # Check if _newvar is still present the variable list at this point
+        if _newvar in self.variables:
+            return False
+        self.variables.append(_newvar)
+        return(True)
 
-   def getVariableValueByID(self, _varid):
-      self.getVariableByID(_varid).getValue()
+    def getVariableByName(self, _varname):
+        retValue = None
+        for i in self.variables:
+            if i.getName() == _varname:
+                retValue = i
+                break
+        return retValue
+
+    def getVariableByID(self, _varid):
+        retValue = None
+        for i in self.variables:
+            if i.getID() == _varid:
+                retValue = i
+                break
+        return retValue
+
+    def getVariableValueByName(self, _varname):
+        self.getVariableByName(_varname).getValue()
+
+    def getVariableValueByID(self, _varid):
+        self.getVariableByID(_varid).getValue()
 
 
 #############################################################################
 ## class mstaVariable: manage variable                                     ##
 #############################################################################
 class mstaVariable():
-   def __init__(self):
-      """Constructor."""
-      self.ID = 0
-      self.name = ""
-      self.unit = ""
-      self.value = 0.0
-      self.range = RANGE(0.0,0.0)
-      self.search = RADIUS(0.0,0.0)
-      self.trend = mstaTrendCase()
+    def __init__(self):
+        """Constructor."""
+        self.ID = 0
+        self.name = ""
+        self.alias = ""
+        self.unit = ""
+        self.value = 0.0
+        self.range = RANGE(0.0,0.0)
+        self.search = RADIUS(0.0,0.0)
 
-   # Default operations
-   # +
-   def __add__(self,_other):
-      res = mstaVariable()
-      if not _other.__class__ is mstaVariable:
-         return NotImplemented
-      if self.getUnit() != _other.getUnit():
-         return NotImplemented
-      else:
-         res.setUnit(self.getUnit())
-      if self.getName() != _other.getName():
-         res.setName("")
-      else:
-         res.setName(self.getName())
-      res = mstaVariable()
-      res.range = RANGE(self.getMin()+self._other.getMin(),self.getMax()+self._other.getMax())
-      res.setValue(res.getDeltaRange()/2.0)
-      return res
-   def __iadd__(self,_other):
-      self.range = RANGE(self.getMin()+self._other.getMin(),self.getMax()+self._other.getMax())
-      self.setValue(self.range.getDeltaRange()/2.0)
-      return self
-   # -
-   def __sub__(self,_other):
-      res = mstaVariable()
-      if not _other.__class__ is mstaVariable:
-         return NotImplemented
-      if self.getUnit() != _other.getUnit():
-         return NotImplemented
-      else:
-         res.setUnit(self.getUnit())
-      if self.getName() != _other.getName():
-         res.setName("")
-      else:
-         res.setName(self.getName())
-      res = mstaVariable()
-      res.range = RANGE(self.getMin()-self._other.getMax(),self.getMax()-self._other.getMin())
-      res.setValue(res.range.getDeltaRange()/2.0)
-      return res
-   def __isub__(self,_other):
-      self.range = RANGE(self.getMin()-self._other.getMax(),self.getMax()-self._other.getMin())
-      self.setValue(self.range.getDeltaRange()/2.0)
-      return self
-   # *
-   def __mul__(self,_other):
-      res = mstaVariable()
-      if not _other.__class__ is mstaVariable:
-         return NotImplemented
-      if self.getUnit() != _other.getUnit():
-         return NotImplemented
-      else:
-         res.setUnit(self.getUnit())
-      if self.getName() != _other.getName():
-         res.setName("")
-      else:
-         res.setName(self.getName())
-      res = mstaVariable()
-      lvalues = [self.getMin()*self._other.getMin(),self.getMin()*self._other.getMax(),self.getMax()*self._other.getMin(),self.getMax()*self._other.getMax()]
-      res.range = RANGE(min(lvalues),max(lvalues))
-      res.setValue(res.getDeltaRange()/2.0)
-      return res
-   def __imul__(self,_other):
-      lvalues = [self.getMin()*self._other.getMin(),self.getMin()*self._other.getMax(),self.getMax()*self._other.getMin(),self.getMax()*self._other.getMax()]
-      self.range = RANGE(min(lvalues),max(lvalues))
-      self.setValue(self.getDeltaRange()/2.0)
-      return self
-   # ==
-   def __eq__(self,_other):
-      if self.isInRange(_other.getValue()) or _other.isInRange(self.getValue()):
-         return True
-      else:
-         return False
-   # !=
-   def __ne__(self,_other):
-      if not self.isInRange(_other.getValue()) and not _other.isInRange(self.getValue()):
-         return True
-      else:
-         return False
-   # <
-   def __lt__(self,_other):
-      return(self.getMax() < _other.getMin())
-   def __le__(self,_other):
-      return(self.range.getMax() <= _other.getMin())
-   # >
-   def __gt__(self,_other):
-      return(self.getMin() > _other.getMax())
-   def __ge__(self,_other):
-      return(self.getMin() >= _other.getMax())
+    # Default operations
+    # +
+    def __add__(self,_other):
+        res = mstaVariable()
+        if not _other.__class__ is mstaVariable:
+            return NotImplemented
+        if self.getUnit() != _other.getUnit():
+            return NotImplemented
+        else:
+            res.setUnit(self.getUnit())
+        if self.getName() != _other.getName():
+            res.setName("")
+        else:
+            res.setName(self.getName())
+        res = mstaVariable()
+        res.range = RANGE(self.getMin()+self._other.getMin(),self.getMax()+self._other.getMax())
+        res.setValue(res.getDeltaRange()/2.0)
+        return res
+    def __iadd__(self,_other):
+        self.range = RANGE(self.getMin()+self._other.getMin(),self.getMax()+self._other.getMax())
+        self.setValue(self.range.getDeltaRange()/2.0)
+        return self
+    # -
+    def __sub__(self,_other):
+        res = mstaVariable()
+        if not _other.__class__ is mstaVariable:
+            return NotImplemented
+        if self.getUnit() != _other.getUnit():
+            return NotImplemented
+        else:
+            res.setUnit(self.getUnit())
+        if self.getName() != _other.getName():
+            res.setName("")
+        else:
+            res.setName(self.getName())
+        res = mstaVariable()
+        res.range = RANGE(self.getMin()-self._other.getMax(),self.getMax()-self._other.getMin())
+        res.setValue(res.range.getDeltaRange()/2.0)
+        return res
+    def __isub__(self,_other):
+        self.range = RANGE(self.getMin()-self._other.getMax(),self.getMax()-self._other.getMin())
+        self.setValue(self.range.getDeltaRange()/2.0)
+        return self
+    # *
+    def __mul__(self,_other):
+        res = mstaVariable()
+        if not _other.__class__ is mstaVariable:
+            return NotImplemented
+        if self.getUnit() != _other.getUnit():
+            return NotImplemented
+        else:
+            res.setUnit(self.getUnit())
+        if self.getName() != _other.getName():
+            res.setName("")
+        else:
+            res.setName(self.getName())
+        res = mstaVariable()
+        lvalues = [self.getMin()*self._other.getMin(),self.getMin()*self._other.getMax(),self.getMax()*self._other.getMin(),self.getMax()*self._other.getMax()]
+        res.range = RANGE(min(lvalues),max(lvalues))
+        res.setValue(res.getDeltaRange()/2.0)
+        return res
+    def __imul__(self,_other):
+        lvalues = [self.getMin()*self._other.getMin(),self.getMin()*self._other.getMax(),self.getMax()*self._other.getMin(),self.getMax()*self._other.getMax()]
+        self.range = RANGE(min(lvalues),max(lvalues))
+        self.setValue(self.getDeltaRange()/2.0)
+        return self
+    # ==
+    def __eq__(self,_other):
+        if self.isInRange(_other.getValue()) or _other.isInRange(self.getValue()):
+            return True
+        else:
+            return False
+    # !=
+    def __ne__(self,_other):
+        if not self.isInRange(_other.getValue()) and not _other.isInRange(self.getValue()):
+            return True
+        else:
+            return False
+    # <
+    def __lt__(self,_other):
+        return(self.getMax() < _other.getMin())
+    def __le__(self,_other):
+        return(self.range.getMax() <= _other.getMin())
+    # >
+    def __gt__(self,_other):
+        return(self.getMin() > _other.getMax())
+    def __ge__(self,_other):
+        return(self.getMin() >= _other.getMax())
 
-   # Print itself
-   def __repr__(self):
-      return(f'Name: {self.name}, unit: {self.unit}, value: {self.value}, range: {self.range}')
+    # Print itself
+    def __repr__(self):
+        return(f'Name: {self.name}, unit: {self.unit}, value: {self.value}, range: {self.range}')
 
-   def setID(self,_ID):
-      self.ID = _ID   
-   def getID(self):
-      return self.ID
+    def setID(self,_ID):
+        self.ID = _ID
+    def getID(self):
+        return self.ID
 
-   def setName(self,_name):
-      self.name = _name  
-   def getName(self):
-      return self.name
+    def setName(self,_name):
+        self.name = _name
+    def getName(self):
+        return self.name
 
-   def setUnit(self,_unit):
-      self.unit = _unit  
-   def getUnit(self):
-      return self.unit
+    def setAlias(self,_alias):
+        self.alias = _alias
+    def getAlias(self):
+        return self.alias
 
-   def setValue(self,_value):
-      self.value = _value
-   def getValue(self):
-      return self.value
-   def getMin(self):
-      return self.range.getMin()
-   def getMax(self):
-      return self.range.getMax()
+    def setUnit(self,_unit):
+        self.unit = _unit
+    def getUnit(self):
+        return self.unit
 
-   def setSearch(self,_a, _b):
-      self.search = [_a,_b] 
-   def getSearch(self):
-      if self.search[0] == self.search[1]:
-         return self.search[0]
-      else:
-         return self.search
+    def setValue(self,_value):
+        self.value = _value
+    def getValue(self):
+        return self.value
+    def getMin(self):
+        return self.range.getMin()
+    def getMax(self):
+        return self.range.getMax()
 
-   def setRange(self, _min, _max):
-      self.range = RANGE(_min, _max)
-   def getRange(self):
-      return(self.range)
+    def setSearch(self,_a, _b):
+        self.search = [_a,_b]
+    def getSearch(self):
+        if self.search[0] == self.search[1]:
+            return self.search[0]
+        else:
+            return self.search
 
-   def isInRange(self, _value):
-      return(_value >= self.getMin() and _value <= self.getMax())
+    def setRange(self, _min, _max):
+        self.range = RANGE(_min, _max)
+    def getRange(self):
 
-   def setOperand(self, _op):
-      self.trend.setOp(_op)
+        return(self.range)
+
+    def isInRange(self, _value):
+        return(_value >= self.getMin() and _value <= self.getMax())
 
 #############################################################################
 ## class mstaTrendCase: manage trend case                                  ##
 #############################################################################
 class mstaTrendCase():
-   def __init__(self):
-      """Constructor."""
-      self.trend = TREND['none']
+    def __init__(self):
+        """Constructor."""
+        self.ID = -1
+        self.trend = TREND['none']
 
-   def setOp(self, _op):
-      assert TREND[_op]
-      self.trend = TREND[_op]
+    def getID(self):
+        return self.ID
 
-   def getOp(self):
-      return(self.trend)
+    def setID(self, _id):
+        assert _id >= 0
+        self.ID = _id
+
+    def setOperand(self, _op):
+        assert TREND[_op]
+        self.trend = TREND[_op]
+
+    def getOperand(self):
+        return(self.trend)
 
 #############################################################################
 ## class mstaComposedTrendCase: manage trend case                          ##
 #############################################################################
 class mstaComposedTrendCase():
-   def __init__(self):
-      """Constructor."""
-      self.operand = []
-      self.trendList = []
+    def __init__(self):
+        """Constructor."""
+        self.ID = -1
+        self.linkOperand = []
+        self.trendList = []
 
-   def addTrendCase(self, _trendcase, _operand):
-      assert isinstance(_trendcase, mstaTrendCase)
-      if len(self.trendList) > 0:
-         assert _operand
-         assert OPERAND[_operand]
+    def getID(self):
+        return self.ID
 
-      self.trendList.append(_trendcase)
-      self.operand.append(OPERAND[_operand])
-      # there must be (operand + 1) trend cases
-      assert len(self.trendList) == len(self.operand) + 1
+    def setID(self, _id):
+        assert _id >= 0
+        self.ID = _id
+
+    def addTrendCase(self, _trendcase, _operand):
+        assert isinstance(_trendcase, mstaTrendCase)
+        # if more than one trend case
+        if len(self.trendList) > 0:
+            assert OPERAND[_operand] # is _operand valid
+
+        self.trendList.append(_trendcase)
+        self.operand.append(OPERAND[_operand])
+        # there must be (operand + 1) trend cases
+        assert len(self.trendList) == len(self.linkOperand) + 1
 
    

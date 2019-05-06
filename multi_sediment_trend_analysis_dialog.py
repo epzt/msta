@@ -46,8 +46,16 @@ CONTEXTINFO = {1:"Variable(s) information", \
                2:"Trend(s) information", \
                3:"GSTA variable information", \
                4:"GSTA trend(s) information", \
-               5:"Current selected variable:", \
+               5:"Current selected variable", \
+               6:"Points information", \
                999:""}
+
+# constante definitions
+UPDATEDB = {'varalias' : 0, \
+            'varrange' : 1, \
+            'varvalue' : 2, \
+            'vartrend' : 3, \
+            'varsearch' : 4}
 
 Ui_MainWindow, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'ui_multi_sediment_trend_analysis_dialog_base.ui'))
@@ -69,12 +77,13 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         self.actionFileImport.triggered.connect(self.DataFileImport)
         self.actionAbout.triggered.connect(self.DisplayAboutMSTA)
         self.actionSetWorkingDirectory.triggered.connect(self.SetWorkingDirectory)
-        self.actionVariableListAll.triggered.connect(self.VariablesListAll)
-        self.actionSelectVariables.triggered.connect(self.SelectVariables)
+        self.actionVariableListAll.triggered.connect(self.PrintAllVariablesList)
+        self.actionSelectOneVariable.triggered.connect(self.SelectOneVariable)
+        self.actionSelectAllVariables.triggered.connect(self.SelectAllVariables)
         self.actionGSTALikeVariable.triggered.connect(self.SetGSTAVariables)
         self.actionGSTALikeTrend.triggered.connect(self.SetGSTATrends)
         self.actionClearViewText.triggered.connect(self.SetClearText)
-        self.actionTrendList.triggered.connect(self.TrendsListAll)
+        self.actionTrendList.triggered.connect(self.PrintTrendsList)
 
         self.setGeometry(10, 10, 400, 400)
         self.setWindowTitle('Multi Sediment Trend Analysis') 
@@ -155,8 +164,11 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
             return
 
         # Save information before living, just de names, variables are not created yet
-        self.variablesName = varnames
-        self.updateLogViewPort(999, self.variablesName)
+        self.variablesName = varnames.copy()
+        self.updateLogViewPort(6, f'{len(self.points)} points created')
+        self.updateLogViewPort(1, self.variablesName)
+        # All variables are selected by default at the beginning
+        self.selectedVariableNames = self.variablesName.copy()
         return
 
     # _dataset: np.array of n samples lines and m variables columns
@@ -208,6 +220,7 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
                 newvar = mv()
                 newvar.setID(j+1)
                 newvar.setName(_varnames[j])
+                newvar.setAlias(_varnames[j]) # Alias = name by default
                 newvar.setUnit('')
                 newvar.setValue(_variables[i][j])
                 newvar.setRange(0.0,0.0)
@@ -217,7 +230,7 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
     # Add _text information on the viewport of the application
     # base on _context (see CONTEXTINFO dict definition)
     def updateLogViewPort(self, _context, _text):
-        self.textwidget.append(f'{CONTEXTINFO[_context]}:')
+        self.textwidget.append(f'{CONTEXTINFO[_context]}')
         if not _text:
             self.textwidget.append("\t------")
         if isinstance(_text, list):
@@ -227,16 +240,25 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
             self.textwidget.append(f'\t{_text}')
 
     # Print the current defined variable(s)
-    def VariablesListAll(self):
+    def PrintAllVariablesList(self):
+        if not self.variablesName:
+            QMessageBox.information(self, "Variable", "No variables defined yet.")
+            return
         self.updateLogViewPort(1, self.variablesName)
 
     # Print the defined trend(s)
-    def TrendsListAll(self):
-        varList = [self.GSTAVariables['mean'],self.GSTAVariables['sorting'],self.GSTAVariables['skewness']]
-        self.updateLogViewPort(2, varList)
+    def PrintTrendsList(self):
+        if len(self.points) != 0:
+            textInfo = []
+            # As each point containts same variables, we use the first one as default: [0]
+            for v in self.points[0].getVariablesName():
+                if v.getName() in self.selectedVariableNames:
+                    newLine=f'{v.getName()}_i {v.getOperand()} {v.getName()}_j'
+                    textInfo.append(newLine)
+            self.updateLogViewPort(2, textInfo)
 
-    # Select one variable in the current variable list and return it
-    def SelectVariables(self):
+    # Select one variable in the current variable list
+    def SelectOneVariable(self):
         if not self.variablesName:
             QMessageBox.information(self, "Variable", "No variables defined yet.")
             return
@@ -246,8 +268,18 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         theSelectedVarDlg.setOption(QInputDialog.UseListViewForComboBoxItems)
         theSelectedVar, ok = theSelectedVarDlg.getItem(self,"Selection","Select a variable",self.variablesName,0,False)
         if ok and theSelectedVar:
+            self.selectedVariableNames.clear()
             self.updateLogViewPort(5, theSelectedVar)
             self.selectedVariableNames.append(theSelectedVar)
+
+    # Select all the variables
+    def SelectAllVariables(self):
+        if not self.variablesName:
+            QMessageBox.information(self, "Variable", "No variables defined yet.")
+            return
+        self.updateLogViewPort(5, self.variablesName)
+        self.selectedVariableNames.clear()
+        self.selectedVariableNames = self.variablesName.copy()
 
     # Definition of the trend case(s) for a GSTA analysis
     def SetGSTATrends(self):
@@ -260,7 +292,11 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
                 QMessageBox.information(self, "GSTA Variables", msg)
             else:
                 # TODO: gérer la mise a jour de l'operand de chaque variable en fonction des cas choisis
-                #for v in self.selectedVariableNames:
+                for p in self.points:
+                    for v in p.variables:
+                        if v.getName() in self.selectedVariableNames:
+
+                            return
                 return
 
     # Definition of the GSTA variables to use for mean, sorting and skewness
@@ -286,8 +322,42 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         self.selectedVariableNames.clear()
         # construction of the new list of the working variable names
         self.selectedVariableNames.append(dlg.variablesDict['mean'])
+        self.updatePointsDB(0, [dlg.variablesDict['mean'],'mean']) # Change of the alias over the points database
         self.selectedVariableNames.append(dlg.variablesDict['sorting'])
+        self.updatePointsDB(0, [dlg.variablesDict['sorting'], 'sorting']) # Change of the alias over the points database
         self.selectedVariableNames.append(dlg.variablesDict['skewness'])
+        self.updatePointsDB(0, [dlg.variablesDict['skewness'], 'skewness']) # Change of the alias over the points database
+        self.updateLogViewPort(5, self.selectedVariableNames)
 
     def SetClearText(self):
         self.textwidget.clear()
+
+    # Function to update the different parameters of the variables in the points database
+    # _code : king of update to operate (see UPDATEDB definition)
+    # _newvalue : list of changes to apply in relation with _code
+    # this function make the change(s) only on current selected variables.
+    def updatePointsDB(self, _code, _newvalue):
+        progress = QProgressDialog("Update points...", "Cancel", 0, len(self.points), self)
+        progress.setWindowFlags(QtCore.Qt.Dialog | QtCore.Qt.FramelessWindowHint | QtCore.Qt.CustomizeWindowHint)
+        progress.setModal(True)
+        progress.setMinimumDuration(0)
+        progress.setCancelButton(None)  # Remove the cancel button.
+        # Changes are operate on all the points
+        i = 0
+        for p in self.points:
+            i = i + 1
+            progress.setValue(i)
+            if _code == UPDATEDB['varalias']:
+                assert(len(_newvalue) == 2) # should have the variable name first and the new alias of this variable
+                for v in p.variables:
+                    if _newvalue[0] in self.selectedVariableNames:
+                        v.setAlias(_newvalue[1])
+                continue
+            if _code == UPDATEDB['varrange']:
+                assert (len(_newvalue) == 3)  # should have the variable name first and new min, max values of this variable
+                for v in p.variables:
+                    if _newvalue[0] in self.selectedVariableNames:
+                        v.setRange(_newvalue[1], _newvalue[2])
+                continue
+        progress.close()
+        return

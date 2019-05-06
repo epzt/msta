@@ -56,7 +56,7 @@
       <string>Select</string>
      </property>
      <addaction name="actionSelectAllVariables"/>
-     <addaction name="actionSelectVariables"/>
+     <addaction name="actionSelectOneVariable"/>
     </widget>
     <addaction name="actionVariableListAll"/>
     <addaction name="menuVariableSelect"/>
@@ -173,7 +173,7 @@
     <string>All</string>
    </property>
   </action>
-  <action name="actionSelectVariables">
+  <action name="actionSelectOneVariable">
    <property name="text">
     <string>One...</string>
    </property>

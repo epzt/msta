@@ -87,6 +87,9 @@ class setGSTATrendCases(QDialog, setGSTATrendDlg):
         self.sortingTrend = ""
         self.skewnessTrend = ""
         self.trendCaseList = []
+        self.linkOperand = "AND" # Default operand which link multiple trend case
+
+        self.linkOperandComboBox.setEnabled(False)
 
         self.GSTATrendCase = mstaComposedTrendCase()
         self.buttonAddGSTATrendCase.clicked.connect(self.addGSTATrendCase)
@@ -101,6 +104,7 @@ class setGSTATrendCases(QDialog, setGSTATrendDlg):
         self.radioGSTASkewnessPlus.toggled.connect(self.setSkewnessTrend)
         self.radioGSTASkewnessMinus.toggled.connect(self.setSkewnessTrend)
         self.radioGSTASkewnessNone.toggled.connect(self.setSkewnessTrend)
+        self.linkOperandComboBox.currentTextChanged.connect(self.currentTextChanged)
 
 
     def setMeanTrend(self):
@@ -137,6 +141,12 @@ class setGSTATrendCases(QDialog, setGSTATrendDlg):
             for c in self.trendCaseList:
                 labelTrendCaseText = labelTrendCaseText + c + '\n'
             self.labelTrendCase.setText(labelTrendCaseText)
+        # if more than one trend case, enable the link operand combobox
+        if len(self.trendCaseList) > 1:
+            self.linkOperandComboBox.setEnabled(True)
+        else:
+            self.linkOperandComboBox.setEnabled(False)
+            self.linkOperand = "AND" # return to default value
         return
 
     def removeGSTATrendCase(self):
@@ -148,7 +158,21 @@ class setGSTATrendCases(QDialog, setGSTATrendDlg):
         for c in self.trendCaseList:
             labelTrendCaseText = labelTrendCaseText + c + '\n'
         self.labelTrendCase.setText(labelTrendCaseText)
+        # if more than one trend case, enable the link operand combobox
+        if len(self.trendCaseList) > 1:
+            self.linkOperandComboBox.setEnabled(True)
+        else:
+            self.linkOperandComboBox.setEnabled(False)
+            self.linkOperand = "AND"  # return to default value
         return
 
+    def getTrendCaseList(self):
+        if self.trendCaseList:
+            return self.trendCaseList
+        else:
+            return []
+
+    def currentTextChanged(self, _text):
+        self.linkOperand = _text
 
 
