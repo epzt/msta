@@ -98,6 +98,8 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         self.selectedVariableNames = []
         # A dict defining the three GSTA variables on the current dataset
         self.GSTAVariables = {'mean':'','sorting':'','skewness':''}
+        # The list of currend trend case(s)
+        self.trendCases = []
         # "Central Widget" expands to fill all available space
         self.textwidget = QTextEdit()
         self.setCentralWidget(self.textwidget)
@@ -105,8 +107,7 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         self.textwidget.setTextColor(QColor("black"))
         fontWeight = self.textwidget.currentFont().weight()
         self.textwidget.setTabStopWidth(fontWeight )
-        #self.dataset = np.zeros((1,1)) # Just for initialisation
-        #self.coordsset = np.zeros((1,1)) # Just for initialisation
+
 
     def DisplayAboutMSTA(self):
         about=aboutMSTA()
@@ -145,7 +146,7 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
                                 names=tuple(coordsnames),
                                 usecols=tuple(coordsids)
                                 )
-                QMessageBox.information(self, "Import data...", f'{dataset.shape[0]} rows have been imported.')
+                # QMessageBox.information(self, "Import data...", f'{dataset.shape[0]} rows have been imported.')
             except ValueError:
                 QMessageBox.critical(self, "Load data file error", "An error occured while reading data file.\nNo data imported")
                 return
@@ -221,9 +222,9 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
                 newvar.setID(j+1)
                 newvar.setName(_varnames[j])
                 newvar.setAlias(_varnames[j]) # Alias = name by default
-                newvar.setUnit('')
+                newvar.setUnit("other") # By default unknown unit
                 newvar.setValue(_variables[i][j])
-                newvar.setRange(0.0,0.0)
+                newvar.setRange(_variables[i][j],_variables[i][j]) # By default, no range
                 newpt.addVariable(newvar)
             self.points.append(newpt)
 
@@ -248,14 +249,17 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
 
     # Print the defined trend(s)
     def PrintTrendsList(self):
-        if len(self.points) != 0:
-            textInfo = []
-            # As each point containts same variables, we use the first one as default: [0]
-            for v in self.points[0].getVariablesName():
-                if v.getName() in self.selectedVariableNames:
-                    newLine=f'{v.getName()}_i {v.getOperand()} {v.getName()}_j'
-                    textInfo.append(newLine)
-            self.updateLogViewPort(2, textInfo)
+        if len(self.trendCases) == 0:
+            QMessageBox.information(self, "Trend case", "No trend cae(s) defined yet.")
+            return
+
+        textInfo = []
+        # As each point containts same variables, we use the first one as default: [0]
+        for v in self.points[0].getVariablesName():
+            if v.getName() in self.selectedVariableNames:
+                newLine=f'{v.getAlias()}_i --- {v.getAlias()}_j'
+                textInfo.append(newLine)
+        self.updateLogViewPort(2, textInfo)
 
     # Select one variable in the current variable list
     def SelectOneVariable(self):
@@ -292,11 +296,6 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
                 QMessageBox.information(self, "GSTA Variables", msg)
             else:
                 # TODO: gérer la mise a jour de l'operand de chaque variable en fonction des cas choisis
-                for p in self.points:
-                    for v in p.variables:
-                        if v.getName() in self.selectedVariableNames:
-
-                            return
                 return
 
     # Definition of the GSTA variables to use for mean, sorting and skewness

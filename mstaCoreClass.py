@@ -40,6 +40,14 @@ OPERAND = {
     'none' : ''
 }
 
+# Unit of variables
+UNIT = {
+    'percent' : '%',
+    'metric' : 'm',
+    'phi' : 'phi',
+    'other' : 'unknown'
+}
+
 #############################################################################
 ## class RANGE: manage variables range                                     ##
 #############################################################################
@@ -62,7 +70,7 @@ class RANGE():
         return(self.max - self.min)
 
 #############################################################################
-## class RANGE: manage variables range                                     ##
+## class RADIUS: manage variables search procedure                         ##
 #############################################################################
 
 class RADIUS():
@@ -141,7 +149,7 @@ class mstaVariable():
         self.ID = 0
         self.name = ""
         self.alias = ""
-        self.unit = ""
+        self.unit = "other" #Default value, i.e. unknown type
         self.value = 0.0
         self.range = RANGE(0.0,0.0)
         self.search = RADIUS(0.0,0.0)
@@ -255,14 +263,16 @@ class mstaVariable():
         return self.alias
 
     def setUnit(self,_unit):
+        assert UNIT[_unit] != ''
         self.unit = _unit
     def getUnit(self):
-        return self.unit
+        return UNIT[self.unit]
 
     def setValue(self,_value):
         self.value = _value
     def getValue(self):
         return self.value
+
     def getMin(self):
         return self.range.getMin()
     def getMax(self):
@@ -277,9 +287,9 @@ class mstaVariable():
             return self.search
 
     def setRange(self, _min, _max):
+        assert self.value >= _min and self.value <= _max
         self.range = RANGE(_min, _max)
     def getRange(self):
-
         return(self.range)
 
     def isInRange(self, _value):
@@ -293,6 +303,12 @@ class mstaTrendCase():
         """Constructor."""
         self.ID = -1
         self.trend = TREND['none']
+        self.leftVar = ''
+        self.rightVar = ''
+
+    # Print itself
+    def __repr__(self):
+        return (f'{self.leftVar} {TREND[self.trend]} {self.rightVar}')
 
     def getID(self):
         return self.ID
@@ -307,6 +323,12 @@ class mstaTrendCase():
 
     def getOperand(self):
         return(self.trend)
+
+    def setLeftVar(self, _var):
+        self.leftVar = _var
+
+    def setRightVar(self, _var):
+        self.rightVar = _var
 
 #############################################################################
 ## class mstaComposedTrendCase: manage trend case                          ##
@@ -324,6 +346,18 @@ class mstaComposedTrendCase():
     def setID(self, _id):
         assert _id >= 0
         self.ID = _id
+
+    def getTrend(self, _id):
+        assert _id <= len(self.trendList)
+        return self.trendList[_id]
+
+    def getFirstTrend(self):
+        assert len(self.trendList) >= 1
+        return self.trendList[0]
+
+    def getLastTrend(self):
+        assert len(self.trendList) >= 1
+        return self.trendList[len(self.trendList)-1]
 
     def addTrendCase(self, _trendcase, _operand):
         assert isinstance(_trendcase, mstaTrendCase)
