@@ -13,6 +13,10 @@
   <property name="windowTitle">
    <string>About MSTA</string>
   </property>
+  <property name="windowIcon">
+   <iconset resource="resources.qrc">
+    <normaloff>:/plugins/mutli_sediment_trend_analysis/icon.png</normaloff>:/plugins/mutli_sediment_trend_analysis/icon.png</iconset>
+  </property>
   <property name="modal">
    <bool>true</bool>
   </property>
@@ -81,8 +85,48 @@
     <string>Author: E. Poizot (emmanuel.poizot@lecnam.net)</string>
    </property>
   </widget>
+  <widget class="QLabel" name="label_4">
+   <property name="geometry">
+    <rect>
+     <x>30</x>
+     <y>90</y>
+     <width>451</width>
+     <height>131</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="pixmap">
+    <pixmap resource="resources.qrc">:/plugins/mutli_sediment_trend_analysis/logogeoceano transparent.png</pixmap>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_5">
+   <property name="geometry">
+    <rect>
+     <x>170</x>
+     <y>210</y>
+     <width>206</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>14</pointsize>
+     <italic>true</italic>
+    </font>
+   </property>
+   <property name="text">
+    <string>http://www.geoceano.fr</string>
+   </property>
+  </widget>
  </widget>
- <resources/>
+ <resources>
+  <include location="resources.qrc"/>
+ </resources>
  <connections>
   <connection>
    <sender>okButton</sender>

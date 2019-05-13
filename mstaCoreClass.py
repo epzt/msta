@@ -299,12 +299,20 @@ class mstaVariable():
 ## class mstaTrendCase: manage trend case                                  ##
 #############################################################################
 class mstaTrendCase():
-    def __init__(self):
+    def __init__(self, _variable):
         """Constructor."""
         self.ID = -1
         self.trend = TREND['none']
-        self.leftVar = ''
-        self.rightVar = ''
+        assert _variable
+        # Normally one case should be defined for same variable but
+        # it is eventually possible to manage 2 different variables
+        if isinstance(_variable, list):
+            assert len(_variable) == 2
+            self.leftVar = _variable[0]
+            self.rightVar = _variable[1]
+        else:
+            self.leftVar = _variable
+            self.rightVar = _variable
 
     # Print itself
     def __repr__(self):

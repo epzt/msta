@@ -1,5 +1,6 @@
 <RCC>
-    <qresource prefix="/plugins/mutli_sediment_trend_analysis" >
-        <file>icon.png</file>
-    </qresource>
+  <qresource prefix="/plugins/mutli_sediment_trend_analysis">
+    <file>logogeoceano transparent.png</file>
+    <file>icon.png</file>
+  </qresource>
 </RCC>

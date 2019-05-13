@@ -12,6 +12,9 @@ class Ui_AboutDlg(object):
     def setupUi(self, AboutDlg):
         AboutDlg.setObjectName("AboutDlg")
         AboutDlg.resize(539, 273)
+        icon = QtGui.QIcon()
+        icon.addPixmap(QtGui.QPixmap(":/plugins/mutli_sediment_trend_analysis/icon.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        AboutDlg.setWindowIcon(icon)
         AboutDlg.setModal(True)
         self.okButton = QtWidgets.QPushButton(AboutDlg)
         self.okButton.setGeometry(QtCore.QRect(10, 240, 80, 24))
@@ -32,6 +35,19 @@ class Ui_AboutDlg(object):
         self.label_3 = QtWidgets.QLabel(AboutDlg)
         self.label_3.setGeometry(QtCore.QRect(240, 250, 291, 16))
         self.label_3.setObjectName("label_3")
+        self.label_4 = QtWidgets.QLabel(AboutDlg)
+        self.label_4.setGeometry(QtCore.QRect(30, 90, 451, 131))
+        self.label_4.setText("")
+        self.label_4.setPixmap(QtGui.QPixmap(":/plugins/mutli_sediment_trend_analysis/logogeoceano transparent.png"))
+        self.label_4.setScaledContents(True)
+        self.label_4.setObjectName("label_4")
+        self.label_5 = QtWidgets.QLabel(AboutDlg)
+        self.label_5.setGeometry(QtCore.QRect(170, 210, 206, 22))
+        font = QtGui.QFont()
+        font.setPointSize(14)
+        font.setItalic(True)
+        self.label_5.setFont(font)
+        self.label_5.setObjectName("label_5")
 
         self.retranslateUi(AboutDlg)
         self.okButton.clicked.connect(AboutDlg.close)
@@ -44,4 +60,6 @@ class Ui_AboutDlg(object):
         self.label.setText(_translate("AboutDlg", "Mutli-Sediment Trend Analysis"))
         self.label_2.setText(_translate("AboutDlg", "MSTA"))
         self.label_3.setText(_translate("AboutDlg", "Author: E. Poizot (emmanuel.poizot@lecnam.net)"))
+        self.label_5.setText(_translate("AboutDlg", "http://www.geoceano.fr"))
 
+import resources

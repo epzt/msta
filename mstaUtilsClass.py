@@ -3,6 +3,7 @@ from PyQt5.QtGui import QDialog, QInputDialog
 from .ui_about_msta import Ui_AboutDlg
 from .ui_set_gsta_variables_dialog import Ui_setGSTAVariablesDialog as setGSTAVarDlg
 from .ui_gsta_trend_definition import Ui_setGSTATrendCaseDialog as setGSTATrendDlg
+from .ui_msta_variable_definition import Ui_SetMSTAVarOptionsDlg as setMSTAVariableDlg
 
 from .mstaCoreClass import mstaTrendCase, mstaComposedTrendCase
 
@@ -36,6 +37,17 @@ class setGSTAVariables(QDialog, setGSTAVarDlg):
             for k in self.variablesDict:
                 if item == self.variablesDict[k]:
                     return
+            variableDlg = setMSTAVariableOptionDlg("mean")
+            result = variableDlg.exec_()
+            if not result:
+                msg = "Mean variable set to default:\nName: mean, alias: mean, range: (0,0), no anysotropy"
+                QMessageBox.information(self, "GSTA Variables", msg)
+            else:
+                variableDlg.getVariableName()
+                variableDlg.getVariableAlias()
+                variableDlg.getVariableRange()
+                variableDlg.getVariableAnaysotropy()
+
             self.variablesDict['mean'] = item
             self.meanLineEdit.setText(item)
 
@@ -75,17 +87,20 @@ class setGSTAVariables(QDialog, setGSTAVarDlg):
         return(self.variablesDict['skewness'])
 
 #############################################################################
-# GSTA trend definnition
+# GSTA trend definition
 #############################################################################
 class setGSTATrendCases(QDialog, setGSTATrendDlg):
-    def __init__(self, parent=None):
+    def __init__(self, _variables, parent=None):
         super(setGSTATrendCases,self).__init__(parent)
         self.setupUi(self)
 
         # Initial variables
-        self.meanTrend = ""
-        self.sortingTrend = ""
-        self.skewnessTrend = ""
+        self.meanTrendText = ""
+        self.meanTrend = mstaTrendCase()
+        self.sortingTrendText = ""
+        self.sortingTrend = mstaTrendCase()
+        self.skewnessTrendText = ""
+        self.skewnessTrend = mstaTrendCase()
         self.trendCaseList = []
         self.linkOperand = "AND" # Default operand which link multiple trend case
 
@@ -109,30 +124,30 @@ class setGSTATrendCases(QDialog, setGSTATrendDlg):
 
     def setMeanTrend(self):
         if self.radioGSTAMeanFiner.isChecked():
-            self.meanTrend = "F"
+            self.meanTrendText = "F"
         elif self.radioGSTAMeanCoarser.isChecked():
-            self.meanTrend = "C"
+            self.meanTrendText = "C"
         else:
-            self.meanTrend = ""
+            self.meanTrendText = ""
 
     def setSortingTrend(self):
         if self.radioGSTASortingBetter.isChecked():
-            self.sortingTrend = "B"
+            self.sortingTrendText = "B"
         elif self.radioGSTASortingPorer.isChecked():
-            self.sortingTrend = "P"
+            self.sortingTrendText = "P"
         else:
-            self.sortingTrend = ""
+            self.sortingTrendText = ""
 
     def setSkewnessTrend(self):
         if self.radioGSTASkewnessPlus.isChecked():
-            self.skewnessTrend = "+"
+            self.skewnessTrendText = "+"
         elif self.radioGSTASkewnessMinus.isChecked():
-            self.skewnessTrend = "-"
+            self.skewnessTrendText = "-"
         else:
-            self.skewnessTrend = ""
+            self.skewnessTrendText = ""
 
     def addGSTATrendCase(self):
-        newTrendCase = f'{self.meanTrend}{self.sortingTrend}{self.skewnessTrend}'
+        newTrendCase = f'{self.meanTrendText}{self.sortingTrendText}{self.skewnessTrendText}'
         if newTrendCase == "":
             return
         if newTrendCase not in self.trendCaseList:
@@ -150,7 +165,7 @@ class setGSTATrendCases(QDialog, setGSTATrendDlg):
         return
 
     def removeGSTATrendCase(self):
-        delTrendCase = f'{self.meanTrend}{self.sortingTrend}{self.skewnessTrend}'
+        delTrendCase = f'{self.meanTrendText}{self.sortingTrendText}{self.skewnessTrendText}'
         if delTrendCase == "" or delTrendCase not in self.trendCaseList:
             return
         self.trendCaseList.remove(delTrendCase)
@@ -176,3 +191,22 @@ class setGSTATrendCases(QDialog, setGSTATrendDlg):
         self.linkOperand = _text
 
 
+#############################################################################
+# MSTA variable definition
+#############################################################################
+class setMSTAVariableOptionDlg(QDialog, setMSTAVariableDlg):
+    def __init__(self, _variable, parent=None):
+        super(setMSTAVariableOptionDlg,self).__init__(parent)
+        self.setupUi(self)
+
+    def getVariableName(self):
+        return self.variableNameLineEdit.text()
+
+    def getVariableAlias(self):
+        return self.variableAliasLineEdit.text()
+
+    def getVariableRange(self):
+        return [self.minVariableRangeLineEdit, self.maxVariableRangeLineEdit]
+
+    def getVariableAnaysotropy(self):
+        return [self.directionVariableLineEdit, self.tolangVariableLineEdit]

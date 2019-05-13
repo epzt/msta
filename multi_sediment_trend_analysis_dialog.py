@@ -86,7 +86,12 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         self.actionTrendList.triggered.connect(self.PrintTrendsList)
 
         self.setGeometry(10, 10, 400, 400)
-        self.setWindowTitle('Multi Sediment Trend Analysis') 
+        self.setWindowTitle('Multi Sediment Trend Analysis')
+
+        self.menuVariables.setEnabled(False)
+        self.menuTrends.setEnabled(False)
+        self.actionGSTALikeTrend.setEnabled(False)
+        self.menuRun.setEnabled(False)
 
         # Variables
         self.iface = _iface
@@ -103,10 +108,10 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         # "Central Widget" expands to fill all available space
         self.textwidget = QTextEdit()
         self.setCentralWidget(self.textwidget)
-        self.textwidget.setEnabled(False)
+        self.textwidget.setEnabled(True)
         self.textwidget.setTextColor(QColor("black"))
         fontWeight = self.textwidget.currentFont().weight()
-        self.textwidget.setTabStopWidth(fontWeight )
+        self.textwidget.setTabStopWidth(fontWeight)
 
 
     def DisplayAboutMSTA(self):
@@ -170,6 +175,9 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         self.updateLogViewPort(1, self.variablesName)
         # All variables are selected by default at the beginning
         self.selectedVariableNames = self.variablesName.copy()
+        # Data set is loaded, variables and trends can be manage
+        self.menuVariables.setEnabled(True)
+        self.menuTrends.setEnabled(True)
         return
 
     # _dataset: np.array of n samples lines and m variables columns
@@ -178,8 +186,16 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
     # _coordsset: np.array of n samples lines and two coordinates
     # _filename: name of the text file (without extension) which contains the original data
     def CreateTemporaryLayer(self, _dataset, _varnames, _coordsset, _coordsnames, _filename):
+        # Selection of a reference system eventually different from the current project
+        theProj = QgsProjectionSelectionDialog(self)
+        theProj.setCrs(QgsProject.instance().crs())
+        result = theProj.exec_()
+        if result == QDialog.Rejected:
+            QMessageBox.information(self, "Reference system", "Layer refrence system is the same to the current project")
+            URI=f'point?crs={QgsProject.instance().crs().authid()}'
+        else:
+            URI=f'point?crs={theProj.crs().authid()}'
         # create the temporary layer
-        URI=f'point?crs={QgsProject.instance().crs().authid()}'
         vl = QgsVectorLayer(URI, f'msta_{_filename}_Layer', "memory")
         pr = vl.dataProvider()
         
@@ -202,7 +218,6 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         vl.updateExtents()
         # Add the temporary layer to the current project
         QgsProject.instance().addMapLayer(vl)
-
         return
 
     # _points: np.array of n samples lines and two coordinates
@@ -235,8 +250,10 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         if not _text:
             self.textwidget.append("\t------")
         if isinstance(_text, list):
+            _newtext = ''
             for i in _text:
-                self.textwidget.append(f'\t{i}')
+                _newtext += f' {i} '
+            self.textwidget.append(_newtext)
         else:
             self.textwidget.append(f'\t{_text}')
 
@@ -250,7 +267,7 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
     # Print the defined trend(s)
     def PrintTrendsList(self):
         if len(self.trendCases) == 0:
-            QMessageBox.information(self, "Trend case", "No trend cae(s) defined yet.")
+            QMessageBox.information(self, "Trend case", "No trend case(s) defined yet.")
             return
 
         textInfo = []
@@ -287,10 +304,14 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
 
     # Definition of the trend case(s) for a GSTA analysis
     def SetGSTATrends(self):
-        dlg = setGSTATrendCases()
+        dlg = setGSTATrendCases(self.selectedVariableNames)
         result = dlg.exec()
         if result and len(dlg.trendCaseList) > 0:
-            if len(self.selectedVariableNames) == 0:
+            self.trendCases = dlg.getTrendCaseList()
+            if len(self.selectedVariableNames) == 0 or \
+                    self.GSTAVariables['mean'] == "" or \
+                    self.GSTAVariables['sorting'] == "" or \
+                    self.GSTAVariables['skewness'] == "":
                 msg = "You just defined GSTA trend case(s) to study.\n" \
                       "You have now to defined the corresponding GSTA variables to use\n for mean, sorting and skewness"
                 QMessageBox.information(self, "GSTA Variables", msg)
@@ -320,13 +341,15 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         # Clear the names of the current variable list
         self.selectedVariableNames.clear()
         # construction of the new list of the working variable names
-        self.selectedVariableNames.append(dlg.variablesDict['mean'])
-        self.updatePointsDB(0, [dlg.variablesDict['mean'],'mean']) # Change of the alias over the points database
-        self.selectedVariableNames.append(dlg.variablesDict['sorting'])
-        self.updatePointsDB(0, [dlg.variablesDict['sorting'], 'sorting']) # Change of the alias over the points database
-        self.selectedVariableNames.append(dlg.variablesDict['skewness'])
-        self.updatePointsDB(0, [dlg.variablesDict['skewness'], 'skewness']) # Change of the alias over the points database
+        self.selectedVariableNames.append(dlg.getMeanVariable())
+        self.updatePointsDB(0, [dlg.getMeanVariable(),'mean']) # Change of the alias over the points database
+        self.selectedVariableNames.append(dlg.getSortingVariable())
+        self.updatePointsDB(0, [dlg.getSortingVariable(), 'sorting']) # Change of the alias over the points database
+        self.selectedVariableNames.append(dlg.getSkewnessVariable())
+        self.updatePointsDB(0, [dlg.getSkewnessVariable(), 'skewness']) # Change of the alias over the points database
         self.updateLogViewPort(5, self.selectedVariableNames)
+        # GSTA variables are defined, thrends can be manage
+        self.actionGSTALikeTrend.setEnabled(True)
 
     def SetClearText(self):
         self.textwidget.clear()
@@ -349,13 +372,13 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
             if _code == UPDATEDB['varalias']:
                 assert(len(_newvalue) == 2) # should have the variable name first and the new alias of this variable
                 for v in p.variables:
-                    if _newvalue[0] in self.selectedVariableNames:
+                    if _newvalue[0] == v.getName(): # Changes are operate on actual selected variables(s)
                         v.setAlias(_newvalue[1])
                 continue
             if _code == UPDATEDB['varrange']:
                 assert (len(_newvalue) == 3)  # should have the variable name first and new min, max values of this variable
                 for v in p.variables:
-                    if _newvalue[0] in self.selectedVariableNames:
+                    if _newvalue[0] == v.getName(): # Changes are operate on actual selected variables(s)
                         v.setRange(_newvalue[1], _newvalue[2])
                 continue
         progress.close()
