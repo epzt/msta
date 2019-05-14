@@ -231,8 +231,7 @@ class setMSTAVariableOptionDlg(QDialog, setMSTAVariableDlg):
             self.variableNameLineEdit.setText(_variable.getName())
             self.variableAliasLineEdit.setText(_variable.getAlias())
             self.variableDgLineEdit.setText(str(_variable.getDg()))
-            self.minVariableRangeLineEdit.setText(str(_variable.getMin()))
-            self.maxVariableRangeLineEdit.setText(str(_variable.getMax()))
+            self.pmVariableRangeLineEdit.setText(str(_variable.getRange()))
             self.directionVariableLineEdit.setText(str(_variable.getDirection()))
             self.tolangVariableLineEdit.setText(str(_variable.getToleranceAngle()))
             self.variableUnitComboBox.setEditText(_variable.getUnit())
@@ -240,8 +239,7 @@ class setMSTAVariableOptionDlg(QDialog, setMSTAVariableDlg):
             self.variableNameLineEdit.setText(_variable)
             self.variableAliasLineEdit.setText(_variable)
             self.variableDgLineEdit.setText("0.0")
-            self.minVariableRangeLineEdit.setText("0.0")
-            self.maxVariableRangeLineEdit.setText("0.0")
+            self.pmVariableRangeLineEdit.setText("0.0")
             self.directionVariableLineEdit.setText("0.0")
             self.tolangVariableLineEdit.setText("0.0")
             # Variable definition
@@ -249,8 +247,7 @@ class setMSTAVariableOptionDlg(QDialog, setMSTAVariableDlg):
             self.variableUnitComboBox.setCurrentIndex(3)
         else:
             self.variableDgLineEdit.setText("0.0")
-            self.minVariableRangeLineEdit.setText("0.0")
-            self.maxVariableRangeLineEdit.setText("0.0")
+            self.pmVariableRangeLineEdit.setText("0.0")
             self.directionVariableLineEdit.setText("0.0")
             self.tolangVariableLineEdit.setText("0.0")
             # Variable definition
@@ -276,7 +273,7 @@ class setMSTAVariableOptionDlg(QDialog, setMSTAVariableDlg):
         newvar.setAlias(self.getVariableAlias())
         newvar.setUnit(self.getVariableUnit())
         newvar.setDg(self.getVariableDg())
-        newvar.setRange(self.getVariableRangeMin(),self.getVariableRangeMax())
+        newvar.setRange(self.getVariableRangeMin(),self.getVariableRange())
         newvar.setSearch(self.getVariableAnysotropyDirection(), self.getVariableAnysotropyTolangle())
         # DEBUG
         print(newvar)
@@ -294,11 +291,8 @@ class setMSTAVariableOptionDlg(QDialog, setMSTAVariableDlg):
     def getVariableDg(self):
         return float(self.variableDgLineEdit.text())
 
-    def getVariableRangeMin(self):
-        return float(self.minVariableRangeLineEdit.text())
-
-    def getVariableRangeMax(self):
-        return float(self.maxVariableRangeLineEdit.text())
+    def getVariableRange(self):
+        return float(self.pmVariableRangeLineEdit.text())
 
     def getVariableAnysotropyDirection(self):
         return float(self.directionVariableLineEdit.text())

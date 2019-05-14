@@ -51,7 +51,7 @@ UNIT = {
 #############################################################################
 ## class RANGE: manage variables range                                     ##
 #############################################################################
-
+'''
 class RANGE():
     def __init__(self, _min, _max):
         self.min = _min
@@ -68,7 +68,7 @@ class RANGE():
 
     def getDeltaRange(self):
         return(self.max - self.min)
-
+'''
 #############################################################################
 ## class RADIUS: manage variables search procedure                         ##
 #############################################################################
@@ -152,7 +152,7 @@ class mstaVariable():
         self.unit = "other" #Default value, i.e. unknown type
         self.value = 0.0
         self.dg = 0.0
-        self.range = RANGE(0.0,0.0)
+        self.range = 0.0 # +/- range centred around value
         self.search = RADIUS(0.0,0.0)
 
     # Default operations
@@ -166,16 +166,16 @@ class mstaVariable():
         else:
             res.setUnit(self.getUnit())
         if self.getName() != _other.getName():
-            res.setName("")
+            res.setName(f'{self.getName()}/{_other.getName()}')
         else:
             res.setName(self.getName())
         res = mstaVariable()
-        res.range = RANGE(self.getMin()+self._other.getMin(),self.getMax()+self._other.getMax())
-        res.setValue(res.getDeltaRange()/2.0)
+        res.setRange(self.getRange()+self._other.getRange())
+        res.setValue(self.getValue()+_other.getValue())
         return res
     def __iadd__(self,_other):
-        self.range = RANGE(self.getMin()+self._other.getMin(),self.getMax()+self._other.getMax())
-        self.setValue(self.range.getDeltaRange()/2.0)
+        self.range = self.getRange()+self._other.getRange()
+        self.value = self.value+_other.getValue()
         return self
     # -
     def __sub__(self,_other):
@@ -187,16 +187,16 @@ class mstaVariable():
         else:
             res.setUnit(self.getUnit())
         if self.getName() != _other.getName():
-            res.setName("")
+            res.setName(f'{self.getName()}/{_other.getName()}')
         else:
             res.setName(self.getName())
         res = mstaVariable()
-        res.range = RANGE(self.getMin()-self._other.getMax(),self.getMax()-self._other.getMin())
-        res.setValue(res.range.getDeltaRange()/2.0)
+        self.setRange(self.getRange()+self._other.getRange())
+        res.setValue(self.getValue()-_other.getValue())
         return res
     def __isub__(self,_other):
-        self.range = RANGE(self.getMin()-self._other.getMax(),self.getMax()-self._other.getMin())
-        self.setValue(self.range.getDeltaRange()/2.0)
+        self.range = self.getRange()+self._other.getRange()
+        self.value = self.value-_other.getValue()
         return self
     # *
     def __mul__(self,_other):
@@ -208,18 +208,38 @@ class mstaVariable():
         else:
             res.setUnit(self.getUnit())
         if self.getName() != _other.getName():
-            res.setName("")
+            res.setName(f'{self.getName()}/{_other.getName()}')
         else:
             res.setName(self.getName())
         res = mstaVariable()
-        lvalues = [self.getMin()*self._other.getMin(),self.getMin()*self._other.getMax(),self.getMax()*self._other.getMin(),self.getMax()*self._other.getMax()]
-        res.range = RANGE(min(lvalues),max(lvalues))
-        res.setValue(res.getDeltaRange()/2.0)
+        res.range = (_other.getValue()*self.getRange())+(self.getValue()*_other.getRange())
+        res.setValue(self.getValue()*_other.getValue())
         return res
     def __imul__(self,_other):
-        lvalues = [self.getMin()*self._other.getMin(),self.getMin()*self._other.getMax(),self.getMax()*self._other.getMin(),self.getMax()*self._other.getMax()]
-        self.range = RANGE(min(lvalues),max(lvalues))
-        self.setValue(self.getDeltaRange()/2.0)
+        self.range = (_other.getValue()*self.getRange())+(self.getValue()*_other.getRange())
+        self.setvalue = self.value*_other.getValue()
+        return self
+
+    # /
+    def __truediv__(self, other):
+        res = mstaVariable()
+        if not _other.__class__ is mstaVariable:
+            return NotImplemented
+        if self.getUnit() != _other.getUnit():
+            return NotImplemented
+        else:
+            res.setUnit(self.getUnit())
+        if self.getName() != _other.getName():
+            res.setName(f'{self.getName()}/{_other.getName()}')
+        else:
+            res.setName(self.getName())
+        res = mstaVariable()
+        res.range = (1/_other.getValue())*(self.getRange()+(self.getValue()/_other.getgetValue()*_other.getRange()))
+        res.setValue(self.getValue() / _other.getValue())
+        return res
+    def __itruediv__(self, other):
+        self.range = (1/_other.getValue())*(self.getRange()+(self.getValue()/_other.getgetValue()*_other.getRange()))
+        self.value = self.value / _other.getValue()
         return self
     # ==
     def __eq__(self,_other):
@@ -237,7 +257,7 @@ class mstaVariable():
     def __lt__(self,_other):
         return(self.getMax() < _other.getMin())
     def __le__(self,_other):
-        return(self.range.getMax() <= _other.getMin())
+        return(self.getMax() <= _other.getMin())
     # >
     def __gt__(self,_other):
         return(self.getMin() > _other.getMax())
@@ -247,7 +267,8 @@ class mstaVariable():
     # Print itself
     def __repr__(self):
         return(f'Name: {self.name}, alias: {self.alias} unit: {self.unit}\n \
-                value: {self.value}, range: {self.range.getMin()},{self.range.getMax()}')
+                value: {self.value}, distance: {self.dg}\n \
+                range: {self.getMin()},{self.getMax()}')
 
     def setID(self,_ID):
         self.ID = _ID
@@ -276,9 +297,9 @@ class mstaVariable():
         return self.value
 
     def getMin(self):
-        return self.range.getMin()
+        return self.value - self.getRange()
     def getMax(self):
-        return self.range.getMax()
+        return self.value + self.getRange()
 
     def setSearch(self,_a, _b):
         self.search = [_a,_b]
@@ -291,15 +312,13 @@ class mstaVariable():
 
     def setDg(self, _dg):
         self.dg = _dg
-
     def getDg(self):
         return self.dg
 
-    def setRange(self, _min, _max):
-        assert self.value >= _min and self.value <= _max
-        self.range = RANGE(_min, _max)
+    def setRange(self, _pm):
+        self.range = _pm
     def getRange(self):
-        return(self.range)
+        return self.range
 
     def isInRange(self, _value):
         return(_value >= self.getMin() and _value <= self.getMax())
