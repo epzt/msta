@@ -1,11 +1,21 @@
 from PyQt5.QtGui import QDialog, QInputDialog
+from PyQt5.QtWidgets import  QMessageBox
 
 from .ui_about_msta import Ui_AboutDlg
 from .ui_set_gsta_variables_dialog import Ui_setGSTAVariablesDialog as setGSTAVarDlg
 from .ui_gsta_trend_definition import Ui_setGSTATrendCaseDialog as setGSTATrendDlg
 from .ui_msta_variable_definition import Ui_SetMSTAVarOptionsDlg as setMSTAVariableDlg
 
-from .mstaCoreClass import mstaTrendCase, mstaComposedTrendCase
+from .mstaCoreClass import mstaTrendCase, mstaComposedTrendCase, mstaVariable
+
+# Unit of variables,must be the same as mstaCoreClass.py definition
+UNIT = {
+    'percent' : '%',
+    'metre' : 'm',
+    'phi' : 'phi',
+    'other' : 'unknown'
+}
+
 
 #############################################################################
 # Just a class to print About information
@@ -18,9 +28,9 @@ class aboutMSTA(QDialog, Ui_AboutDlg):
 #############################################################################
 # GSTA variables definition from global variable list
 #############################################################################
-class setGSTAVariables(QDialog, setGSTAVarDlg):
+class setGSTAVariablesDlg(QDialog, setGSTAVarDlg):
     def __init__(self, _variablesList, parent=None):
-        super(setGSTAVariables,self).__init__(parent)
+        super(setGSTAVariablesDlg,self).__init__(parent)
         self.setupUi(self)
 
         self.meanButton.clicked.connect(self.getMean)
@@ -28,7 +38,8 @@ class setGSTAVariables(QDialog, setGSTAVarDlg):
         self.skewnessButton.clicked.connect(self.getSkewness)
         # Initialisations
         self.variablesDict = {'mean':'','sorting':'','skewness':''}
-        self.items = _variablesList
+        self.items = _variablesList  # List of variable names
+        self.variablesDefinition = [] # List of variable definitions (of type class mstaVariable)
 
     def getMean(self):
         item, ok = QInputDialog(self).getItem(self, "Select Mean",
@@ -37,17 +48,15 @@ class setGSTAVariables(QDialog, setGSTAVarDlg):
             for k in self.variablesDict:
                 if item == self.variablesDict[k]:
                     return
+            # Launch the dialog box of variable options definition
             variableDlg = setMSTAVariableOptionDlg("mean")
             result = variableDlg.exec_()
             if not result:
-                msg = "Mean variable set to default:\nName: mean, alias: mean, range: (0,0), no anysotropy"
+                msg = "Mean variable set to default:\nName: mean, alias: mean, distance: 0.0, range: (0,0) and no anysotropy"
                 QMessageBox.information(self, "GSTA Variables", msg)
-            else:
-                variableDlg.getVariableName()
-                variableDlg.getVariableAlias()
-                variableDlg.getVariableRange()
-                variableDlg.getVariableAnaysotropy()
-
+            # Even if in variableDlg no definition is set of the mean variable, it is set to default values
+            self.variablesDefinition.append(variableDlg.getVariableDefinition())
+            # Updates of the dialog
             self.variablesDict['mean'] = item
             self.meanLineEdit.setText(item)
 
@@ -58,6 +67,15 @@ class setGSTAVariables(QDialog, setGSTAVarDlg):
             for k in self.variablesDict:
                 if item == self.variablesDict[k]:
                     return
+            # Launch the dialog box of variable options definition
+            variableDlg = setMSTAVariableOptionDlg("sorting")
+            result = variableDlg.exec_()
+            if not result:
+                msg = "Sorting variable set to default:\nName: sorting, alias: sorting, distance: 0.0, range: (0,0) and no anysotropy"
+                QMessageBox.information(self, "GSTA Variables", msg)
+            # Even if in variableDlg no definition is set of the mean variable, it is set to default values
+            self.variablesDefinition.append(variableDlg.getVariableDefinition())
+            # Updates of the dialog
             self.variablesDict['sorting'] = item
             self.sortingLineEdit.setText(item)
 
@@ -68,6 +86,15 @@ class setGSTAVariables(QDialog, setGSTAVarDlg):
             for k in self.variablesDict:
                 if item == self.variablesDict[k]:
                     return
+            # Launch the dialog box of variable options definition
+            variableDlg = setMSTAVariableOptionDlg("skewness")
+            result = variableDlg.exec_()
+            if not result:
+                msg = "Skewness variable set to default:\nName: skewness, alias: skewness, distance: 0.0, range: (0,0) and no anysotropy"
+                QMessageBox.information(self, "GSTA Variables", msg)
+            # Even if in variableDlg no definition is set of the mean variable, it is set to default values
+            self.variablesDefinition.append(variableDlg.getVariableDefinition())
+            # Updates of the dialog
             self.variablesDict['skewness'] = item
             self.skewnessLineEdit.setText(item)
 
@@ -199,14 +226,82 @@ class setMSTAVariableOptionDlg(QDialog, setMSTAVariableDlg):
         super(setMSTAVariableOptionDlg,self).__init__(parent)
         self.setupUi(self)
 
+        # Initialisation from previous variable
+        if isinstance(_variable, mstaVariable):
+            self.variableNameLineEdit.setText(_variable.getName())
+            self.variableAliasLineEdit.setText(_variable.getAlias())
+            self.variableDgLineEdit.setText(str(_variable.getDg()))
+            self.minVariableRangeLineEdit.setText(str(_variable.getMin()))
+            self.maxVariableRangeLineEdit.setText(str(_variable.getMax()))
+            self.directionVariableLineEdit.setText(str(_variable.getDirection()))
+            self.tolangVariableLineEdit.setText(str(_variable.getToleranceAngle()))
+            self.variableUnitComboBox.setEditText(_variable.getUnit())
+        elif isinstance(_variable, str):
+            self.variableNameLineEdit.setText(_variable)
+            self.variableAliasLineEdit.setText(_variable)
+            self.variableDgLineEdit.setText("0.0")
+            self.minVariableRangeLineEdit.setText("0.0")
+            self.maxVariableRangeLineEdit.setText("0.0")
+            self.directionVariableLineEdit.setText("0.0")
+            self.tolangVariableLineEdit.setText("0.0")
+            # Variable definition
+            self.unit = "other"
+            self.variableUnitComboBox.setCurrentIndex(3)
+        else:
+            self.variableDgLineEdit.setText("0.0")
+            self.minVariableRangeLineEdit.setText("0.0")
+            self.maxVariableRangeLineEdit.setText("0.0")
+            self.directionVariableLineEdit.setText("0.0")
+            self.tolangVariableLineEdit.setText("0.0")
+            # Variable definition
+            self.unit = "other"
+            self.variableUnitComboBox.setCurrentIndex(3)
+
+        # Connection définition
+        self.variableUnitComboBox.currentTextChanged.connect(self.currentUnitChanged)
+
+    def currentUnitChanged(self, _unit):
+        if _unit == "persent":
+            self.unit = UNIT["persent"]
+        elif _unit == "metre":
+            self.unit = UNIT["metre"]
+        elif _unit == "phi":
+            self.unit = UNIT["phi"]
+        else:
+            self.unit = UNIT["other"]
+
+    def getVariableDefinition(self):
+        newvar = mstaVariable()
+        newvar.setName(self.getVariableName())
+        newvar.setAlias(self.getVariableAlias())
+        newvar.setUnit(self.getVariableUnit())
+        newvar.setDg(self.getVariableDg())
+        newvar.setRange(self.getVariableRangeMin(),self.getVariableRangeMax())
+        newvar.setSearch(self.getVariableAnysotropyDirection(), self.getVariableAnysotropyTolangle())
+        # DEBUG
+        print(newvar)
+        return newvar
+
     def getVariableName(self):
         return self.variableNameLineEdit.text()
 
     def getVariableAlias(self):
         return self.variableAliasLineEdit.text()
 
-    def getVariableRange(self):
-        return [self.minVariableRangeLineEdit, self.maxVariableRangeLineEdit]
+    def getVariableUnit(self):
+        return next(i for i in UNIT if UNIT[i] == self.unit)
 
-    def getVariableAnaysotropy(self):
-        return [self.directionVariableLineEdit, self.tolangVariableLineEdit]
+    def getVariableDg(self):
+        return float(self.variableDgLineEdit.text())
+
+    def getVariableRangeMin(self):
+        return float(self.minVariableRangeLineEdit.text())
+
+    def getVariableRangeMax(self):
+        return float(self.maxVariableRangeLineEdit.text())
+
+    def getVariableAnysotropyDirection(self):
+        return float(self.directionVariableLineEdit.text())
+
+    def getVariableAnysotropyTolangle(self):
+        return float(self.tolangVariableLineEdit.text())

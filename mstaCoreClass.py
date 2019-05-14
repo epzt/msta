@@ -43,7 +43,7 @@ OPERAND = {
 # Unit of variables
 UNIT = {
     'percent' : '%',
-    'metric' : 'm',
+    'metre' : 'm',
     'phi' : 'phi',
     'other' : 'unknown'
 }
@@ -151,6 +151,7 @@ class mstaVariable():
         self.alias = ""
         self.unit = "other" #Default value, i.e. unknown type
         self.value = 0.0
+        self.dg = 0.0
         self.range = RANGE(0.0,0.0)
         self.search = RADIUS(0.0,0.0)
 
@@ -245,7 +246,8 @@ class mstaVariable():
 
     # Print itself
     def __repr__(self):
-        return(f'Name: {self.name}, unit: {self.unit}, value: {self.value}, range: {self.range}')
+        return(f'Name: {self.name}, alias: {self.alias} unit: {self.unit}\n \
+                value: {self.value}, range: {self.range.getMin()},{self.range.getMax()}')
 
     def setID(self,_ID):
         self.ID = _ID
@@ -281,10 +283,17 @@ class mstaVariable():
     def setSearch(self,_a, _b):
         self.search = [_a,_b]
     def getSearch(self):
-        if self.search[0] == self.search[1]:
-            return self.search[0]
-        else:
-            return self.search
+        return self.search
+    def getDirection(self):
+        return self.search[0] # Direction is stored as the first element of the list
+    def getToleranceAngle(self):
+        return self.search[1] # Tol. angle is stored as the second element of the list
+
+    def setDg(self, _dg):
+        self.dg = _dg
+
+    def getDg(self):
+        return self.dg
 
     def setRange(self, _min, _max):
         assert self.value >= _min and self.value <= _max

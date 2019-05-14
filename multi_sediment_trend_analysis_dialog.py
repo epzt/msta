@@ -239,6 +239,7 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
                 newvar.setAlias(_varnames[j]) # Alias = name by default
                 newvar.setUnit("other") # By default unknown unit
                 newvar.setValue(_variables[i][j])
+                newvar.setDg(0.0) # By default Dg is null
                 newvar.setRange(_variables[i][j],_variables[i][j]) # By default, no range
                 newpt.addVariable(newvar)
             self.points.append(newpt)
@@ -333,7 +334,7 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
             if QMessageBox.information(self, "GSTA Variables", msg, QMessageBox.Yes | QMessageBox.No) == QMessageBox.No:
                 return
         # Launch the dialog for definition of GSTA variables
-        dlg = setGSTAVariables(self.variablesName)
+        dlg = setGSTAVariablesDlg(self.variablesName)
         result = dlg.exec()
         if not result or not dlg.areGSTAVariablesSet():
             QMessageBox.information(self, "GSTA Variables", "No GSTA variables defined yet")
@@ -343,10 +344,13 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         # construction of the new list of the working variable names
         self.selectedVariableNames.append(dlg.getMeanVariable())
         self.updatePointsDB(0, [dlg.getMeanVariable(),'mean']) # Change of the alias over the points database
+
         self.selectedVariableNames.append(dlg.getSortingVariable())
         self.updatePointsDB(0, [dlg.getSortingVariable(), 'sorting']) # Change of the alias over the points database
+
         self.selectedVariableNames.append(dlg.getSkewnessVariable())
         self.updatePointsDB(0, [dlg.getSkewnessVariable(), 'skewness']) # Change of the alias over the points database
+
         self.updateLogViewPort(5, self.selectedVariableNames)
         # GSTA variables are defined, thrends can be manage
         self.actionGSTALikeTrend.setEnabled(True)
