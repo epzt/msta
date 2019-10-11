@@ -272,7 +272,7 @@
      <bool>false</bool>
     </property>
     <property name="textInteractionFlags">
-     <set>Qt::TextSelectableByKeyboard|Qt::TextSelectableByMouse</set>
+     <set>Qt::NoTextInteraction</set>
     </property>
    </widget>
    <widget class="QSplitter" name="splitter">
@@ -333,14 +333,13 @@
      </item>
     </widget>
    </widget>
+   <zorder>splitter</zorder>
    <zorder>GSTATrendSkewnessGroup</zorder>
    <zorder>GSTATrendSortingGroup</zorder>
    <zorder>GSTATrendMeanGroup</zorder>
    <zorder>buttonRemoveGSTATrendCase</zorder>
    <zorder>buttonAddGSTATrendCase</zorder>
    <zorder>labelTrendCase</zorder>
-   <zorder>linkOperandComboBox</zorder>
-   <zorder>label</zorder>
   </widget>
  </widget>
  <resources/>

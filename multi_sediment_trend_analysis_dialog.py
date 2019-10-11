@@ -34,6 +34,8 @@ from qgis.core import *
 from qgis.gui import *
 from qgis.utils import *
 
+from datetime import datetime
+
 from .pyMstaTextFileAnalysisDialog import pyMstaTextFileAnalysisDialog
 from .mstaCoreClass import mstaPoint as mp
 from .mstaCoreClass import mstaVariable as mv
@@ -42,19 +44,20 @@ from .mstaCoreClass import mstaComposedTrendCase as cpdtrend
 from .mstaUtilsClass import *
 
 
-CONTEXTINFO = {1:"Variable(s) information", \
-               2:"Trend(s) information", \
-               3:"GSTA variable information", \
-               4:"GSTA trend(s) information", \
-               5:"Current selected variable", \
-               6:"Points information", \
+CONTEXTINFO = {1:"Variable(s) information",
+               2:"Trend(s) information",
+               3:"GSTA variable information",
+               4:"GSTA trend(s) information",
+               5:"Current selected variable",
+               6:"Points information",
+               7:"__DEBUG__",
                999:""}
 
 # constante definitions
-UPDATEDB = {'varalias' : 0, \
-            'varrange' : 1, \
-            'varvalue' : 2, \
-            'vartrend' : 3, \
+UPDATEDB = {'varalias' : 0,
+            'varrange' : 1,
+            'varvalue' : 2,
+            'vartrend' : 3,
             'varsearch' : 4}
 
 Ui_MainWindow, _ = uic.loadUiType(os.path.join(
@@ -78,12 +81,19 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         self.actionAbout.triggered.connect(self.DisplayAboutMSTA)
         self.actionSetWorkingDirectory.triggered.connect(self.SetWorkingDirectory)
         self.actionVariableListAll.triggered.connect(self.PrintAllVariablesList)
-        self.actionSelectOneVariable.triggered.connect(self.SelectOneVariable)
-        self.actionSelectAllVariables.triggered.connect(self.SelectAllVariables)
+        self.actionVariableListSelected.triggered.connect(self.PrintSelectedVariablesList)
+        #self.actionSelectOneVariable.triggered.connect(self.SelectOneVariable)
+        #self.actionSelectAllVariables.triggered.connect(self.SelectAllVariables)
         self.actionGSTALikeVariable.triggered.connect(self.SetGSTAVariables)
-        self.actionGSTALikeTrend.triggered.connect(self.SetGSTATrends)
+        self.actionGSTALikeTrend.triggered.connect(self.SetGSTATrendCases)
         self.actionClearViewText.triggered.connect(self.SetClearText)
         self.actionTrendList.triggered.connect(self.PrintTrendsList)
+        self.actionTrendSet.triggered.connect(self.SetMSTATrendCases)
+        self.actionModifyVariables.triggered.connect(self.ModifyVariables)
+        self.actionDeleteVariables.triggered.connect(self.DeleteOneVariable)
+        #  self.actionResetInitial.triggered.connect(self.resetInitialVariables)
+        self.actionDeleteAllTrends.triggered.connect(self.DeleteAllTrends)
+        self.actionComputeMSTA.triggered.connect(self.ComputeMSTA)
 
         self.setGeometry(10, 10, 400, 400)
         self.setWindowTitle('Multi Sediment Trend Analysis')
@@ -91,20 +101,22 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         self.menuVariables.setEnabled(False)
         self.menuTrends.setEnabled(False)
         self.actionGSTALikeTrend.setEnabled(False)
-        self.menuRun.setEnabled(False)
+        self.computeMSTA.setEnabled(False)
 
         # Variables
         self.iface = _iface
         self.workingDir = os.path.expanduser("~")
         self.points = []
         # A list of all the variables in the current dataset
-        self.variablesName = []
+        self.totalVariablesName = []
+        # A list of all the variables objects of class mstaVariable
+        self.variablesObjectsList = []
         # The list of the current selected variable names, i.e. the working variables
         self.selectedVariableNames = []
         # A dict defining the three GSTA variables on the current dataset
         self.GSTAVariables = {'mean':'','sorting':'','skewness':''}
-        # The list of currend trend case(s)
-        self.trendCases = []
+        # The current trend case(s) object
+        self.trendCases = mstaComposedTrendCase()
         # "Central Widget" expands to fill all available space
         self.textwidget = QTextEdit()
         self.setCentralWidget(self.textwidget)
@@ -113,14 +125,16 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         fontWeight = self.textwidget.currentFont().weight()
         self.textwidget.setTabStopWidth(fontWeight)
 
-
+    ###############################################
     def DisplayAboutMSTA(self):
         about=aboutMSTA()
         about.exec()
 
+    ###############################################
     def SetWorkingDirectory(self):
         self.workingDir = QFileDialog.getExistingDirectory(self, self.workingDir, "Select working directory...", QFileDialog.ShowDirsOnly)
 
+    ###############################################
     def DataFileImport(self):
         # Choice of the file name
         fullPathFileName,_= QFileDialog.getOpenFileName(self,"Open a data file", 
@@ -164,22 +178,23 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
             QMessageBox.critical(self, "Temporary layer error", "An error occured while creating temporary layer.")
             return
         try:
-            self.createDB(dataset, varnames, coordsset, coordsnames)
+            self.createPointDB(dataset, varnames, coordsset, coordsnames)
         except:
             QMessageBox.critical(self, "Database initialisation error", "An error occured during database creation")
             return
 
         # Save information before living, just de names, variables are not created yet
-        self.variablesName = varnames.copy()
+        self.totalVariablesName = varnames.copy()
         self.updateLogViewPort(6, f'{len(self.points)} points created')
-        self.updateLogViewPort(1, self.variablesName)
+        self.updateLogViewPort(1, self.totalVariablesName)
         # All variables are selected by default at the beginning
-        self.selectedVariableNames = self.variablesName.copy()
+        self.selectedVariableNames = self.totalVariablesName.copy()
         # Data set is loaded, variables and trends can be manage
         self.menuVariables.setEnabled(True)
         self.menuTrends.setEnabled(True)
         return
 
+    ###############################################
     # _dataset: np.array of n samples lines and m variables columns
     # _varnames: list of the variables names
     # _coordsnames: list of the two coordinates variables
@@ -191,7 +206,7 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         theProj.setCrs(QgsProject.instance().crs())
         result = theProj.exec_()
         if result == QDialog.Rejected:
-            QMessageBox.information(self, "Reference system", "Layer refrence system is the same to the current project")
+            QMessageBox.information(self, "Reference system", "Layer reference system is the same to the current project")
             URI=f'point?crs={QgsProject.instance().crs().authid()}'
         else:
             URI=f'point?crs={theProj.crs().authid()}'
@@ -220,12 +235,13 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         QgsProject.instance().addMapLayer(vl)
         return
 
+    ###############################################
     # _points: np.array of n samples lines and two coordinates
     # _variables: np.array of n samples lines and m variables columns
     # _coordnames: list of the two coordinates variables
-    # _varnames: list of the variables namess
+    # _varnames: list of the variables names
     # The variable names and values are stored at each point location
-    def createDB(self, _variables, _varnames, _points, _coordnames):
+    def createPointDB(self, _variables, _varnames, _points, _coordnames):
         # first loop over the points
         for i in range(_points.shape[0]):
             # mp is mstaPoint
@@ -237,132 +253,21 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
                 newvar.setID(j+1)
                 newvar.setName(_varnames[j])
                 newvar.setAlias(_varnames[j]) # Alias = name by default
-                newvar.setUnit("other") # By default unknown unit
+                newvar.setUnit("%") # By default % unit
                 newvar.setValue(_variables[i][j])
                 newvar.setDg(0.0) # By default Dg is null
-                newvar.setRange(_variables[i][j],_variables[i][j]) # By default, no range
+                newvar.setRange(0.0) # By default, no range
+                newvar.setSearch(0.0,0.0) # By default omnidirectional
                 newpt.addVariable(newvar)
             self.points.append(newpt)
+        # As each point has the same variable list, the object list is equal to the list of the 1st point by default
+        self.variablesObjectsList = self.points[0].getVariables().copy()
 
-    # Add _text information on the viewport of the application
-    # base on _context (see CONTEXTINFO dict definition)
-    def updateLogViewPort(self, _context, _text):
-        self.textwidget.append(f'{CONTEXTINFO[_context]}')
-        if not _text:
-            self.textwidget.append("\t------")
-        if isinstance(_text, list):
-            _newtext = ''
-            for i in _text:
-                _newtext += f' {i} '
-            self.textwidget.append(_newtext)
-        else:
-            self.textwidget.append(f'\t{_text}')
-
-    # Print the current defined variable(s)
-    def PrintAllVariablesList(self):
-        if not self.variablesName:
-            QMessageBox.information(self, "Variable", "No variables defined yet.")
-            return
-        self.updateLogViewPort(1, self.variablesName)
-
-    # Print the defined trend(s)
-    def PrintTrendsList(self):
-        if len(self.trendCases) == 0:
-            QMessageBox.information(self, "Trend case", "No trend case(s) defined yet.")
-            return
-
-        textInfo = []
-        # As each point containts same variables, we use the first one as default: [0]
-        for v in self.points[0].getVariablesName():
-            if v.getName() in self.selectedVariableNames:
-                newLine=f'{v.getAlias()}_i --- {v.getAlias()}_j'
-                textInfo.append(newLine)
-        self.updateLogViewPort(2, textInfo)
-
-    # Select one variable in the current variable list
-    def SelectOneVariable(self):
-        if not self.variablesName:
-            QMessageBox.information(self, "Variable", "No variables defined yet.")
-            return
-        theSelectedVarDlg = QInputDialog(self)
-        theSelectedVarDlg.setCancelButtonText("Cancel")
-        theSelectedVarDlg.setOkButtonText("Select")
-        theSelectedVarDlg.setOption(QInputDialog.UseListViewForComboBoxItems)
-        theSelectedVar, ok = theSelectedVarDlg.getItem(self,"Selection","Select a variable",self.variablesName,0,False)
-        if ok and theSelectedVar:
-            self.selectedVariableNames.clear()
-            self.updateLogViewPort(5, theSelectedVar)
-            self.selectedVariableNames.append(theSelectedVar)
-
-    # Select all the variables
-    def SelectAllVariables(self):
-        if not self.variablesName:
-            QMessageBox.information(self, "Variable", "No variables defined yet.")
-            return
-        self.updateLogViewPort(5, self.variablesName)
-        self.selectedVariableNames.clear()
-        self.selectedVariableNames = self.variablesName.copy()
-
-    # Definition of the trend case(s) for a GSTA analysis
-    def SetGSTATrends(self):
-        dlg = setGSTATrendCases(self.selectedVariableNames)
-        result = dlg.exec()
-        if result and len(dlg.trendCaseList) > 0:
-            self.trendCases = dlg.getTrendCaseList()
-            if len(self.selectedVariableNames) == 0 or \
-                    self.GSTAVariables['mean'] == "" or \
-                    self.GSTAVariables['sorting'] == "" or \
-                    self.GSTAVariables['skewness'] == "":
-                msg = "You just defined GSTA trend case(s) to study.\n" \
-                      "You have now to defined the corresponding GSTA variables to use\n for mean, sorting and skewness"
-                QMessageBox.information(self, "GSTA Variables", msg)
-            else:
-                # TODO: gérer la mise a jour de l'operand de chaque variable en fonction des cas choisis
-                return
-
-    # Definition of the GSTA variables to use for mean, sorting and skewness
-    def SetGSTAVariables(self):
-        # Global variables should be defined
-        if not self.variablesName:
-            QMessageBox.information(self, "Variable", "No variables loaded yet.")
-            return
-        # Check if previous GSTA variables definition exists
-        if self.GSTAVariables['mean'] or self.GSTAVariables['sorting'] or self.GSTAVariables['skewness']:
-            msg = "Previous definition exist:\nmean:{} sorting:{}, skewness:{}\nDo you want to change ?".format(self.GSTAVariables['mean'],
-                                                                                      self.GSTAVariables['sorting'],
-                                                                                      self.GSTAVariables['skewness'])
-            if QMessageBox.information(self, "GSTA Variables", msg, QMessageBox.Yes | QMessageBox.No) == QMessageBox.No:
-                return
-        # Launch the dialog for definition of GSTA variables
-        dlg = setGSTAVariablesDlg(self.variablesName)
-        result = dlg.exec()
-        if not result or not dlg.areGSTAVariablesSet():
-            QMessageBox.information(self, "GSTA Variables", "No GSTA variables defined yet")
-            return
-        # Clear the names of the current variable list
-        self.selectedVariableNames.clear()
-        # construction of the new list of the working variable names
-        self.selectedVariableNames.append(dlg.getMeanVariable())
-        self.updatePointsDB(0, [dlg.getMeanVariable(),'mean']) # Change of the alias over the points database
-
-        self.selectedVariableNames.append(dlg.getSortingVariable())
-        self.updatePointsDB(0, [dlg.getSortingVariable(), 'sorting']) # Change of the alias over the points database
-
-        self.selectedVariableNames.append(dlg.getSkewnessVariable())
-        self.updatePointsDB(0, [dlg.getSkewnessVariable(), 'skewness']) # Change of the alias over the points database
-
-        self.updateLogViewPort(5, self.selectedVariableNames)
-        # GSTA variables are defined, thrends can be manage
-        self.actionGSTALikeTrend.setEnabled(True)
-
-    def SetClearText(self):
-        self.textwidget.clear()
-
-    # Function to update the different parameters of the variables in the points database
-    # _code : king of update to operate (see UPDATEDB definition)
-    # _newvalue : list of changes to apply in relation with _code
+    ###############################################
+    # Function to update the variables in the points database
+    # _newValue : list of changes to apply in relation with _code
     # this function make the change(s) only on current selected variables.
-    def updatePointsDB(self, _code, _newvalue):
+    def updatePointsDB(self, _newValue):
         progress = QProgressDialog("Update points...", "Cancel", 0, len(self.points), self)
         progress.setWindowFlags(QtCore.Qt.Dialog | QtCore.Qt.FramelessWindowHint | QtCore.Qt.CustomizeWindowHint)
         progress.setModal(True)
@@ -373,17 +278,192 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         for p in self.points:
             i = i + 1
             progress.setValue(i)
-            if _code == UPDATEDB['varalias']:
-                assert(len(_newvalue) == 2) # should have the variable name first and the new alias of this variable
-                for v in p.variables:
-                    if _newvalue[0] == v.getName(): # Changes are operate on actual selected variables(s)
-                        v.setAlias(_newvalue[1])
-                continue
-            if _code == UPDATEDB['varrange']:
-                assert (len(_newvalue) == 3)  # should have the variable name first and new min, max values of this variable
-                for v in p.variables:
-                    if _newvalue[0] == v.getName(): # Changes are operate on actual selected variables(s)
-                        v.setRange(_newvalue[1], _newvalue[2])
-                continue
+            for newv in _newValue:
+                p.updateVariable(newv)
         progress.close()
+        return
+
+    ###############################################
+    # Add _text information on the viewport of the application
+    # base on _context (see CONTEXTINFO dict definition)
+    def updateLogViewPort(self, _context, _text):
+        dt = datetime.now()
+        self.textwidget.append(f'{dt.strftime("%d %b %Y, %H:%M:%S")}: {CONTEXTINFO[_context]}')
+        if not _text:
+            self.textwidget.append("\t------")
+        if isinstance(_text, list):
+            for i in _text:
+                self.textwidget.append(f'{i.__repr__()}\n')
+        else:
+            self.textwidget.append(f'{_text.__repr__()}\n')
+
+    ###############################################
+    # Print the current defined variable(s)
+    def PrintAllVariablesList(self):
+        if not self.totalVariablesName:
+            QMessageBox.information(self, "Variable", "No variables defined yet.")
+            return
+        # Print all the current loaded variables
+        self.updateLogViewPort(1, self.variablesObjectsList)
+
+    ###############################################
+    # Print the current selected variable(s)
+    def PrintSelectedVariablesList(self):
+        if not self.selectedVariableNames:
+            QMessageBox.information(self, "Variable", "No variables defined yet.")
+            return
+        # Print the current selected variables
+        self.updateLogViewPort(1, [v for v in self.variablesObjectsList if v.getName() in self.selectedVariableNames])
+
+    ###############################################
+    # Print the defined trend(s)
+    def PrintTrendsList(self):
+        if self.trendCases.getTrendCount() == 0:
+            QMessageBox.information(self, "Trend case", "No trend case(s) defined yet.")
+            return
+        self.updateLogViewPort(2, self.trendCases.__repr__())
+
+    ###############################################
+    # Definition of the GSTA variables to use for mean, sorting and skewness
+    def SetGSTAVariables(self):
+        # Global variables should be defined
+        if not self.totalVariablesName:
+            QMessageBox.information(self, "Variable", "No variables loaded yet.")
+            return
+        # Check if previous GSTA variables definition exists
+        if self.GSTAVariables['mean'] or self.GSTAVariables['sorting'] or self.GSTAVariables['skewness']:
+            msg = "Previous definition exist:\nmean: {}\nsorting: {}\nskewness: {}\nDo you want to change ?".format(self.GSTAVariables['mean'],
+                                                                                      self.GSTAVariables['sorting'],
+                                                                                      self.GSTAVariables['skewness'])
+            if QMessageBox.question(self, "GSTA Variables", msg) == QMessageBox.No:
+                return
+        # Launch the dialog for definition of GSTA variables
+        dlg = setGSTAVariablesDlg(self.totalVariablesName)
+        result = dlg.exec()
+        if not result or not dlg.areGSTAVariablesSet():
+            QMessageBox.information(self, "GSTA Variables", "No GSTA variables defined yet")
+            self.updateLogViewPort(1, "No GSTA variables defined yet")
+            return
+
+        # Update/fill the dictionnary of GSTA variables links
+        self.GSTAVariables['mean'] = dlg.getMeanVariableName()
+        self.GSTAVariables['sorting'] = dlg.getSortingVariableName()
+        self.GSTAVariables['skewness'] = dlg.getSkewnessVariableName()
+
+        # Clear and update the names of the current selected variable name list
+        self.selectedVariableNames.clear()
+        self.selectedVariableNames.append(dlg.getMeanVariableName())
+        self.selectedVariableNames.append(dlg.getSortingVariableName())
+        self.selectedVariableNames.append(dlg.getSkewnessVariableName())
+
+        # Update the global variable list (mstaVariable)
+        gstaVariableList = dlg.getGSTAVariablesDefinitions()
+        for lv in self.variablesObjectsList:
+            for nv in gstaVariableList:
+                if nv.getName() == lv.getName(): # Change only the variables used for GSTA
+                    del self.variablesObjectsList[self.variablesObjectsList.index(lv)]
+                    self.variablesObjectsList.append(nv)
+
+        self.updatePointsDB(self.variablesObjectsList) # Update the corresponding variables at each points
+        self.updateLogViewPort(5, self.selectedVariableNames)
+
+        # GSTA variables are defined, trends can be manage
+        self.actionGSTALikeTrend.setEnabled(True)
+
+    ###############################################
+    def SetClearText(self):
+        self.textwidget.clear()
+
+    ###############################################
+    def ModifyVariables(self):
+        # Get the name of the variable of interest from user (only cuurent selected variables are listed)
+        variable, ok = QInputDialog.getItem(self, 'Modify a variable', 'Select a variable', self.selectedVariableNames, 0, False)
+        if ok:
+            for vol in self.variablesObjectsList:
+                if vol.getName() == variable:
+                    # Open dialog of variables settings
+                    dlg = setMSTAVariableOptionDlg(vol)
+                    ok = dlg.exec()
+                    if ok:
+                        # Update the list of all the mstaVariable
+                        newVar = dlg.getVariableDefinition()
+                        del self.variablesObjectsList[self.variablesObjectsList.index(vol)]
+                        self.variablesObjectsList.append(newVar)
+                        self.updatePointsDB(self.variablesObjectsList)  # Update the corresponding variables at each points
+                        self.updateLogViewPort(1, "Variable {} has been modified.".format(variable))
+                        return
+        return
+
+    ###############################################
+    def DeleteOneVariable(self):
+        # Get the name of the variableof interest from user
+        variable, ok = QInputDialog.getItem(self, 'Delete a variable', 'Select a variable', self.totalVariablesName, 0,
+                                            False)
+        if ok:
+            for vol in self.variablesObjectsList:
+                if vol.getName() == variable:
+                    if QMessageBox.question(self, "Variable", "Are you sure you want to delete variable {} ?".format(variable)) == QMessageBox.Yes:
+                        # Delete the variable name only from selected variable name list, variableObjectsList is not modified
+                        del self.selectedVariableNames[self.selectedVariableNames.index(variable)]
+                        self.updateLogViewPort(1, "Variable {} has been delete.".format(variable))
+                    break
+
+    '''
+    ###############################################
+    def resetInitialVariables(self):
+        if QMessageBox.question(self, "Variable",
+                                "Are you sure you want to reinitilized to initial variable set ?") == QMessageBox.Yes:
+            # Retreive initial variable name list
+            self.selectedVariableNames.clear()
+            assert len(self.totalVariablesName) > 0
+            self.selectedVariableNames = self.totalVariablesName.copy()
+            # Reinitialized the list of variable objects to variables contained in initial dataset
+            self.variablesObjectsList.clear()
+            self.variablesObjectsList = self.points[0].getVariables().copy()
+            self.updatePointsDB(self.variablesObjectsList)  # Update the corresponding variables at each points
+            # In case GSTA variables were previously defined, it is reset
+            self.GSTAVariables = {'mean': '', 'sorting': '', 'skewness': ''}
+            # Print information
+            self.updateLogViewPort(1, "Variables list has been set to initial to default current dataset.")
+            self.updateLogViewPort(1, self.variablesObjectsList)
+    '''
+    ###############################################
+    # Definition of the trend case(s) for a GSTA analysis
+    def SetGSTATrendCases(self):
+        dlg = setGSTATrendCasesDlg(self.selectedVariableNames, self.variablesObjectsList, self.trendCases)
+        result = dlg.exec()
+        if result and dlg.getTrendCases().getTrendCount() > 0:
+            self.trendCases = dlg.getTrendCases()
+            if len(self.selectedVariableNames) == 0 or \
+                    self.GSTAVariables['mean'] == "" or \
+                    self.GSTAVariables['sorting'] == "" or \
+                    self.GSTAVariables['skewness'] == "":
+                msg = "You just defined GSTA trend case(s) to study.\n" \
+                      "You have now to defined the corresponding GSTA variables to use\n for mean, sorting and skewness"
+                QMessageBox.information(self, "GSTA Variables", msg)
+            else:
+                # TODO: gérer la mise a jour de l'operand de chaque variable en fonction des cas choisis
+                 return
+
+    ###############################################
+    def SetMSTATrendCases(self):
+        dlg = setMSTATrendCasesDlg(self.selectedVariableNames, self.variablesObjectsList, self.trendCases) # Variable definition is the same for all points
+        result = dlg.exec()
+        if result:
+            self.trendCases = dlg.getTrendCases()
+            self.computeMSTA.setEnabled(True)
+            return
+
+    ###############################################
+    def DeleteAllTrends(self):
+        if self.trendCases.getTrendCount() == 0:
+            QMessageBox.information(self, "Trend case(s)", "No trend case(s) defined yet.")
+            return
+        if QMessageBox.question(self, "Trend cases(s)", "Are you sure you want to delete all defined trends ?") == QMessageBox.Yes:
+            self.trendCases = mstaComposedTrendCase()
+            self.computeMSTA.setEnabled(False)
+        return
+
+    def ComputeMSTA(self):
+        QMessageBox.information(self, "*/*\*/*\*", "Not implemented yet")
         return

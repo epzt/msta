@@ -27,6 +27,7 @@
     <property name="title">
      <string>File</string>
     </property>
+    <addaction name="actionSetWorkingDirectory"/>
     <addaction name="actionFileImport"/>
     <addaction name="separator"/>
     <addaction name="actionAppQuit"/>
@@ -35,33 +36,16 @@
     <property name="title">
      <string>Variables</string>
     </property>
-    <widget class="QMenu" name="menuVariableModify">
+    <widget class="QMenu" name="menuList">
      <property name="title">
-      <string>Modify</string>
+      <string>List</string>
      </property>
-     <addaction name="actionModifyVariablesName"/>
-     <addaction name="actionModifyVariablesUnits"/>
-     <addaction name="actionVModifyVariablesRange"/>
-     <addaction name="actionModifyVariableResearchArea"/>
+     <addaction name="actionVariableListAll"/>
+     <addaction name="actionVariableListSelected"/>
     </widget>
-    <widget class="QMenu" name="menuVariableDelete">
-     <property name="title">
-      <string>Delete</string>
-     </property>
-     <addaction name="actionDeleteAllVariables"/>
-     <addaction name="actionDeleteVariables"/>
-    </widget>
-    <widget class="QMenu" name="menuVariableSelect">
-     <property name="title">
-      <string>Select</string>
-     </property>
-     <addaction name="actionSelectAllVariables"/>
-     <addaction name="actionSelectOneVariable"/>
-    </widget>
-    <addaction name="actionVariableListAll"/>
-    <addaction name="menuVariableSelect"/>
-    <addaction name="menuVariableModify"/>
-    <addaction name="menuVariableDelete"/>
+    <addaction name="menuList"/>
+    <addaction name="actionModifyVariables"/>
+    <addaction name="actionDeleteVariables"/>
     <addaction name="separator"/>
     <addaction name="actionGSTALikeVariable"/>
    </widget>
@@ -69,33 +53,19 @@
     <property name="title">
      <string>Trends</string>
     </property>
-    <widget class="QMenu" name="menuDeleteTrends">
-     <property name="title">
-      <string>Delete</string>
-     </property>
-     <addaction name="actionDeleteAllTrends"/>
-     <addaction name="actionDeleteTrendsSelection"/>
-    </widget>
+    <addaction name="actionTrendSet"/>
     <addaction name="actionTrendList"/>
-    <addaction name="actionModifyTrends"/>
-    <addaction name="menuDeleteTrends"/>
+    <addaction name="actionDeleteAllTrends"/>
     <addaction name="separator"/>
     <addaction name="actionGSTALikeTrend"/>
    </widget>
    <widget class="QMenu" name="menuSettings">
     <property name="title">
-     <string>Settings</string>
+     <string>View</string>
     </property>
-    <widget class="QMenu" name="menuView">
-     <property name="title">
-      <string>View</string>
-     </property>
-     <addaction name="actionLoadViewText"/>
-     <addaction name="actionSaveViewText"/>
-     <addaction name="actionClearViewText"/>
-    </widget>
-    <addaction name="actionSetWorkingDirectory"/>
-    <addaction name="menuView"/>
+    <addaction name="actionSaveViewText"/>
+    <addaction name="actionLoadViewText"/>
+    <addaction name="actionClearViewText"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -103,24 +73,23 @@
     </property>
     <addaction name="actionAbout"/>
    </widget>
-   <widget class="QMenu" name="menuRun">
+   <widget class="QMenu" name="computeMSTA">
     <property name="title">
      <string>Run</string>
     </property>
-    <addaction name="actionMSTA"/>
-    <addaction name="actionGSTA"/>
+    <addaction name="actionComputeMSTA"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuSettings"/>
    <addaction name="menuVariables"/>
    <addaction name="menuTrends"/>
-   <addaction name="menuRun"/>
+   <addaction name="computeMSTA"/>
    <addaction name="menuHelp"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionFileImport">
    <property name="text">
-    <string>Import...</string>
+    <string>Import dataset...</string>
    </property>
   </action>
   <action name="actionModifyVariablesName">
@@ -150,7 +119,7 @@
   </action>
   <action name="actionDeleteVariables">
    <property name="text">
-    <string>One...</string>
+    <string>Delete...</string>
    </property>
   </action>
   <action name="actionAppQuit">
@@ -185,10 +154,10 @@
   </action>
   <action name="actionDeleteAllTrends">
    <property name="text">
-    <string>All</string>
+    <string>Delete all...</string>
    </property>
   </action>
-  <action name="actionDeleteTrendsSelection">
+  <action name="actionDeleteOneTrends">
    <property name="text">
     <string>One...</string>
    </property>
@@ -229,14 +198,9 @@
     <string>GSTA like variables...</string>
    </property>
   </action>
-  <action name="actionTrendList">
+  <action name="actionTrendSet">
    <property name="text">
-    <string>List</string>
-   </property>
-  </action>
-  <action name="actionVariableListAll">
-   <property name="text">
-    <string>List</string>
+    <string>Set/modify...</string>
    </property>
   </action>
   <action name="actionClear">
@@ -267,6 +231,41 @@
   <action name="actionClearViewText">
    <property name="text">
     <string>Clear</string>
+   </property>
+  </action>
+  <action name="actionTrendList">
+   <property name="text">
+    <string>List</string>
+   </property>
+  </action>
+  <action name="actionModifyVariables">
+   <property name="text">
+    <string>Modify...</string>
+   </property>
+  </action>
+  <action name="actionResetInitial">
+   <property name="text">
+    <string>Reset initial</string>
+   </property>
+  </action>
+  <action name="actionAll">
+   <property name="text">
+    <string>All...</string>
+   </property>
+  </action>
+  <action name="actionVariableListAll">
+   <property name="text">
+    <string>All</string>
+   </property>
+  </action>
+  <action name="actionVariableListSelected">
+   <property name="text">
+    <string>Selected</string>
+   </property>
+  </action>
+  <action name="actionComputeMSTA">
+   <property name="text">
+    <string>Compute...</string>
    </property>
   </action>
  </widget>

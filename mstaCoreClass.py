@@ -26,7 +26,7 @@ from qgis.core import QgsPoint
 import numpy as np
 
 # Trend operations
-TREND = {
+COMP = {
     'sup' : '>',
     'inf' : '<',
     'none' : ''
@@ -42,8 +42,10 @@ OPERAND = {
 
 # Unit of variables
 UNIT = {
-    'percent' : '%',
-    'metre' : 'm',
+    '%' : 'percent',
+    'm' : 'metre',
+    'mm' : 'millimetre',
+    'mu' : 'micronmetre',
     'phi' : 'phi',
     'other' : 'unknown'
 }
@@ -96,7 +98,7 @@ class mstaPoint(QgsPoint):
         """Constructor."""
         super().__init__(_x,_y)
         self.ID = 0
-        self.variables = []
+        self.variables = [] # List of mstaVariable type
 
     def __repr__(self):
         return(f'ID: {self.ID}, {super().asWkt()}\n\t{[i for i in  self.variables]}')
@@ -107,11 +109,24 @@ class mstaPoint(QgsPoint):
     def getID(self):
         return self.ID
 
-    def getVariablesName(self):
+    def getVariables(self):
         return self.variables
+
+    def updateVariable(self, _newVar):
+        for v in self.variables:
+            if v.getName() == _newVar.getName():
+                # Backup the value of the variable for this point because this is the only field
+                # the user cannot change/modify
+                _newVar.setValue(v.getValue())
+                # Delete the variable to update in the list
+                del self.variables[self.variables.index(v)]
+                # Append the updated variable
+                self.variables.append(_newVar)
+                return
 
     def addVariable(self, _newvar):
         # Check if _newvar is still present the variable list at this point
+        #if _newvar in self.variables and not isinstance(mstaVariable, _newvar):
         if _newvar in self.variables:
             return False
         self.variables.append(_newvar)
@@ -149,14 +164,14 @@ class mstaVariable():
         self.ID = 0
         self.name = ""
         self.alias = ""
-        self.unit = "other" #Default value, i.e. unknown type
+        self.unit = "%" #Default value, i.e. percent
         self.value = 0.0
         self.dg = 0.0
         self.range = 0.0 # +/- range centred around value
         self.search = RADIUS(0.0,0.0)
 
     # Default operations
-    # +
+    # + addition
     def __add__(self,_other):
         res = mstaVariable()
         if not _other.__class__ is mstaVariable:
@@ -177,7 +192,7 @@ class mstaVariable():
         self.range = self.getRange()+self._other.getRange()
         self.value = self.value+_other.getValue()
         return self
-    # -
+    # - substraction
     def __sub__(self,_other):
         res = mstaVariable()
         if not _other.__class__ is mstaVariable:
@@ -198,7 +213,7 @@ class mstaVariable():
         self.range = self.getRange()+self._other.getRange()
         self.value = self.value-_other.getValue()
         return self
-    # *
+    # * multiplication
     def __mul__(self,_other):
         res = mstaVariable()
         if not _other.__class__ is mstaVariable:
@@ -219,9 +234,8 @@ class mstaVariable():
         self.range = (_other.getValue()*self.getRange())+(self.getValue()*_other.getRange())
         self.setvalue = self.value*_other.getValue()
         return self
-
-    # /
-    def __truediv__(self, other):
+    # / division
+    def __truediv__(self, _other):
         res = mstaVariable()
         if not _other.__class__ is mstaVariable:
             return NotImplemented
@@ -237,28 +251,28 @@ class mstaVariable():
         res.range = (1/_other.getValue())*(self.getRange()+(self.getValue()/_other.getgetValue()*_other.getRange()))
         res.setValue(self.getValue() / _other.getValue())
         return res
-    def __itruediv__(self, other):
+    def __itruediv__(self, _other):
         self.range = (1/_other.getValue())*(self.getRange()+(self.getValue()/_other.getgetValue()*_other.getRange()))
         self.value = self.value / _other.getValue()
         return self
-    # ==
+    # == equality
     def __eq__(self,_other):
         if self.isInRange(_other.getValue()) or _other.isInRange(self.getValue()):
             return True
         else:
             return False
-    # !=
+    # != non equility
     def __ne__(self,_other):
         if not self.isInRange(_other.getValue()) and not _other.isInRange(self.getValue()):
             return True
         else:
             return False
-    # <
+    # < lower than
     def __lt__(self,_other):
         return(self.getMax() < _other.getMin())
     def __le__(self,_other):
         return(self.getMax() <= _other.getMin())
-    # >
+    # > upper thn
     def __gt__(self,_other):
         return(self.getMin() > _other.getMax())
     def __ge__(self,_other):
@@ -266,9 +280,10 @@ class mstaVariable():
 
     # Print itself
     def __repr__(self):
-        return(f'Name: {self.name}, alias: {self.alias} unit: {self.unit}\n \
-                value: {self.value}, distance: {self.dg}\n \
-                range: {self.getMin()},{self.getMax()}')
+        return(f'Name: {self.name}, alias: {self.alias}\n \
+                distance: {self.dg}, unit: {self.unit}\n \
+                range: +/-{self.getRange()}\n \
+                dir : {self.getDirection()}, Tol: {self.getToleranceAngle()}')
 
     def setID(self,_ID):
         self.ID = _ID
@@ -286,10 +301,10 @@ class mstaVariable():
         return self.alias
 
     def setUnit(self,_unit):
-        assert UNIT[_unit] != ''
+        assert _unit in UNIT.keys()
         self.unit = _unit
     def getUnit(self):
-        return UNIT[self.unit]
+        return self.unit
 
     def setValue(self,_value):
         self.value = _value
@@ -323,6 +338,10 @@ class mstaVariable():
     def isInRange(self, _value):
         return(_value >= self.getMin() and _value <= self.getMax())
 
+    # Return False only for phi units and other (not affected)
+    def isMetric(self):
+        return not (self.getUnit() == 'phi' or self.getUnit() == 'other')
+
 #############################################################################
 ## class mstaTrendCase: manage trend case                                  ##
 #############################################################################
@@ -330,7 +349,7 @@ class mstaTrendCase():
     def __init__(self, _variable):
         """Constructor."""
         self.ID = -1
-        self.trend = TREND['none']
+        self.compSigne = COMP['none']
         assert _variable
         # Normally one case should be defined for same variable but
         # it is eventually possible to manage 2 different variables
@@ -344,27 +363,48 @@ class mstaTrendCase():
 
     # Print itself
     def __repr__(self):
-        return (f'{self.leftVar} {TREND[self.trend]} {self.rightVar}')
+        if self.compSigne != '':
+            return (f'{self.leftVar.getAlias()}(i) {self.compSigne} {self.rightVar.getAlias()}(j)')
+
+    def getTrendText(self):
+        return (f'{self.leftVar.getAlias()}(i) {self.compSigne} {self.rightVar.getAlias()}(j)')
+
+    # define equality or not between two mstaTrendCase objects
+    def __eq__(self,_other):
+        if self.getLeftVar().getName() == _other.getLeftVar().getName() and \
+           self.getRightVar().getName() == _other.getRightVar().getName() and \
+           self.getComp() == _other.getComp():
+            return True
+        else:
+            return False
 
     def getID(self):
         return self.ID
 
     def setID(self, _id):
-        assert _id >= 0
+        assert _id >= -1
         self.ID = _id
 
-    def setOperand(self, _op):
-        assert TREND[_op]
-        self.trend = TREND[_op]
+    def setComp(self, _op):
+        assert _op != ''
+        self.compSigne = COMP[_op]
 
-    def getOperand(self):
-        return(self.trend)
+    def getComp(self):
+        return(self.compSigne)
 
     def setLeftVar(self, _var):
+        assert isinstance(_var, mstaVariable)
         self.leftVar = _var
 
+    def getLeftVar(self):
+        return self.leftVar
+
     def setRightVar(self, _var):
+        assert isinstance(_var, mstaVariable)
         self.rightVar = _var
+
+    def getRightVar(self):
+        return self.rightVar
 
 #############################################################################
 ## class mstaComposedTrendCase: manage trend case                          ##
@@ -375,6 +415,26 @@ class mstaComposedTrendCase():
         self.ID = -1
         self.linkOperand = []
         self.trendList = []
+        self.level = 1  # Define the level of the composed trend, must be in {1,2}
+
+    def __repr__(self):
+        if len(self.trendList) == 0:
+            return
+        return([t.__repr__() for t in self.trendList])
+
+    def getTrendsText(self):
+        retValue = []
+        for t in self.trendList:
+            if isinstance(t, mstaTrendCase):
+                retValue.append(f'{t.getTrendText()}')
+        return retValue
+
+    # Equality between two mstacomposedtrendcase objects
+    def __eq__(self,_other):
+        if self.getTrend() == _other.getTrend():
+            return True
+        else:
+            return False
 
     def getID(self):
         return self.ID
@@ -383,9 +443,36 @@ class mstaComposedTrendCase():
         assert _id >= 0
         self.ID = _id
 
-    def getTrend(self, _id):
-        assert _id <= len(self.trendList)
-        return self.trendList[_id]
+    # return the higher ID of mstaTrendCase object in the list
+    def getMaxCaseID(self):
+        maxID = -1  # just to be sure to get the max, even if not trend is defined (should be -1)
+        for t in self.trendList:
+            assert isinstance(t, mstaTrendCase)
+            if maxID < t.getID():
+                maxID = t.getID()
+        return maxID
+
+    def getLevel(self):
+        return self.level
+
+    def setLevel(self, _lvl):
+        self.level = _lvl
+
+    def addOperand(self, _op):
+        self.linkOperand.append(OPERAND[_op])
+
+    # Change the operand between two
+    def setOperand(self, _id, _op):
+        assert _id < len(self.linkOperand) and _id < len(self.trendList)-1
+        self.linkOperand[_id] = OPERAND[_op]
+
+    def getTrend(self, *args):
+        if len(args) > 0:
+            _id = args[0]
+            assert _id < len(self.trendList)
+            return self.trendList[_id]
+        else:
+            return self.trendList
 
     def getFirstTrend(self):
         assert len(self.trendList) >= 1
@@ -393,17 +480,37 @@ class mstaComposedTrendCase():
 
     def getLastTrend(self):
         assert len(self.trendList) >= 1
-        return self.trendList[len(self.trendList)-1]
+        return self.trendList[-1]
+
+    def getTrendCount(self):
+        return len(self.trendList)
 
     def addTrendCase(self, _trendcase, _operand):
-        assert isinstance(_trendcase, mstaTrendCase)
+        assert isinstance(_trendcase, mstaTrendCase) or isinstance(_trendcase, mstaComposedTrendCase)
         # if more than one trend case
-        if len(self.trendList) > 0:
-            assert OPERAND[_operand] # is _operand valid
+        #if len(self.trendList) > 0:
+        #    assert OPERAND[_operand] # is _operand valid
 
         self.trendList.append(_trendcase)
-        self.operand.append(OPERAND[_operand])
+        self.linkOperand.append(OPERAND[_operand])
         # there must be (operand + 1) trend cases
-        assert len(self.trendList) == len(self.linkOperand) + 1
+        # assert len(self.trendList) == len(self.linkOperand) + 1
+
+    def deleteTrendCase(self, _trendcase):
+        assert isinstance(_trendcase, mstaTrendCase) or isinstance(_trendcase, mstaComposedTrendCase)
+        # if more than one trend case
+        #if len(self.trendList) > 0:
+        #    assert OPERAND[_operand] # is _operand valid
+        for t in self.trendList:
+            if t == _trendcase:
+                index = self.trendList.index(t)
+                assert index < len(self.linkOperand)
+                if index == 0: # This is the first trend of the list
+                    del self.linkOperand[0] # First element of operand list
+                else:
+                    del self.linkOperand[index-1]
+                self.trendList.remove(t)
+        return
+
 
    
