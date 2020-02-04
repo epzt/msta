@@ -43,6 +43,8 @@
      <addaction name="actionVariableListAll"/>
      <addaction name="actionVariableListSelected"/>
     </widget>
+    <addaction name="actionSelectVariables"/>
+    <addaction name="actionClearSelect"/>
     <addaction name="menuList"/>
     <addaction name="actionModifyVariables"/>
     <addaction name="actionDeleteVariables"/>
@@ -71,6 +73,10 @@
     <property name="title">
      <string>Help</string>
     </property>
+    <addaction name="separator"/>
+    <addaction name="actionVariableSettings"/>
+    <addaction name="actionTrendSettings"/>
+    <addaction name="separator"/>
     <addaction name="actionAbout"/>
    </widget>
    <widget class="QMenu" name="computeMSTA">
@@ -268,9 +274,30 @@
     <string>Compute...</string>
    </property>
   </action>
+  <action name="actionVariableSettings">
+   <property name="text">
+    <string>Variable settings</string>
+   </property>
+  </action>
+  <action name="actionTrendSettings">
+   <property name="text">
+    <string>Trend settings</string>
+   </property>
+  </action>
+  <action name="actionSelectVariables">
+   <property name="text">
+    <string>Select</string>
+   </property>
+   <property name="toolTip">
+    <string notr="true">Select</string>
+   </property>
+  </action>
+  <action name="actionClearSelect">
+   <property name="text">
+    <string>Clear select...</string>
+   </property>
+  </action>
  </widget>
- <resources>
-  <include location="resources.qrc"/>
- </resources>
+ <resources/>
  <connections/>
 </ui>

@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'ui_multi_sediment_trend_analysis_dialog_base.ui'
 #
-# Created by: PyQt5 UI code generator 5.10.1
+# Created by: PyQt5 UI code generator 5.9.2
 #
 # WARNING! All changes made in this file will be lost!
 
@@ -16,7 +16,7 @@ class Ui_MainWindow(object):
         self.centralwidget.setObjectName("centralwidget")
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 641, 21))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 641, 20))
         self.menubar.setObjectName("menubar")
         self.menuFile = QtWidgets.QMenu(self.menubar)
         self.menuFile.setObjectName("menuFile")
@@ -107,12 +107,23 @@ class Ui_MainWindow(object):
         self.actionVariableListSelected.setObjectName("actionVariableListSelected")
         self.actionComputeMSTA = QtWidgets.QAction(MainWindow)
         self.actionComputeMSTA.setObjectName("actionComputeMSTA")
+        self.actionVariableSettings = QtWidgets.QAction(MainWindow)
+        self.actionVariableSettings.setObjectName("actionVariableSettings")
+        self.actionTrendSettings = QtWidgets.QAction(MainWindow)
+        self.actionTrendSettings.setObjectName("actionTrendSettings")
+        self.actionSelectVariables = QtWidgets.QAction(MainWindow)
+        self.actionSelectVariables.setToolTip("Select")
+        self.actionSelectVariables.setObjectName("actionSelectVariables")
+        self.actionClearSelect = QtWidgets.QAction(MainWindow)
+        self.actionClearSelect.setObjectName("actionClearSelect")
         self.menuFile.addAction(self.actionSetWorkingDirectory)
         self.menuFile.addAction(self.actionFileImport)
         self.menuFile.addSeparator()
         self.menuFile.addAction(self.actionAppQuit)
         self.menuList.addAction(self.actionVariableListAll)
         self.menuList.addAction(self.actionVariableListSelected)
+        self.menuVariables.addAction(self.actionSelectVariables)
+        self.menuVariables.addAction(self.actionClearSelect)
         self.menuVariables.addAction(self.menuList.menuAction())
         self.menuVariables.addAction(self.actionModifyVariables)
         self.menuVariables.addAction(self.actionDeleteVariables)
@@ -126,6 +137,10 @@ class Ui_MainWindow(object):
         self.menuSettings.addAction(self.actionSaveViewText)
         self.menuSettings.addAction(self.actionLoadViewText)
         self.menuSettings.addAction(self.actionClearViewText)
+        self.menuHelp.addSeparator()
+        self.menuHelp.addAction(self.actionVariableSettings)
+        self.menuHelp.addAction(self.actionTrendSettings)
+        self.menuHelp.addSeparator()
         self.menuHelp.addAction(self.actionAbout)
         self.computeMSTA.addAction(self.actionComputeMSTA)
         self.menubar.addAction(self.menuFile.menuAction())
@@ -184,4 +199,8 @@ class Ui_MainWindow(object):
         self.actionVariableListAll.setText(_translate("MainWindow", "All"))
         self.actionVariableListSelected.setText(_translate("MainWindow", "Selected"))
         self.actionComputeMSTA.setText(_translate("MainWindow", "Compute..."))
+        self.actionVariableSettings.setText(_translate("MainWindow", "Variable settings"))
+        self.actionTrendSettings.setText(_translate("MainWindow", "Trend settings"))
+        self.actionSelectVariables.setText(_translate("MainWindow", "Select"))
+        self.actionClearSelect.setText(_translate("MainWindow", "Clear select..."))
 

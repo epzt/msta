@@ -1,19 +1,19 @@
 # -*- coding: utf-8 -*-
 
-from PyQt5 import QtGui, QtWidgets
 from .ui_msta_text_file_analysis import Ui_msta_text_file_analysis
+from PyQt5 import QtGui, QtWidgets
 
-YCOORDTEXT = ["y","lat","latitude","coordx","xx","xcoord"]
-XCOORDTEXT = ["x","lon","long","longitude","coordy","yy","ycoord"]
+YCOORDTEXT = ["y", "lat", "latitude", "coordx", "xx", "xcoord"]
+XCOORDTEXT = ["x", "lon", "long", "longitude", "coordy", "yy", "ycoord"]
 
 class IDNAME(object):
-    def __init__(self,_id, _name):
-        self.ID=_id
-        self.NAME=_name
-    def setID(self,_id):
-        self.ID=_id
-    def setNAME(self,_name):
-        self.NAME=_name
+    def __init__(self, _id, _name):
+        self.ID = _id
+        self.NAME = _name
+    def setID(self, _id):
+        self.ID = _id
+    def setNAME(self, _name):
+        self.NAME = _name
     def getID(self):
         return self.ID
     def getNAME(self):
@@ -32,7 +32,6 @@ class pyMstaTextFileAnalysisDialog(QtWidgets.QDialog, Ui_msta_text_file_analysis
         self.setupUi(self)
         # Initialisation
         self.setWindowTitle(initFileName)
-        
         # Variables
         self.fileName = initFileName
         self.currentSeparator = ' '
@@ -40,11 +39,10 @@ class pyMstaTextFileAnalysisDialog(QtWidgets.QDialog, Ui_msta_text_file_analysis
         self.numberLineToSkip = 0
         self.lineItemsList = []
         self.variableNameList = []
-        self.sampleNameIndex = IDNAME(-1,'')
-        self.xCoordinateIndex = IDNAME(-1,'')
-        self.yCoordinateIndex = IDNAME(-1,'')
+        self.sampleNameIndex = IDNAME(-1, '')
+        self.xCoordinateIndex = IDNAME(-1, '')
+        self.yCoordinateIndex = IDNAME(-1, '')
         self.commaDecimalSeparator = False
-        
         # Connections definition
         self.radioSpace.toggled.connect(self.spaceToggled)
         self.radioTabulation.toggled.connect(self.tabulationToggled)
@@ -62,7 +60,6 @@ class pyMstaTextFileAnalysisDialog(QtWidgets.QDialog, Ui_msta_text_file_analysis
         self.sampleNameGroupBox.toggled.connect(self.sampleNameGroupToggled)
         self.numberofLinesToRead.valueChanged.connect(self.setNumberofLinesToRead)
         self.allLinesToRead.toggled.connect(self.setAllLinesToRead)
-
         self.updateTableView()
         
     #----------------------------------------------------
@@ -132,9 +129,9 @@ class pyMstaTextFileAnalysisDialog(QtWidgets.QDialog, Ui_msta_text_file_analysis
         self.updateTableView()
             
     def setXCoord(self, _value):
-       if len(_value) == 0:
-          return
-       self.xCoordinatesIndex = IDNAME(self.xCoordComboBox.currentIndex(), _value)
+        if len(_value) == 0:
+            return
+        self.xCoordinatesIndex = IDNAME(self.xCoordComboBox.currentIndex(), _value)
         
     def setYCoord(self, _value):
         if len(_value) == 0:
@@ -204,8 +201,7 @@ class pyMstaTextFileAnalysisDialog(QtWidgets.QDialog, Ui_msta_text_file_analysis
     def getNumberOfFirstLineToSkip(self):
         if self.firstLineAsHeader:
             return self.numberLineToSkip + 1
-        else:
-            return self.numberLineToSkip
+        return self.numberLineToSkip
         
     #-------------------------------------------------------
     # Update the tableView widget base on the user choosen settings
@@ -252,17 +248,16 @@ class pyMstaTextFileAnalysisDialog(QtWidgets.QDialog, Ui_msta_text_file_analysis
                                 i += 1
                             # the current line of the file is treated as header, so read next line
                             continue
-                        else:
                         # First line containts data directly
-                            self.tableAnalysisResult.setColumnCount(len(fields))
-                            for i in range(len(fields)):
-                                # Set the default name of the columns, i.e. variable names
-                                item = QtGui.QTableWidgetItem(f'V{i+1}')
-                                self.tableAnalysisResult.setHorizontalHeaderItem(i,item)
-                                self.xCoordComboBox.addItem(f'V{i+1}')
-                                self.yCoordComboBox.addItem(f'V{i+1}')
-                                self.sampleNameComboBox.addItem(f'V{i+1}')
-                                self.variableNameList.append(IDNAME(i,f'V{i+1}'))
+                        self.tableAnalysisResult.setColumnCount(len(fields))
+                        for i in range(len(fields)):
+                            # Set the default name of the columns, i.e. variable names
+                            item = QtWidgets.QTableWidgetItem(f'V{i+1}')
+                            self.tableAnalysisResult.setHorizontalHeaderItem(i,item)
+                            self.xCoordComboBox.addItem(f'V{i+1}')
+                            self.yCoordComboBox.addItem(f'V{i+1}')
+                            self.sampleNameComboBox.addItem(f'V{i+1}')
+                            self.variableNameList.append(IDNAME(i,f'V{i+1}'))
     
                     self.updateXCoord()
                     self.updateYCoord()
@@ -270,21 +265,21 @@ class pyMstaTextFileAnalysisDialog(QtWidgets.QDialog, Ui_msta_text_file_analysis
 
                     # Check for the number of fields, it must be the same all along the file
                     #if len(fields) != self.tableAnalysisResult.columnCount():
-                    #    QtGui.QMessageBox.information(self, "Text file analysis", f'Number of fields at line {currentFileLineNumber} is not equal to {self.tableAnalysisResult.columnCount()}')
+                    #    QtWidgets.QMessageBox.information(self, "Text file analysis", f'Number of fields at line {currentFileLineNumber} is not equal to {self.tableAnalysisResult.columnCount()}')
                     #    return
                 
                     # Fill the table view
                     self.lineItemsList = []
                     for f in range(len(fields)):
                         if self.commaDecimalSeparator:
-                            item = QtGui.QTableWidgetItem(fields[f].replace(",", "."))
+                            item = QtWidgets.QTableWidgetItem(fields[f].replace(",", "."))
                         else:
-                            item = QtGui.QTableWidgetItem(fields[f])
+                            item = QtWidgets.QTableWidgetItem(fields[f])
                         self.lineItemsList.append(item)
                         self.tableAnalysisResult.setItem(self.tableAnalysisResult.rowCount()-1, f, item)
 
         except IOError:
-            QtGui.QMessageBox.information(self, "Text file analysis", f'An error occured with file:\n{self.fileName}')
+            QtWidgets.QMessageBox.information(self, "Text file analysis", f'An error occured with file:\n{self.fileName}')
             return
 
         textFile.close()
@@ -303,7 +298,7 @@ class pyMstaTextFileAnalysisDialog(QtWidgets.QDialog, Ui_msta_text_file_analysis
         if self.getSampleNameIndex() != -1:
             self.variableNameList.remove(self.getSampleNameName())
         if self.getXIndex() == self.getYIndex():
-            QtGui.QMessageBox.critical(self, "Text file analysis", 'X and Y ccordinates must be different.')
+            QtWidgets.QMessageBox.critical(self, "Text file analysis", 'X and Y ccordinates must be different.')
             return(retListCoordsIds, retListCoordsNames, retListVarIds, retListVarNames)
         
         # print(self.variableNameList)

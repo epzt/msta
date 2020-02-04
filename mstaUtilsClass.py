@@ -1,6 +1,6 @@
-from PyQt5.QtWidgets import  QMessageBox, QDialog, QInputDialog
+from PyQt5.QtWidgets import  QMessageBox, QDialog, QInputDialog, QCheckBox, QGroupBox, QVBoxLayout, QGridLayout, QDialogButtonBox
 
-from .ui_about_msta import Ui_AboutDlg
+#from .ui_about_msta import Ui_AboutDlg
 from .ui_set_gsta_variables_dialog import Ui_setGSTAVariablesDialog as setGSTAVarDlg
 from .ui_gsta_trend_definition import Ui_setGSTATrendCaseDialog as setGSTATrendDlg
 from .ui_msta_variable_definition import Ui_SetMSTAVarOptionsDlg as setMSTAVariableDlg
@@ -28,10 +28,10 @@ COMP = {
 #############################################################################
 # Just a class to print About information
 #############################################################################
-class aboutMSTA(QDialog, Ui_AboutDlg):
-    def __int__(self, parent=None):
-        super(aboutMSTA,self).__init__(parent)
-        self.setupUi(self)
+# class aboutMSTA(QDialog, Ui_AboutDlg):
+#    def __int__(self, parent=None):
+#        super(aboutMSTA,self).__init__(parent)
+#        self.setupUi(self)
 
 #############################################################################
 # GSTA variables definition from global variable list
@@ -41,97 +41,147 @@ class setGSTAVariablesDlg(QDialog, setGSTAVarDlg):
         super(setGSTAVariablesDlg,self).__init__(parent)
         self.setupUi(self)
 
-        self.meanButton.clicked.connect(self.getMean)
-        self.sortingButton.clicked.connect(self.getSorting)
-        self.skewnessButton.clicked.connect(self.getSkewness)
+        self.meanComboBox.addItem('Choose a variable...')
+        self.sortingComboBox.addItem('Choose a variable...')
+        self.skewnessComboBox.addItem('Choose a variable...')
+        # fill comboboxes with variables' names
+        self.meanComboBox.addItems(_variablesList)
+        self.sortingComboBox.addItems(_variablesList)
+        self.skewnessComboBox.addItems(_variablesList)
+
+        # currentTextChanged
+        self.meanComboBox.activated.connect(self.getMean)
+        self.sortingComboBox.activated.connect(self.getSorting)
+        self.skewnessComboBox.activated.connect(self.getSkewness)
+
         # Initialisations
-        self.variablesDict = {'mean':'','sorting':'','skewness':''}
         self.items = _variablesList  # List of variable names
         self.variablesDefinition = [] # List of variable definitions (list of class mstaVariable)
 
-    def getMean(self):
-        item, ok = QInputDialog(self).getItem(self, "Select Mean",
-                                        "List of available variables", self.items, 0, False)
-        if ok and item:
-            for k in self.variablesDict:
-                if item == self.variablesDict[k]:
-                    return
-            # Launch the dialog box of variable options definition
-            variableDlg = setMSTAVariableOptionDlg(item)
-            result = variableDlg.exec_()
-            if not result:
-                msg = "Mean variable set to default:\nName: mean, alias: mean, distance: 0.0, range: (0,0) and no anysotropy"
-                QMessageBox.information(self, "GSTA Variables", msg)
+    def getVariableDefinitionNames(self):
+        return [v.getName() for v in self.variablesDefinition]
 
-            # Even if in variableDlg no definition is set for the mean variable, it is set to default values
-            newVar = variableDlg.getVariableDefinition()
-            # This is o force alias to have "Mean" value
-            newVar.setAlias("Mean")
-            self.variablesDefinition.append(newVar)
-            # Updates of the dialog
-            self.variablesDict['mean'] = item
-            self.meanLineEdit.setText(item)
+    def getVariableDefinitionAlias(self):
+        return [v.getAlias() for v in self.variablesDefinition]
 
-    def getSorting(self):
-        item, ok = QInputDialog(self).getItem(self, "Select Sorting",
-                                        "List of available variables", self.items, 0, False)
-        if ok and item:
-            for k in self.variablesDict:
-                if item == self.variablesDict[k]:
-                    return
-            # Launch the dialog box of variable options definition
-            variableDlg = setMSTAVariableOptionDlg(item)
-            result = variableDlg.exec_()
-            if not result:
-                msg = "Sorting variable set to default:\nName: sorting, alias: sorting, distance: 0.0, range: (0,0) and no anysotropy"
-                QMessageBox.information(self, "GSTA Variables", msg)
+    def isVariableSet(self, _vname):
+        return _vname in self.getVariableDefinitionNames()
 
-            # Even if in variableDlg no definition is set for the mean variable, it is set to default values
-            newVar = variableDlg.getVariableDefinition()
-            # This is o force alias to have "Sorting" value
-            newVar.setAlias("Sorting")
-            self.variablesDefinition.append(newVar)
-            # Updates of the dialog
-            self.variablesDict['sorting'] = item
-            self.sortingLineEdit.setText(item)
+    def isAliasSet(self, _valias):
+        return _valias in self.getVariableDefinitionAlias()
 
-    def getSkewness(self):
-        item, ok = QInputDialog(self).getItem(self, "Select Skewness",
-                                        "List of available variables", self.items, 0, False)
-        if ok and item:
-            for k in self.variablesDict:
-                if item == self.variablesDict[k]:
-                    return
-            # Launch the dialog box of variable options definition
-            variableDlg = setMSTAVariableOptionDlg(item)
-            result = variableDlg.exec_()
-            if not result:
-                msg = "Skewness variable set to default:\nName: skewness, alias: skewness, distance: 0.0, range: (0,0) and no anysotropy"
-                QMessageBox.information(self, "GSTA Variables", msg)
-            # Even if in variableDlg no definition is set for the mean variable, it is set to default values
-            newVar = variableDlg.getVariableDefinition()
-            # This is o force alias to have "Skewness" value
-            newVar.setAlias("Skewness")
-            self.variablesDefinition.append(newVar)
+    def getVariableDefinitionNameIndex(self, _vname):
+        return self.getVariableDefinitionNames().index(_vname)
 
-            # Updates of the dialog
-            self.variablesDict['skewness'] = item
-            self.skewnessLineEdit.setText(item)
+    def getVariableDefinitionAliasIndex(self, _vname):
+        return self.getVariableDefinitionAlias().index(_vname)
 
-    def areGSTAVariablesSet(self):
+    def getMean(self, _index):
+        item = self.meanComboBox.itemText(_index)
+        if item == 'Choose a variable...' and self.isAliasSet('Mean'):
+            varIndex = self.getVariableDefinitionAliasIndex('Mean')
+            del self.variablesDefinition[varIndex]
+            return
+        if self.isVariableSet(item):
+            msg = "Variable {} is already used for {} parameter.\nDo you want to erase previous definition.".format(
+                item, self.getVariableDefinitionAliasIndex(item))
+            if QMessageBox.question(self, "GSTA Variables", msg) == QMessageBox.Yes:
+                varIndex = self.getVariableDefinitionAliasIndex(item)
+                del self.variablesDefinition[varIndex]
+
+        #key = list(self.variablesDict.keys())[list(self.variablesDict.values()).index(item)]
+
+        # Launch the dialog box of variable options definition
+        variableDlg = setMSTAVariableOptionDlg(item)
+        result = variableDlg.exec_()
+        if not result:
+            msg = "Mean variable not set."
+            QMessageBox.information(self, "GSTA Variables", msg)
+            return
+        # Even if in variableDlg no definition is set for the mean variable, it is set to default values
+        newVar = variableDlg.getVariableDefinition()
+        # This is to force alias to have "Mean" value
+        newVar.setAlias("Mean")
+        self.variablesDefinition.append(newVar)
+
+    def getSorting(self, _index):
+        item = self.sortingComboBox.itemText(_index)
+        if item == 'Choose a variable...' and self.isAliasSet('Sorting'):
+            varIndex = self.getVariableDefinitionAliasIndex('Sorting')
+            del self.variablesDefinition[varIndex]
+            return
+        if self.isVariableSet(item):
+            msg = "Variable {} is already used for {} parameter.\nDo you want to erase previous definition.".format(
+                item, self.getVariableDefinitionAliasIndex(item))
+            if QMessageBox.question(self, "GSTA Variables", msg) == QMessageBox.Yes:
+                varIndex = self.getVariableDefinitionAliasIndex(item)
+                del self.variablesDefinition[varIndex]
+
+        # Launch the dialog box of variable options definition
+        variableDlg = setMSTAVariableOptionDlg(item)
+        result = variableDlg.exec_()
+        if not result:
+            msg = "Sorting variable not set."
+            QMessageBox.information(self, "GSTA Variables", msg)
+            return
+        # Even if in variableDlg no definition is set for the mean variable, it is set to default values
+        newVar = variableDlg.getVariableDefinition()
+        # This is to force alias to have "Sorting" value
+        newVar.setAlias("Sorting")
+        self.variablesDefinition.append(newVar)
+
+    def getSkewness(self, _index):
+        item = self.skewnessComboBox.itemText(_index)
+        if item == 'Choose a variable...' and self.isAliasSet('Skewness'):
+            varIndex = self.getVariableDefinitionAliasIndex('Skewness')
+            del self.variablesDefinition[varIndex]
+            return
+        if self.isVariableSet(item):
+            msg = "Variable {} is already used for {} parameter.\nDo you want to erase previous definition.".format(
+                item, self.getVariableDefinitionAliasIndex(item))
+            if QMessageBox.question(self, "GSTA Variables", msg) == QMessageBox.Yes:
+                varIndex = self.getVariableDefinitionAliasIndex(item)
+                del self.variablesDefinition[varIndex]
+
+        # Launch the dialog box of variable options definition
+        variableDlg = setMSTAVariableOptionDlg(item)
+        result = variableDlg.exec_()
+        if not result:
+            msg = "Skewness variable not set."
+            QMessageBox.information(self, "GSTA Variables", msg)
+            return
+        # Even if in variableDlg no definition is set for the mean variable, it is set to default values
+        newVar = variableDlg.getVariableDefinition()
+        # This is to force alias to have "Skewness" value
+        newVar.setAlias("Skewness")
+        self.variablesDefinition.append(newVar)
+
+    def areAllGSTAVariablesSet(self):
         retValue  = False
         if self.getMeanVariableName() and self.getSortingVariableName() and self.getSkewnessVariableName():
             retValue = True
         return retValue
 
     def getMeanVariableName(self):
-        return(self.variablesDict['mean'])
+        try:
+            id = self.getVariableDefinitionAliasIndex('Mean')
+            return self.variablesDefinition[id]
+        except:
+            return ''
 
     def getSortingVariableName(self):
-        return(self.variablesDict['sorting'])
+        try:
+            id = self.getVariableDefinitionAliasIndex('Sorting')
+            return self.variablesDefinition[id]
+        except:
+            return ''
 
     def getSkewnessVariableName(self):
-        return(self.variablesDict['skewness'])
+        try:
+            id = self.getVariableDefinitionAliasIndex('Skewness')
+            return self.variablesDefinition[id]
+        except:
+            return ''
 
     def getGSTAVariablesDefinitions(self):
         return(self.variablesDefinition)
@@ -154,11 +204,11 @@ class setGSTATrendCasesDlg(QDialog, setGSTATrendDlg):
         self.trendCases = _trends  # Type mstaComposedTrendcase
         # Initial variables
         self.meanTrendText = ""
-        self.meanTrend = mstaTrendCase(self.getNameFromVariableList(_variables, "mean"))
+        self.meanTrend = mstaTrendCase(self.getNameFromVariableList(_variables, "Mean"))
         self.sortingTrendText = ""
-        self.sortingTrend = mstaTrendCase(self.getNameFromVariableList(_variables, "sorting"))
+        self.sortingTrend = mstaTrendCase(self.getNameFromVariableList(_variables, "Sorting"))
         self.skewnessTrendText = ""
-        self.skewnessTrend = mstaTrendCase(self.getNameFromVariableList(_variables, "skewness"))
+        self.skewnessTrend = mstaTrendCase(self.getNameFromVariableList(_variables, "Skewness"))
         self.GSTATrendCaseListNames = []
         # self.trendCaseList = [] # List of single mstaTrendCase objects such as F or C or B etc.
         self.linkOperand = "AND" # Default operand which link multiple trend case
@@ -349,10 +399,10 @@ class setMSTAVariableOptionDlg(QDialog, setMSTAVariableDlg):
             self.variableDgLineEdit.setText(str(_variable.getDg()))
             self.pmVariableRangeLineEdit.setText(str(_variable.getRange()))
             self.directionVariableLineEdit.setText(str(_variable.getDirection()))
-            self.tolangVariableLineEdit.setText(str(_variable.getToleranceAngle()))
+            self.tolangVariableLineEdit.setText(str(_variable.getTolerance()))
             self.variableUnitComboBox.setCurrentText(_variable.getUnit())
         # Initialisation with initial variables name
-        elif isinstance(_variable, str):
+        elif isinstance(_variable, str) :
             self.variableNameLineEdit.setText(_variable)
             self.variableAliasLineEdit.setText(_variable)
             self.variableDgLineEdit.setText("0.0")
@@ -483,6 +533,18 @@ class setMSTATrendCasesDlg(QDialog, setMSTATrendDlg):
         return
 
     def addTrendCase(self):
+        # Two different variables can be mix only of they have same Dg
+        if not self.varObjectsList[self.variableAComboBox.currentIndex()].isEqual(self.varObjectsList[self.variableBComboBox.currentIndex()]):
+            indexA = self.variableAComboBox.currentIndex()
+            indexB = self.variableBComboBox.currentIndex()
+            QMessageBox.warning(self, "Trend definition error",
+                                "Can\'t mix two variables with different characteristic distance, research angle or tolerance value:\n"
+                                "{}: {}\n"
+                                "{}: {}".format(self.varObjectsList[indexA].getName(),
+                                                self.varObjectsList[indexA].getDg(),
+                                                self.varObjectsList[indexB].getName(),
+                                                self.varObjectsList[indexB].getDg()))
+            return
         newTrendCaseText = f'{self.variableAName}(i) {self.signType} {self.variableBName}(j)'
         if newTrendCaseText in self.trendTextCases:
             return
@@ -494,8 +556,10 @@ class setMSTATrendCasesDlg(QDialog, setMSTATrendDlg):
         self.trendListLabel.setText(labelTrendCaseText)
 
         # Update trend cases list
+        QMessageBox.information(self, "GSTA Variables", "{}".format(self.variableAComboBox.currentIndex()))
         newTrendCase = mstaTrendCase(self.varObjectsList[self.variableAComboBox.currentIndex()])
         if self.variableAName != self.variableBName: # In case varA is different to varB
+            QMessageBox.information(self, "GSTA Variables", "{}".format(self.variableBComboBox.currentIndex()))
             newTrendCase.setRightVar(self.varObjectsList[self.variableBComboBox.currentIndex()])
         newTrendCase.setID(self.currentID)
         self.currentID +=  1
@@ -531,7 +595,6 @@ class setMSTATrendCasesDlg(QDialog, setMSTATrendDlg):
 
     def currentVariableBTextChanged(self):
         self.variableBName = self.variableBComboBox.currentText()
-        self.variableAComboBox.setCurrentIndex(self.variableBComboBox.currentIndex())
         return
 
     def currentSignTextChanged(self):
@@ -544,3 +607,51 @@ class setMSTATrendCasesDlg(QDialog, setMSTATrendDlg):
 
     def getTrendCases(self):
         return self.trendCases
+
+#############################################################################
+# Variable selection dialog
+#############################################################################
+class setSelectedVariablesDlg(QDialog):
+    def __init__(self, _variablesList, _currentSelectedList):
+        super().__init__()
+        self.vars = _variablesList
+        self.selVars = _currentSelectedList
+        self.varCheckBoxList = []
+        self.buttonBox = QDialogButtonBox(self)
+        self.windowLayout = QVBoxLayout()
+        self.buttonBox.setStandardButtons(QDialogButtonBox.Ok)
+
+        self.buttonBox.accepted.connect(self.accept)
+        self.initUI(self.vars)
+        return
+
+    def initUI(self, _vars):
+        self.setWindowTitle("Select variables")
+        self.horizontalGroupBox = QGroupBox("Variables")
+        self.layout = QGridLayout()
+        self.layout.setColumnStretch(0,1)
+        i = 0
+        if len(self.selVars) > 0:
+            for v in self.vars:
+                if v.getName() in self.selVars:
+                    cb = QCheckBox(v.getName())
+                    self.layout.addWidget(cb, i, 0)
+                    self.varCheckBoxList.append(cb)
+                    i += 1
+        else:
+            for v in self.vars:
+                cb = QCheckBox(v.getName())
+                self.layout.addWidget(cb, i, 0)
+                i += 1
+                self.varCheckBoxList.append(cb)
+        self.horizontalGroupBox.setLayout(self.layout)
+        self.windowLayout.addWidget(self.horizontalGroupBox)
+        self.windowLayout.addWidget(self.buttonBox)
+        self.setLayout(self.windowLayout)
+
+    def getSelectedVariables(self):
+        retValue = []
+        for i in range(self.layout.count()):
+            if self.layout.itemAt(i).widget().isChecked():
+                retValue.append(self.layout.itemAt(i).widget().text())
+        return retValue

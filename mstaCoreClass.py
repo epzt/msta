@@ -72,22 +72,25 @@ class RANGE():
         return(self.max - self.min)
 '''
 #############################################################################
-## class RADIUS: manage variables search procedure                         ##
+## class ELLIPSE: manage variables search procedure                         ##
 #############################################################################
 
-class RADIUS():
-    def __init__(self, _a, _b):
-        self.major = _b
-        self.minor = _a
+class ELLIPSE():
+    def __init__(self, _d, _t):
+        self.direction = _d
+        self.tolerance = _t
 
-    def getMinor(self):
-        return self.minor
+    def __eq__(self, _other):
+        return self.direction == _other.getDirection() and self.tolerance == _other.getTolerance()
 
-    def getMajor(self):
-        return self.major
+    def getDirection(self):
+        return self.direction
 
-    def isCircle(self):
-        return((self.major-self.minor) == 0)
+    def getTolerance(self):
+        return self.tolerance
+
+    def isCircular(self, _r):
+        return _r == self.tolerance
 
 #############################################################################
 ## class mstaPoint: manage data points                                     ##
@@ -168,7 +171,7 @@ class mstaVariable():
         self.value = 0.0
         self.dg = 0.0
         self.range = 0.0 # +/- range centred around value
-        self.search = RADIUS(0.0,0.0)
+        self.search = ELLIPSE(0.0,self.dg) # By default circle search
 
     # Default operations
     # + addition
@@ -283,7 +286,12 @@ class mstaVariable():
         return(f'Name: {self.name}, alias: {self.alias}\n \
                 distance: {self.dg}, unit: {self.unit}\n \
                 range: +/-{self.getRange()}\n \
-                dir : {self.getDirection()}, Tol: {self.getToleranceAngle()}')
+                dir : {self.getDirection()}, Tol: {self.getTolerance()}')
+
+    # Test if the current variable as same Dg, direction and tolerance than variable _other
+    # convenient during process
+    def isEqual(self, _other):
+        return self.dg == _other.dg and self.getSearch() == _other.getSearch()
 
     def setID(self,_ID):
         self.ID = _ID
@@ -316,14 +324,15 @@ class mstaVariable():
     def getMax(self):
         return self.value + self.getRange()
 
-    def setSearch(self,_a, _b):
-        self.search = [_a,_b]
+    def setSearch(self,_d, _t):
+        self.search = ELLIPSE(_d,_t)
     def getSearch(self):
         return self.search
+
     def getDirection(self):
-        return self.search[0] # Direction is stored as the first element of the list
-    def getToleranceAngle(self):
-        return self.search[1] # Tol. angle is stored as the second element of the list
+        return self.search.getDirection() # Direction is stored as the first element of the list
+    def getTolerance(self):
+        return self.search.getTolerance() # Tol. angle is stored as the second element of the list
 
     def setDg(self, _dg):
         self.dg = _dg
@@ -416,6 +425,13 @@ class mstaComposedTrendCase():
         self.linkOperand = []
         self.trendList = []
         self.level = 1  # Define the level of the composed trend, must be in {1,2}
+
+    def __getitem__(self, item):
+        assert len(self.trendList) > 0
+        if item < len(self.trendList):
+            return self.trendList[item]
+        else:
+            return None
 
     def __repr__(self):
         if len(self.trendList) == 0:

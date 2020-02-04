@@ -35,74 +35,77 @@
     <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
    </property>
   </widget>
-  <widget class="QPushButton" name="meanButton">
+  <widget class="QWidget" name="">
    <property name="geometry">
     <rect>
-     <x>10</x>
+     <x>20</x>
      <y>20</y>
-     <width>80</width>
-     <height>24</height>
+     <width>241</width>
+     <height>25</height>
     </rect>
    </property>
-   <property name="text">
-    <string>Mean</string>
-   </property>
+   <layout class="QHBoxLayout" name="horizontalLayout">
+    <item>
+     <widget class="QLabel" name="label">
+      <property name="layoutDirection">
+       <enum>Qt::LeftToRight</enum>
+      </property>
+      <property name="text">
+       <string>MEAN</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QComboBox" name="meanComboBox"/>
+    </item>
+   </layout>
   </widget>
-  <widget class="QPushButton" name="sortingButton">
+  <widget class="QWidget" name="">
    <property name="geometry">
     <rect>
-     <x>10</x>
+     <x>20</x>
      <y>60</y>
-     <width>80</width>
-     <height>24</height>
+     <width>241</width>
+     <height>25</height>
     </rect>
    </property>
-   <property name="text">
-    <string>Sorting</string>
-   </property>
+   <layout class="QHBoxLayout" name="horizontalLayout_2">
+    <item>
+     <widget class="QLabel" name="label_2">
+      <property name="text">
+       <string>SORTING</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QComboBox" name="sortingComboBox"/>
+    </item>
+   </layout>
   </widget>
-  <widget class="QPushButton" name="skewnessButton">
+  <widget class="QWidget" name="">
    <property name="geometry">
     <rect>
-     <x>10</x>
+     <x>20</x>
      <y>100</y>
-     <width>80</width>
-     <height>24</height>
+     <width>241</width>
+     <height>25</height>
     </rect>
    </property>
-   <property name="text">
-    <string>Skewness</string>
-   </property>
-  </widget>
-  <widget class="QLineEdit" name="meanLineEdit">
-   <property name="geometry">
-    <rect>
-     <x>100</x>
-     <y>20</y>
-     <width>161</width>
-     <height>24</height>
-    </rect>
-   </property>
-  </widget>
-  <widget class="QLineEdit" name="sortingLineEdit">
-   <property name="geometry">
-    <rect>
-     <x>100</x>
-     <y>60</y>
-     <width>161</width>
-     <height>24</height>
-    </rect>
-   </property>
-  </widget>
-  <widget class="QLineEdit" name="skewnessLineEdit">
-   <property name="geometry">
-    <rect>
-     <x>100</x>
-     <y>100</y>
-     <width>161</width>
-     <height>24</height>
-    </rect>
-   </property>
+   <layout class="QHBoxLayout" name="horizontalLayout_3">
+    <item>
+     <widget class="QLabel" name="label_3">
+      <property name="text">
+       <string>SKEWNESS</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QComboBox" name="skewnessComboBox"/>
+    </item>
+   </layout>
   </widget>
  </widget>
  <resources/>
