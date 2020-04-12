@@ -171,7 +171,7 @@
   <widget class="QLabel" name="label_2">
    <property name="geometry">
     <rect>
-     <x>130</x>
+     <x>150</x>
      <y>10</y>
      <width>29</width>
      <height>16</height>
@@ -184,7 +184,7 @@
   <widget class="QLabel" name="label_3">
    <property name="geometry">
     <rect>
-     <x>240</x>
+     <x>270</x>
      <y>10</y>
      <width>25</width>
      <height>16</height>
@@ -194,25 +194,12 @@
     <string>Unit</string>
    </property>
   </widget>
-  <widget class="QLineEdit" name="variableNameLineEdit">
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>30</y>
-     <width>110</width>
-     <height>24</height>
-    </rect>
-   </property>
-  </widget>
   <widget class="QLineEdit" name="variableAliasLineEdit">
    <property name="geometry">
     <rect>
-     <x>130</x>
+     <x>149</x>
      <y>30</y>
-     <width>100</width>
+     <width>111</width>
      <height>24</height>
     </rect>
    </property>
@@ -220,7 +207,7 @@
   <widget class="QComboBox" name="variableUnitComboBox">
    <property name="geometry">
     <rect>
-     <x>240</x>
+     <x>270</x>
      <y>30</y>
      <width>74</width>
      <height>24</height>
@@ -236,17 +223,7 @@
    </item>
    <item>
     <property name="text">
-     <string>m</string>
-    </property>
-   </item>
-   <item>
-    <property name="text">
-     <string>mm</string>
-    </property>
-   </item>
-   <item>
-    <property name="text">
-     <string>mu</string>
+     <string>metric</string>
     </property>
    </item>
    <item>
@@ -312,6 +289,16 @@
     </widget>
     <widget class="QLineEdit" name="pmVariableRangeLineEdit"/>
    </widget>
+  </widget>
+  <widget class="QComboBox" name="variableNameComboBox">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>30</y>
+     <width>131</width>
+     <height>23</height>
+    </rect>
+   </property>
   </widget>
  </widget>
  <resources/>

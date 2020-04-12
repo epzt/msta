@@ -85,10 +85,18 @@
     </property>
     <addaction name="actionComputeMSTA"/>
    </widget>
+   <widget class="QMenu" name="menuProcessing">
+    <property name="title">
+     <string>Analysis</string>
+    </property>
+    <addaction name="actionCluster"/>
+    <addaction name="actionPCA"/>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuSettings"/>
    <addaction name="menuVariables"/>
    <addaction name="menuTrends"/>
+   <addaction name="menuProcessing"/>
    <addaction name="computeMSTA"/>
    <addaction name="menuHelp"/>
   </widget>
@@ -295,6 +303,16 @@
   <action name="actionClearSelect">
    <property name="text">
     <string>Clear select...</string>
+   </property>
+  </action>
+  <action name="actionCluster">
+   <property name="text">
+    <string>Cluster...</string>
+   </property>
+  </action>
+  <action name="actionPCA">
+   <property name="text">
+    <string>PCA...</string>
    </property>
   </action>
  </widget>

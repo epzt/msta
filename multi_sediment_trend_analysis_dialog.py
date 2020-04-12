@@ -107,6 +107,8 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         self.menuTrends.setEnabled(False)
         self.actionGSTALikeTrend.setEnabled(False)
         self.computeMSTA.setEnabled(False)
+        self.actionClearSelect.setEnabled(False)
+        self.actionVariableListSelected.setEnabled(False)
 
         # Variables
         self.iface = _iface
@@ -265,7 +267,6 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
             for j in range(len(_varnames)):
                 # mv is mstaVariable
                 newvar = mv()
-                newvar.setID(j+1)
                 newvar.setName(_varnames[j])
                 newvar.setAlias(_varnames[j]) # Alias = name by default
                 newvar.setUnit("%") # By default % unit
@@ -308,9 +309,9 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
             self.textwidget.append("\t------")
         if isinstance(_text, list):
             for i in _text:
-                self.textwidget.append(f'{i.__repr__()}')
+                self.textwidget.append(f'{i.__str__()}')
         else:
-            self.textwidget.append(f'{_text.__repr__()}')
+            self.textwidget.append(f'{_text.__str__()}')
 
     ###############################################
     def SetClearText(self):
@@ -340,71 +341,106 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         if self.trendCases.getTrendCount() == 0:
             QMessageBox.information(self, "Trend case", "No trend case(s) defined yet.")
             return
-        self.updateLogViewPort(2, self.trendCases.__repr__())
+        self.updateLogViewPort(2, self.trendCases.__str__())
 
     ###############################################
     # Definition of the GSTA variables to use for mean, sorting and skewness
     def SetGSTAVariables(self):
-        # Global variables should be defined
-        if not self.totalVariablesName:
-            QMessageBox.information(self, "Variable", "No variables loaded yet.")
-            return
-        # Check if previous GSTA variables definition exists
-        aliasList = [v.getAlias() for v in self.variablesObjectsList]
-        if 'Mean' in aliasList or 'Sorting' in aliasList or 'Skewness' in aliasList:
-            msg = "Previous definition exist:"
-            for i in range(len(aliasList)):
-                msg += "\n{}: {}".format(aliasList[i], self.variablesObjectsList[i])
-            msg += "\nThis will be overright.\nDo you want to proceed ?"
-            if QMessageBox.question(self, "GSTA Variables", msg) == QMessageBox.No:
-                return
-        # Launch the dialog for definition of GSTA variables
-        dlg = setGSTAVariablesDlg(self.totalVariablesName)
-        result = dlg.exec()
-        if not result or not dlg.areAllGSTAVariablesSet():
-            QMessageBox.information(self, "GSTA Variables", "No GSTA variables defined yet")
-            self.updateLogViewPort(1, "No GSTA variables defined yet")
-            return
-
-        # Clear and update the names of the current selected variable name list
+        # Use to fill the variable combobox of the dialog
+        tmpVarObjectsList = self.variablesObjectsList.copy()
         self.selectedVariableNames.clear()
-        self.selectedVariableNames = dlg.getVariableDefinitionNames()
+        # Open dialog of variables settings for MEAN variable
+        dlg = setMSTAVariableOptionDlg(tmpVarObjectsList)
+        dlg.setVariableAlias("Mean")
+        while True:
+            result = dlg.exec()
+            if result == QDialog.Accepted:
+                newVar = dlg.getVariableDefinition()
+                for i,v in enumerate(tmpVarObjectsList):
+                    if v.getName() == newVar.getName():
+                        del tmpVarObjectsList[i]
+                        self.selectedVariableNames.append(newVar.getName())
+                for i,v in enumerate(self.variablesObjectsList):
+                    if v.getName() == newVar.getName():
+                        self.variablesObjectsList[i] = newVar
+                break
+            elif result == QDialog.Rejected:
+                if QMessageBox.question(self, "Mean variable", "No mean variable selected", \
+                                        QMessageBox.Abort|QMessageBox.Retry) == QMessageBox.Abort:
+                    return
 
-        # Update the global variable list (mstaVariable)
-        gstaVariableList = dlg.getGSTAVariablesDefinitions()
-        for lv in self.variablesObjectsList:
-            for nv in gstaVariableList:
-                if nv.getName() == lv.getName(): # Change only the variables used for GSTA
-                    self.variablesObjectsList[self.variablesObjectsList.index(lv)] = nv
+        # Open dialog of variables settings for SORTING variable
+        dlg = setMSTAVariableOptionDlg(tmpVarObjectsList)
+        dlg.setVariableAlias("Sorting")
+        while True:
+            result = dlg.exec()
+            if result:
+                newVar = dlg.getVariableDefinition()
+                for i,v in enumerate(tmpVarObjectsList):
+                    if v.getName() == newVar.getName():
+                        del tmpVarObjectsList[i]
+                        self.selectedVariableNames.append(newVar.getName())
+                for i, v in enumerate(self.variablesObjectsList):
+                    if v.getName() == newVar.getName():
+                        self.variablesObjectsList[i] = newVar
+                break
+            elif result == QDialog.Rejected:
+                if QMessageBox.question(self, "Sorting variable", "No sorting variable selected", \
+                                    QMessageBox.Abort | QMessageBox.Retry) == QMessageBox.Abort:
+                    return
 
-        self.variablesObjectsList = sorted(self.variablesObjectsList, key=lambda mstaVariable: mstaVariable.name)
-        self.updatePointsDB(self.variablesObjectsList) # Update the corresponding variables at each points
-        self.updateLogViewPort(5, self.selectedVariableNames)
+        # Open dialog of variables settings for SKEWNESS variable
+        dlg = setMSTAVariableOptionDlg(tmpVarObjectsList)
+        dlg.setVariableAlias("Skewness")
+        while True:
+            result = dlg.exec()
+            if result:
+                newVar = dlg.getVariableDefinition()
+                for i,v in enumerate(tmpVarObjectsList):
+                    if v.getName() == newVar.getName():
+                        del tmpVarObjectsList[i]
+                        self.selectedVariableNames.append(newVar.getName())
+                for i, v in enumerate(self.variablesObjectsList):
+                    if v.getName() == newVar.getName():
+                        self.variablesObjectsList[i] = newVar
+            elif result == QDialog.Rejected:
+                if QMessageBox.question(self, "Skewness variable", "No skewness variable selected", \
+                                    QMessageBox.Abort | QMessageBox.Retry) == QMessageBox.Abort:
+                    return
 
-        # GSTA variables are defined, trends can be manage
-        self.actionGSTALikeTrend.setEnabled(True)
+        if len(self.selectedVariableNames) == 3: # Three variables must be selected
+            self.updatePointsDB(self.variablesObjectsList)  # Update the corresponding variables at each points
+            self.updateLogViewPort(5, self.selectedVariableNames)
+            # Update menu entries
+            self.actionClearSelect.setEnabled(True)
+            self.actionVariableListSelected.setEnabled(True)
+            # GSTA variables are defined, trends can be manage
+            self.actionGSTALikeTrend.setEnabled(True)
+        else:
+            QMessageBox.information(self, "GSTA variable definition", "3 variables must defined for a GSTA analysis\nOnly {} actually defined".format(len(self.selectedVariableNames)))
+            self.actionClearSelect.setEnabled(False)
+            self.actionVariableListSelected.setEnabled(False)
+            # GSTA variables are defined, trends can be manage
+            self.actionGSTALikeTrend.setEnabled(False)
 
     ###############################################
     def ModifyVariables(self):
-        # Get the name of the variable of interest from user (only current selected variables are listed)
-        variable, ok = QInputDialog.getItem(self, 'Modify a variable', 'Select a variable', self.selectedVariableNames, 0, False)
+        # Open dialog of variables settings
+        dlg = setMSTAVariableOptionDlg(self.variablesObjectsList)
+        ok = dlg.exec()
         if ok:
-            for vol in self.variablesObjectsList:
-                if vol.getName() == variable:
-                    # Open dialog of variables settings
-                    dlg = setMSTAVariableOptionDlg(vol)
-                    ok = dlg.exec()
-                    if ok:
-                        # Update the list of all the mstaVariable
-                        newVar = dlg.getVariableDefinition()
-                        self.variablesObjectsList[self.variablesObjectsList.index(vol)] = newVar
-                        self.variablesObjectsList = sorted(self.variablesObjectsList, key=lambda mstaVariable: mstaVariable.name)
-                        self.updatePointsDB(self.variablesObjectsList)  # Update the corresponding variables at each points
-                        self.updateLogViewPort(1, "Variable {} has been modified.".format(variable))
-                        # If GSTA varaiables have been set before, delete one variable do not allow GSTA analysis
-                        if self.actionGSTALikeTrend.isEnabled():
-                            self.actionGSTALikeTrend.setEnabled(False)
-                        return
+            # Update the list of the mstaVariable
+            newVar = dlg.getVariableDefinition()
+            for i,v in enumerate(self.variablesObjectsList):
+                if v.getName() == newVar.getName():
+                    self.variablesObjectsList[i] = newVar
+            self.variablesObjectsList = sorted(self.variablesObjectsList, key=lambda mstaVariable: mstaVariable.name)
+            self.updatePointsDB(self.variablesObjectsList)  # Update the corresponding variables at each points
+            self.updateLogViewPort(1, "Variable {} has been modified.".format(newVar.getName()))
+            # If GSTA varaiables have been set before, delete one variable do not allow GSTA analysis
+            if self.actionGSTALikeTrend.isEnabled():
+                self.actionGSTALikeTrend.setEnabled(False)
+            return
         return
 
     ###############################################
@@ -514,6 +550,8 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         selVar = setSelectedVariablesDlg(self.variablesObjectsList, self.selectedVariableNames)
         selVar.exec_()
         if len(selVar.getSelectedVariables()) > 0:
+            self.actionClearSelect.setEnabled(True)
+            self.actionVariableListSelected.setEnabled(True)
             self.selectedVariableNames = selVar.getSelectedVariables().copy()
 
     ###############################################
@@ -521,5 +559,7 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         if QMessageBox.question(self, "MSTA Variables management", "Do you really want to clear current selected variables ?") == QMessageBox.No:
             return
         self.selectedVariableNames.clear()  # Clear list of selected variables
+        self.actionClearSelect.setEnabled(False)
+        self.actionVariableListSelected.setEnabled(False)
         for v in self.variablesObjectsList:
             self.selectedVariableNames.append(v.getName())  # construct new list with all variables names

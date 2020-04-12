@@ -24,6 +24,7 @@
 
 from qgis.core import QgsPoint
 import numpy as np
+import itertools
 
 # Trend operations
 COMP = {
@@ -43,9 +44,7 @@ OPERAND = {
 # Unit of variables
 UNIT = {
     '%' : 'percent',
-    'm' : 'metre',
-    'mm' : 'millimetre',
-    'mu' : 'micronmetre',
+    'metric' : 'metre',
     'phi' : 'phi',
     'other' : 'unknown'
 }
@@ -99,14 +98,14 @@ class ELLIPSE():
 class mstaPoint(QgsPoint):
     def __init__(self, _x, _y):
         """Constructor."""
-        super().__init__(_x,_y)
+        super().__init__(_x, _y)
         self.ID = 0
         self.variables = [] # List of mstaVariable type
 
     def __repr__(self):
         return(f'ID: {self.ID}, {super().asWkt()}\n\t{[i for i in  self.variables]}')
 
-    def setID(self,_ID):
+    def setID(self, _ID):
         self.ID = _ID
 
     def getID(self):
@@ -162,20 +161,21 @@ class mstaPoint(QgsPoint):
 ## class mstaVariable: manage variable                                     ##
 #############################################################################
 class mstaVariable():
+    mVR = itertools.count()
     def __init__(self):
         """Constructor."""
-        self.ID = 0
+        self.ID = next(mstaVariable.mVR)
         self.name = ""
         self.alias = ""
-        self.unit = "%" #Default value, i.e. percent
+        self.unit = self.setUnit("%") #Default value, i.e. percent
         self.value = 0.0
         self.dg = 0.0
         self.range = 0.0 # +/- range centred around value
-        self.search = ELLIPSE(0.0,self.dg) # By default circle search
+        self.search = ELLIPSE(0.0,  self.dg) # By default circle search
 
     # Default operations
     # + addition
-    def __add__(self,_other):
+    def __add__(self, _other):
         res = mstaVariable()
         if not _other.__class__ is mstaVariable:
             return NotImplemented
@@ -191,12 +191,12 @@ class mstaVariable():
         res.setRange(self.getRange()+self._other.getRange())
         res.setValue(self.getValue()+_other.getValue())
         return res
-    def __iadd__(self,_other):
+    def __iadd__(self, _other):
         self.range = self.getRange()+self._other.getRange()
         self.value = self.value+_other.getValue()
         return self
     # - substraction
-    def __sub__(self,_other):
+    def __sub__(self, _other):
         res = mstaVariable()
         if not _other.__class__ is mstaVariable:
             return NotImplemented
@@ -212,12 +212,12 @@ class mstaVariable():
         self.setRange(self.getRange()+self._other.getRange())
         res.setValue(self.getValue()-_other.getValue())
         return res
-    def __isub__(self,_other):
+    def __isub__(self, _other):
         self.range = self.getRange()+self._other.getRange()
         self.value = self.value-_other.getValue()
         return self
     # * multiplication
-    def __mul__(self,_other):
+    def __mul__(self, _other):
         res = mstaVariable()
         if not _other.__class__ is mstaVariable:
             return NotImplemented
@@ -233,7 +233,7 @@ class mstaVariable():
         res.range = (_other.getValue()*self.getRange())+(self.getValue()*_other.getRange())
         res.setValue(self.getValue()*_other.getValue())
         return res
-    def __imul__(self,_other):
+    def __imul__(self, _other):
         self.range = (_other.getValue()*self.getRange())+(self.getValue()*_other.getRange())
         self.setvalue = self.value*_other.getValue()
         return self
@@ -259,26 +259,26 @@ class mstaVariable():
         self.value = self.value / _other.getValue()
         return self
     # == equality
-    def __eq__(self,_other):
+    def __eq__(self, _other):
         if self.isInRange(_other.getValue()) or _other.isInRange(self.getValue()):
             return True
         else:
             return False
     # != non equility
-    def __ne__(self,_other):
+    def __ne__(self, _other):
         if not self.isInRange(_other.getValue()) and not _other.isInRange(self.getValue()):
             return True
         else:
             return False
     # < lower than
-    def __lt__(self,_other):
+    def __lt__(self, _other):
         return(self.getMax() < _other.getMin())
-    def __le__(self,_other):
+    def __le__(self, _other):
         return(self.getMax() <= _other.getMin())
     # > upper thn
-    def __gt__(self,_other):
+    def __gt__(self, _other):
         return(self.getMin() > _other.getMax())
-    def __ge__(self,_other):
+    def __ge__(self, _other):
         return(self.getMin() >= _other.getMax())
 
     # Print itself
@@ -293,8 +293,6 @@ class mstaVariable():
     def isEqual(self, _other):
         return self.dg == _other.dg and self.getSearch() == _other.getSearch()
 
-    def setID(self,_ID):
-        self.ID = _ID
     def getID(self):
         return self.ID
 
@@ -325,6 +323,8 @@ class mstaVariable():
         return self.value + self.getRange()
 
     def setSearch(self,_d, _t):
+        assert isinstance(_d, float)
+        assert isinstance(_t, float)
         self.search = ELLIPSE(_d,_t)
     def getSearch(self):
         return self.search
@@ -335,11 +335,13 @@ class mstaVariable():
         return self.search.getTolerance() # Tol. angle is stored as the second element of the list
 
     def setDg(self, _dg):
+        assert isinstance(_dg, float)
         self.dg = _dg
     def getDg(self):
         return self.dg
 
     def setRange(self, _pm):
+        assert isinstance(_pm, float)
         self.range = _pm
     def getRange(self):
         return self.range
@@ -349,37 +351,52 @@ class mstaVariable():
 
     # Return False only for phi units and other (not affected)
     def isMetric(self):
-        return not (self.getUnit() == 'phi' or self.getUnit() == 'other')
+        return not (self.getUnit() == UNIT['phi'] or self.getUnit() == UNIT['other'])
 
 #############################################################################
 ## class mstaTrendCase: manage trend case                                  ##
 #############################################################################
 class mstaTrendCase():
-    def __init__(self, _variable):
+    mTC = itertools.count()
+    def __init__(self, _variables = None, _comp = None):
         """Constructor."""
-        self.ID = -1
-        self.compSigne = COMP['none']
-        assert _variable
+        self.ID = next(mstaTrendCase.mTC)
         # Normally one case should be defined for same variable but
         # it is eventually possible to manage 2 different variables
-        if isinstance(_variable, list):
-            assert len(_variable) == 2
-            self.leftVar = _variable[0]
-            self.rightVar = _variable[1]
-        else:
-            self.leftVar = _variable
-            self.rightVar = _variable
+        if isinstance(_variables, list): # Two different variables
+            assert len(_variables) == 2
+            assert _comp in COMP.keys()
+            assert isinstance(_variables[0], mstaVariable) and isinstance(_variables[1], mstaVariable)
+            self.compSigne = COMP[_comp]
+            self.leftVar = _variables[0]
+            self.rightVar = _variables[1]
+        elif _variables: # Same variable
+            assert _comp in COMP.keys()
+            assert isinstance(_variables, mstaVariable)
+            self.compSigne = COMP[_comp]
+            self.leftVar = _variables
+            self.rightVar = _variables
+        else: # Default init
+            self.compSigne = COMP['none']
+            self.leftVar = mstaVariable()
+            self.rightVar = mstaVariable()
 
     # Print itself
+    def __str__(self):
+        if self.compSigne != '':
+            return (f'{self.ID}:{self.leftVar.getName()}(i) {self.compSigne} {self.rightVar.getName()}(j)')
+        else:
+            return ''
+
     def __repr__(self):
         if self.compSigne != '':
-            return (f'{self.leftVar.getAlias()}(i) {self.compSigne} {self.rightVar.getAlias()}(j)')
-
-    def getTrendText(self):
-        return (f'{self.leftVar.getAlias()}(i) {self.compSigne} {self.rightVar.getAlias()}(j)')
+            return (f'{self.ID}:{self.leftVar.getAlias()}(i) {self.compSigne} {self.rightVar.getAlias()}(j)')
+        else:
+            return ''
 
     # define equality or not between two mstaTrendCase objects
     def __eq__(self,_other):
+        assert isinstance(_other, mstaTrendCase)
         if self.getLeftVar().getName() == _other.getLeftVar().getName() and \
            self.getRightVar().getName() == _other.getRightVar().getName() and \
            self.getComp() == _other.getComp():
@@ -387,12 +404,45 @@ class mstaTrendCase():
         else:
             return False
 
+    # Convenient to test if a case is of type GSTA. mstaTrendCase are never of type GSTA -> always False
+    def isGSTATrend(self):
+        return False
+
+    # Use for specific printing in case of a GSTA trend
+    def getGSTATrendText(self):
+        assert isinstance(self.leftVar, mstaVariable)
+        assert isinstance(self.rightVar, mstaVariable)
+        assert self.leftVar.getAlias() == self.rightVar.getAlias()  # The variables have to be the same (m, sd or sk)
+        if self.leftVar.getAlias() == "mean":  # Mean
+            if self.compSigne == COMP['sup']:
+                if self.leftVar.isMetric():
+                    return 'F'
+                else:
+                    return 'C'
+            else:
+                if self.leftVar.isMetric():
+                    return 'C'
+                else:
+                    return 'F'
+        elif self.leftVar.getAlias() == "sorting":  # Sorting
+            if self.compSigne == COMP['sup']:
+                return 'B'
+            else:
+                return 'P'
+        else:  # Skewness
+            if self.compSigne == COMP['sup']:
+                if self.leftVar.isMetric():
+                    return '-'
+                else:
+                    return '+'
+            else:
+                if self.leftVar.isMetric():
+                    return '+'
+                else:
+                    return '-'
+
     def getID(self):
         return self.ID
-
-    def setID(self, _id):
-        assert _id >= -1
-        self.ID = _id
 
     def setComp(self, _op):
         assert _op != ''
@@ -419,113 +469,114 @@ class mstaTrendCase():
 ## class mstaComposedTrendCase: manage trend case                          ##
 #############################################################################
 class mstaComposedTrendCase():
-    def __init__(self):
+    mCTC = itertools.count()
+    # By default _trendCase is null, but most of the time a mstaComposedTrendCase is
+    # initialized with a simple trend case or a list of trend case (GSTA). In this latter case _op must be given also.
+    def __init__(self, _trendCase = None, _op = None):
+        self.ID = next(mstaComposedTrendCase.mCTC)
         """Constructor."""
-        self.ID = -1
-        self.linkOperand = []
-        self.trendList = []
-        self.level = 1  # Define the level of the composed trend, must be in {1,2}
+        self.composedGSTATrend = False # by default it is false, can be change through dedicated function
+        if isinstance(_trendCase, list): # list of trend case
+            assert _op in OPERAND.values()
+            self.trendsList = _trendCase
+            self.linkOperand = _op # whatever the trend cases number, only one type of operand links them all
+        elif isinstance(_trendCase, mstaTrendCase): # simple trend case (just one)
+            self.trendsList = [_trendCase]
+            self.linkOperand = OPERAND['none']
+        else:
+            self.trendsList = []
+            self.linkOperand = OPERAND['none']
 
     def __getitem__(self, item):
-        assert len(self.trendList) > 0
-        if item < len(self.trendList):
-            return self.trendList[item]
-        else:
-            return None
+            return self.trendsList[item]
 
-    def __repr__(self):
-        if len(self.trendList) == 0:
+    def __repr__(self): # Full printing of trend case without taking care of simple or complex cases (GSTA)
+        if len(self.trendsList) == 0:
             return
-        return([t.__repr__() for t in self.trendList])
+        retValue = "{"
+        for t in self.trendsList:
+            retValue += t.__repr__() + '\n'
+        retValue += "}"
+        return(retValue)
 
-    def getTrendsText(self):
-        retValue = []
-        for t in self.trendList:
-            if isinstance(t, mstaTrendCase):
-                retValue.append(f'{t.getTrendText()}')
-        return retValue
+    def __str__(self): # Complex print which take care of GSTA like trend cases
+        if len(self.trendsList) == 0:
+            return
+        retValue = ""
+        for t in self.trendsList:
+            if t.isGSTATrend():
+                retValue += t.getGSTATrendText()
+            else:
+                retValue += (t.__str__() + '\n')
+        retValue += '\n'
+        return(retValue)
 
-    # Equality between two mstacomposedtrendcase objects
-    def __eq__(self,_other):
-        if self.getTrend() == _other.getTrend():
-            return True
-        else:
-            return False
+    # For convenience and to be homogeneous with mstaTrendCase class
+    def getGSTATrendText(self):
+        return self.__str__()
+
+    def setComposedGSTATrend(self, _bool):
+        self.composedGSTATrend = _bool
+
+    def isGSTATrend(self):
+        return self.composedGSTATrend
 
     def getID(self):
         return self.ID
 
-    def setID(self, _id):
-        assert _id >= 0
-        self.ID = _id
+    # Equality between two mstaComposedTrendCase objects
+    def __eq__(self,_other):
+        assert isinstance(_other, mstaComposedTrendCase)
+        if self.getTrendCount() != _other.getTrendCount(): # if not same length of trend list -> equal = False
+            return False
+        # Both list have same length
+        for i in range(self.getTrendCount()):
+            if self.getTrend(i) != _other.getTrend(i): # It is consider that other is keep in both list
+                return False
+        return True
 
     # return the higher ID of mstaTrendCase object in the list
     def getMaxCaseID(self):
-        maxID = -1  # just to be sure to get the max, even if not trend is defined (should be -1)
-        for t in self.trendList:
-            assert isinstance(t, mstaTrendCase)
-            if maxID < t.getID():
-                maxID = t.getID()
-        return maxID
+        if len(self.trendsList) > 0:
+            return max(t.getID for t in self.trendsList)
+        else:
+            return 0
 
-    def getLevel(self):
-        return self.level
-
-    def setLevel(self, _lvl):
-        self.level = _lvl
-
-    def addOperand(self, _op):
-        self.linkOperand.append(OPERAND[_op])
-
-    # Change the operand between two
-    def setOperand(self, _id, _op):
-        assert _id < len(self.linkOperand) and _id < len(self.trendList)-1
-        self.linkOperand[_id] = OPERAND[_op]
+    # Change the operand
+    def setOperand(self, _op):
+        assert _op in OPERAND.values()
+        self.linkOperand = _op
 
     def getTrend(self, *args):
         if len(args) > 0:
             _id = args[0]
-            assert _id < len(self.trendList)
-            return self.trendList[_id]
+            assert _id < len(self.trendsList)
+            return self.trendsList[_id]
         else:
-            return self.trendList
+            return self.trendsList
 
     def getFirstTrend(self):
-        assert len(self.trendList) >= 1
-        return self.trendList[0]
+        assert len(self.trendsList) >= 1
+        return self.trendsList[0]
 
     def getLastTrend(self):
-        assert len(self.trendList) >= 1
-        return self.trendList[-1]
+        assert len(self.trendsList) >= 1
+        return self.trendsList[-1]
 
     def getTrendCount(self):
-        return len(self.trendList)
+        return len(self.trendsList)
 
     def addTrendCase(self, _trendcase, _operand):
         assert isinstance(_trendcase, mstaTrendCase) or isinstance(_trendcase, mstaComposedTrendCase)
-        # if more than one trend case
-        #if len(self.trendList) > 0:
-        #    assert OPERAND[_operand] # is _operand valid
-
-        self.trendList.append(_trendcase)
-        self.linkOperand.append(OPERAND[_operand])
-        # there must be (operand + 1) trend cases
-        # assert len(self.trendList) == len(self.linkOperand) + 1
+        assert _operand in OPERAND.values()
+        self.linkOperand = _operand
+        self.trendsList.append(_trendcase)
 
     def deleteTrendCase(self, _trendcase):
-        assert isinstance(_trendcase, mstaTrendCase) or isinstance(_trendcase, mstaComposedTrendCase)
-        # if more than one trend case
-        #if len(self.trendList) > 0:
-        #    assert OPERAND[_operand] # is _operand valid
-        for t in self.trendList:
+        for t in self.trendsList:
             if t == _trendcase:
-                index = self.trendList.index(t)
-                assert index < len(self.linkOperand)
-                if index == 0: # This is the first trend of the list
-                    del self.linkOperand[0] # First element of operand list
-                else:
-                    del self.linkOperand[index-1]
-                self.trendList.remove(t)
+                index = self.trendsList.index(t)
+                self.trendsList.remove(t)
         return
 
 
