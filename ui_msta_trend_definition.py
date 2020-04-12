@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'ui_msta_trend_definition.ui'
 #
-# Created by: PyQt5 UI code generator 5.10.1
+# Created by: PyQt5 UI code generator 5.9.2
 #
 # WARNING! All changes made in this file will be lost!
 
@@ -41,20 +41,6 @@ class Ui_mstaTrendDefinitionDialog(object):
         self.comparatorComboBox.setObjectName("comparatorComboBox")
         self.comparatorComboBox.addItem("")
         self.comparatorComboBox.addItem("")
-        self.trendListLabel = QtWidgets.QLabel(mstaTrendDefinitionDialog)
-        self.trendListLabel.setEnabled(True)
-        self.trendListLabel.setGeometry(QtCore.QRect(10, 20, 131, 161))
-        self.trendListLabel.setAutoFillBackground(True)
-        self.trendListLabel.setFrameShape(QtWidgets.QFrame.Panel)
-        self.trendListLabel.setFrameShadow(QtWidgets.QFrame.Sunken)
-        self.trendListLabel.setLineWidth(1)
-        self.trendListLabel.setMidLineWidth(0)
-        self.trendListLabel.setText("")
-        self.trendListLabel.setTextFormat(QtCore.Qt.AutoText)
-        self.trendListLabel.setScaledContents(False)
-        self.trendListLabel.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignTop)
-        self.trendListLabel.setTextInteractionFlags(QtCore.Qt.NoTextInteraction)
-        self.trendListLabel.setObjectName("trendListLabel")
         self.label = QtWidgets.QLabel(mstaTrendDefinitionDialog)
         self.label.setGeometry(QtCore.QRect(230, 10, 61, 16))
         self.label.setObjectName("label")
@@ -62,7 +48,7 @@ class Ui_mstaTrendDefinitionDialog(object):
         self.label_2.setGeometry(QtCore.QRect(230, 103, 60, 16))
         self.label_2.setObjectName("label_2")
         self.layoutWidget = QtWidgets.QWidget(mstaTrendDefinitionDialog)
-        self.layoutWidget.setGeometry(QtCore.QRect(160, 53, 61, 81))
+        self.layoutWidget.setGeometry(QtCore.QRect(160, 40, 61, 91))
         self.layoutWidget.setObjectName("layoutWidget")
         self.verticalLayout_2 = QtWidgets.QVBoxLayout(self.layoutWidget)
         self.verticalLayout_2.setContentsMargins(0, 0, 0, 0)
@@ -90,6 +76,9 @@ class Ui_mstaTrendDefinitionDialog(object):
         self.linkOperandComboBox.addItem("")
         self.linkOperandComboBox.addItem("")
         self.linkOperandComboBox.addItem("")
+        self.TrendCaseTextEdit = QtWidgets.QTextEdit(mstaTrendDefinitionDialog)
+        self.TrendCaseTextEdit.setGeometry(QtCore.QRect(10, 10, 141, 171))
+        self.TrendCaseTextEdit.setObjectName("TrendCaseTextEdit")
 
         self.retranslateUi(mstaTrendDefinitionDialog)
         self.buttonBox.accepted.connect(mstaTrendDefinitionDialog.accept)

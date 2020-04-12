@@ -403,6 +403,7 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
                 for i, v in enumerate(self.variablesObjectsList):
                     if v.getName() == newVar.getName():
                         self.variablesObjectsList[i] = newVar
+                break
             elif result == QDialog.Rejected:
                 if QMessageBox.question(self, "Skewness variable", "No skewness variable selected", \
                                     QMessageBox.Abort | QMessageBox.Retry) == QMessageBox.Abort:
@@ -479,7 +480,7 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
     ###############################################
     # Definition of the trend case(s) for a GSTA analysis
     def SetGSTATrendCases(self):
-        dlg = setGSTATrendCasesDlg(self.totalVariablesName, self.variablesObjectsList, self.trendCases)
+        dlg = setGSTATrendCasesDlg(self.variablesObjectsList, self.trendCases)
         result = dlg.exec()
         if result:
             if dlg.getTrendCases().getTrendCount() > 0:
@@ -490,7 +491,7 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
 
     ###############################################
     def SetMSTATrendCases(self):
-        dlg = setMSTATrendCasesDlg(self.totalVariablesName, self.variablesObjectsList, self.trendCases) # Variable definition is the same for all points
+        dlg = setMSTATrendCasesDlg(self.variablesObjectsList, self.trendCases) # Variable definition is the same for all points
         result = dlg.exec()
         if result:
             self.trendCases = dlg.getTrendCases()
