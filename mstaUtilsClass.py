@@ -107,6 +107,7 @@ class setGSTAVariablesDlg(QDialog, setGSTAVarDlg):
     def getVariableDefinitionAliasIndex(self, _vname):
         return self.getVariableDefinitionAlias().index(_vname)
 
+    @pyqtSlot(int)
     def getMean(self, _index):
         item = self.meanComboBox.itemText(_index)
         if item == 'Choose a variable...' and self.isAliasSet('Mean'):
@@ -135,6 +136,7 @@ class setGSTAVariablesDlg(QDialog, setGSTAVarDlg):
         newVar.setAlias("Mean")
         self.variablesDefinition.append(newVar)
 
+    @pyqtSlot(int)
     def getSorting(self, _index):
         item = self.sortingComboBox.itemText(_index)
         if item == 'Choose a variable...' and self.isAliasSet('Sorting'):
@@ -161,6 +163,7 @@ class setGSTAVariablesDlg(QDialog, setGSTAVarDlg):
         newVar.setAlias("Sorting")
         self.variablesDefinition.append(newVar)
 
+    @pyqtSlot(int)
     def getSkewness(self, _index):
         item = self.skewnessComboBox.itemText(_index)
         if item == 'Choose a variable...' and self.isAliasSet('Skewness'):
@@ -420,7 +423,7 @@ class setMSTAVariableOptionDlg(QDialog, setMSTAVariableDlg):
         # Handle default Ok message
         self.buttonBox.accepted.connect(self.okBoutonGroupClicked)
 
-    # Handle the ok button signal to verify that a variable name
+    # Handle the ok button signal to verify that a variable name has been defined/chosen
     @pyqtSlot()
     def okBoutonGroupClicked(self):
         if self.variableNameComboBox.currentText() == "Choose a variable...":
@@ -540,6 +543,7 @@ class setMSTATrendCasesDlg(QDialog, setMSTATrendDlg):
         assert _sign in COMP.values()
         return list(COMP.keys())[list(COMP.values()).index(_sign)]
 
+    @pyqtSlot(bool)
     def ClearTrendListLabel(self):
         msg = 'Are you sure you want delete all trends ?'
         if QMessageBox.information(self, "MSTA Variables", msg, QMessageBox.Yes | QMessageBox.No) == QMessageBox.No:
@@ -550,6 +554,7 @@ class setMSTATrendCasesDlg(QDialog, setMSTATrendDlg):
         self.linkOperandComboBox.setEnabled(False)
         return
 
+    @pyqtSlot(bool)
     def addMSTATrendCase(self):
         # Two different variables can be mix only of they have same Dg or (direction, tolerance) and unit
         varA = self.varObjectsList[self.variableAComboBox.currentIndex()]
@@ -577,6 +582,7 @@ class setMSTATrendCasesDlg(QDialog, setMSTATrendDlg):
         self.updateMSTATrendCaseText(self.theTrendObject)
         return
 
+    @pyqtSlot(bool)
     def deleteTrendCase(self):
         varA = self.varObjectsList[self.variableAComboBox.currentIndex()]
         varB = self.varObjectsList[self.variableBComboBox.currentIndex()]
