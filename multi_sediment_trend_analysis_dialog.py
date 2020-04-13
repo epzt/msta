@@ -120,8 +120,8 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         self.selectedVariableNames = []
         # A list of all the variables objects of class mstaVariable
         self.variablesObjectsList = []
-        # The current trend case(s) object
-        self.trendCases = mstaComposedTrendCase()
+        # The main trend case object, contains all trend case(s), simple and/or composed
+        self.theTrendObject = mstaComposedTrendCase()
         # "Central Widget" expands to fill all available space
         self.textwidget = QTextEdit()
         self.setCentralWidget(self.textwidget)
@@ -338,10 +338,10 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
     ###############################################
     # Print the defined trend(s)
     def PrintTrendsList(self):
-        if self.trendCases.getTrendCount() == 0:
+        if self.theTrendObject.getTrendCount() == 0:
             QMessageBox.information(self, "Trend case", "No trend case(s) defined yet.")
             return
-        self.updateLogViewPort(2, self.trendCases.__str__())
+        self.updateLogViewPort(2, self.theTrendObject)
 
     ###############################################
     # Definition of the GSTA variables to use for mean, sorting and skewness
@@ -480,42 +480,43 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
     ###############################################
     # Definition of the trend case(s) for a GSTA analysis
     def SetGSTATrendCases(self):
-        dlg = setGSTATrendCasesDlg(self.variablesObjectsList, self.trendCases)
+        dlg = setGSTATrendCasesDlg(self.variablesObjectsList, self.theTrendObject)
         result = dlg.exec()
         if result:
             if dlg.getTrendCases().getTrendCount() > 0:
-                self.trendCases = dlg.getTrendCases()
+                self.theTrendObject = dlg.getTrendCases()
             else:
-                self.trendCases = mstaComposedTrendCase()
+                # TODO: regarder à traiter ici the cas ou il n'y a pas the GSTA trend dans self.theTrendObject
+                # self.theTrendObject = []
                 self.computeMSTA.setEnabled(False)
 
     ###############################################
     def SetMSTATrendCases(self):
-        dlg = setMSTATrendCasesDlg(self.variablesObjectsList, self.trendCases) # Variable definition is the same for all points
+        dlg = setMSTATrendCasesDlg(self.variablesObjectsList, self.theTrendObject) # Variable definition is the same for all points
         result = dlg.exec()
         if result:
-            self.trendCases = dlg.getTrendCases()
+            self.theTrendObject = dlg.getTrendCases()
             self.computeMSTA.setEnabled(True)
             return
 
     ###############################################
     def DeleteAllTrends(self):
-        if self.trendCases.getTrendCount() == 0:
+        if self.theTrendObject.getTrendCount() == 0:
             QMessageBox.information(self, "Trend case(s)", "No trend case(s) defined yet.")
             return
         if QMessageBox.question(self, "Trend cases(s)", "Are you sure you want to delete all defined trends ?") == QMessageBox.Yes:
-            self.trendCases = mstaComposedTrendCase()
+            self.theTrendObject = mstaComposedTrendCase()
             self.computeMSTA.setEnabled(False)
         return
 
     ###############################################
     def ComputeMSTA(self):
-        assert self.trendCases.getTrendCount() > 0 # Must have at least one trand to study
+        assert self.theTrendObject.getTrendCount() > 0 # Must have at least one trand to study
         assert len(self.variablesObjectsList) > 0 # Must have at least one variable in the current selected list
         assert self.temporaryLayer # Check the temporary layer is set
 
         for point in self.points:
-            for trend in self.trendCases:
+            for trend in self.theTrendObject.getTrend():
                 if isinstance(trend, mstaTrendCase):
                     QMessageBox.information(self, "*/*\*/*\*", "{}".format(trend.__repr__()))
                 if isinstance(trend, mstaComposedTrendCase):

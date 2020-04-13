@@ -291,7 +291,14 @@ class mstaVariable():
     # Test if the current variable as same Dg, direction and tolerance than variable _other
     # convenient during process
     def isEqual(self, _other):
-        return self.dg == _other.dg and self.getSearch() == _other.getSearch()
+        retValue = True
+        if self.getDg() != _other.getDg():
+            retValue = False
+        if self.getSearch() != _other.getSearch():
+            retValue = False
+        if self.getUnit() != _other.getUnit():
+            retValue = False
+        return retValue
 
     def getID(self):
         return self.ID
@@ -481,8 +488,11 @@ class mstaComposedTrendCase():
             self.trendsList = _trendCase
             self.linkOperand = _op # whatever the trend cases number, only one type of operand links them all
         elif isinstance(_trendCase, mstaTrendCase): # simple trend case (just one)
+            assert _op in OPERAND.values()
             self.trendsList = [_trendCase]
-            self.linkOperand = OPERAND['none']
+            # TODO: verifier qu'il est necessaire de donner un operand a tous les coups
+            # voir si on ne peut/doit pas gérer ici le cas ou _op est "None"
+            self.linkOperand = _op
         else:
             self.trendsList = []
             self.linkOperand = OPERAND['none']
@@ -531,7 +541,7 @@ class mstaComposedTrendCase():
             return False
         # Both list have same length
         for i in range(self.getTrendCount()):
-            if self.getTrend(i) != _other.getTrend(i): # It is consider that other is keep in both list
+            if self.getTrend(i) != _other.getTrend(i): # It is consider that order is the same in both list
                 return False
         return True
 

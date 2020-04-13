@@ -221,16 +221,16 @@ class setGSTAVariablesDlg(QDialog, setGSTAVarDlg):
 # GSTA trend definition
 #############################################################################
 class setGSTATrendCasesDlg(QDialog, setGSTATrendDlg):
-    def __init__(self, _variables, _trends, parent=None):
+    def __init__(self, _variables, _theTrendObject, parent=None):
         super(setGSTATrendCasesDlg,self).__init__(parent)
         self.setupUi(self)
         # _variables should be a list of three mstaVariable objects
         assert isinstance(_variables, list) and len(_variables) >= 3
         assert isinstance(_variables[0], mstaVariable)
-        # _trends must be of type mstaComposedTrendCase
-        assert isinstance(_trends, mstaComposedTrendCase)
+        # _theTrendObject must be of type mstaComposedTrendCase
+        assert isinstance(_theTrendObject, mstaComposedTrendCase)
         # Assignements
-        self.trendCases = _trends  # Type mstaComposedTrendCase
+        self.theTrendObject = _theTrendObject  # mstaComposedTrendCase objects
         # Initial variables
         self.meanTrendText = ""
         self.meanTrend = mstaTrendCase(self.getNameFromVariableList(_variables, "Mean"),"none")
@@ -256,7 +256,10 @@ class setGSTATrendCasesDlg(QDialog, setGSTATrendDlg):
         self.radioGSTASkewnessNone.toggled.connect(self.setSkewnessTrend)
         self.linkOperandComboBox.currentTextChanged.connect(self.currentTextChanged)
 
+        self.updateGSTATrendCasesText(self.theTrendObject)
+
     ###############################################
+    @pyqtSlot(bool)
     def setMeanTrend(self):
         if self.radioGSTAMeanFiner.isChecked():
             self.meanTrendText = "F"
@@ -275,6 +278,7 @@ class setGSTATrendCasesDlg(QDialog, setGSTATrendDlg):
             self.meanTrend.setComp("none")
 
     ###############################################
+    @pyqtSlot(bool)
     def setSortingTrend(self):
         if self.radioGSTASortingBetter.isChecked():
             self.sortingTrendText = "B"
@@ -287,6 +291,7 @@ class setGSTATrendCasesDlg(QDialog, setGSTATrendDlg):
             self.sortingTrend.setComp("none")
 
     ###############################################
+    @pyqtSlot(bool)
     def setSkewnessTrend(self):
         if self.radioGSTASkewnessPlus.isChecked():
             self.skewnessTrendText = "+"
@@ -305,30 +310,32 @@ class setGSTATrendCasesDlg(QDialog, setGSTATrendDlg):
             self.skewnessTrend.setComp("none")
 
     ###############################################
-    # Add the new trend case to the main list
+    # Add the new trend case to the main object
+    @pyqtSlot(bool)
     def addGSTATrendCase(self):
         # New combined trend case object to add
         newCombinedTC = mstaComposedTrendCase([self.meanTrend,self.sortingTrend,self.skewnessTrend], OPERAND['et'])
         newCombinedTC.setComposedGSTATrend(True)  # It is a GSTA trend !! IMPORTANT TO SET IT AT TRUE
-        for tc in self.trendCases:
+        for tc in self.theTrendObject.getTrend():
             if tc.isGSTATrend():  # Test if it is a GSTA trend
                 if tc == newCombinedTC:  # The new GSTA trend is still defined
                     return
-        self.trendCases.addTrendCase(newCombinedTC, '')  # New GSTA trend case is added to the global list
-        print(self.trendCases)
-        self.updateGSTATrendCasesText(self.trendCases)
+        self.theTrendObject.addTrendCase(newCombinedTC, self.linkOperand)  # New GSTA trend case is added to the global object
+        self.updateGSTATrendCasesText(self.theTrendObject)
         return
 
     ###############################################
+    # Remove the current trend case to the main object
+    @pyqtSlot(bool)
     def removeGSTATrendCase(self):
         # Current combined trend case object to remove
         currentCombinedTC = mstaComposedTrendCase([self.meanTrend, self.sortingTrend, self.skewnessTrend], OPERAND['et'])
         currentCombinedTC.setComposedGSTATrend(True)
-        for tc in self.trendCases:
+        for tc in self.theTrendObject.getTrend():
             if tc.isGSTATrend():  # Test if it is a GSTA trend
                 if tc == currentCombinedTC:  # The current GSTA trend is defined
-                    self.trendCases.deleteTrendCase(tc)  # New GSTA trend case is added to the global list
-        self.updateGSTATrendCasesText(self.trendCases)
+                    self.theTrendObject.deleteTrendCase(tc)  # New GSTA trend case is deleted of the global object
+        self.updateGSTATrendCasesText(self.theTrendObject)
         return
 
     ###############################################
@@ -338,23 +345,23 @@ class setGSTATrendCasesDlg(QDialog, setGSTATrendDlg):
         # New combined trend case object to add
         newCombinedTC = mstaComposedTrendCase(_newTC, OPERAND['et'])
         newCombinedTC.setComposedGSTATrend(True)  # It is a GSTA trend !! IMPORTANT TO SET IT AT TRUE
-        for tc in self.trendCases:
+        for tc in self.theTrendObject.getTrend():
             if tc.isGSTATrend(): # Test if it is a GSTA trend
                 if tc == newCombinedTC: # The new GSTA trend is defined
                     return
-        self.trendCases.addTrendCase(newCombinedTC, '') # New GSTA trend case is added to the global list
+        self.theTrendObject.addTrendCase(newCombinedTC, '') # New GSTA trend case is added to the global list
         return
     '''
     ###############################################
-    def updateGSTATrendCasesText(self, _trendCases):
+    def updateGSTATrendCasesText(self, _theTrendCase):
         # Erase all previous text
         self.TrendCaseTextEdit.clear()
         # If no trends defined-> nothing to do
-        if _trendCases.getTrendCount() == 0:
+        if _theTrendCase.getTrendCount() == 0:
             return
         # Construction of the text
         textCasesTrend = ""
-        for tc in _trendCases.getTrend():
+        for tc in _theTrendCase.getTrend():
             textCasesTrend += tc.getGSTATrendText()
         textCasesTrend += '\n'
         # Print the text in the widget
@@ -370,9 +377,10 @@ class setGSTATrendCasesDlg(QDialog, setGSTATrendDlg):
 
     ###############################################
     def getTrendCases(self):
-        return self.trendCases
+        return self.theTrendObject
 
     ###############################################
+    @pyqtSlot('const QString')
     def currentTextChanged(self, _text):
         self.linkOperand = _text
 
@@ -492,22 +500,22 @@ class setMSTAVariableOptionDlg(QDialog, setMSTAVariableDlg):
 # MSTA trend definition
 #############################################################################
 class setMSTATrendCasesDlg(QDialog, setMSTATrendDlg):
-    def __init__(self, _variables, _trends, parent=None):
+    def __init__(self, _variables, _theTrendObject, parent=None):
         super(setMSTATrendCasesDlg, self).__init__(parent)
         self.setupUi(self)
 
         # _variables should be a list of mstaVariable objects
         assert isinstance(_variables, list)
         assert isinstance(_variables[0], mstaVariable)
-        # _trends must be of type mstaComposedTrendCase
-        assert isinstance(_trends, mstaComposedTrendCase)
+        # _theTrendObject must be of type mstaComposedTrendCase
+        assert isinstance(_theTrendObject, mstaComposedTrendCase)
         # Construct the variable names list
         self.varObjectsList = _variables.copy()
         self.varNames = [v.getName() for v in self.varObjectsList]
-        # List of composed trend case objects (can have just one case)
-        self.trendCases = _trends
-        # List of names of the defined trend case, just usefull for interface information
-        self.TrendCaseTextEdit.setText(self.trendCases.__str__())
+        # Composed trend case object (contains all the other case)
+        self.theTrendObject = _theTrendObject
+        # Update the text of defined trend cases
+        self.updateMSTATrendCaseText(self.theTrendObject)
 
         # Initialisations
         # Lists of comboboxes
@@ -538,99 +546,89 @@ class setMSTATrendCasesDlg(QDialog, setMSTATrendDlg):
             return
         self.trendListLabel.clear()
         self.trendTextCases.clear()
-        self.trendCases = mstaComposedTrendCase()
+        self.theTrendObject = mstaComposedTrendCase()
         self.linkOperandComboBox.setEnabled(False)
         return
 
     def addMSTATrendCase(self):
-        # Two different variables can be mix only of they have same Dg
-        if not self.varObjectsList[self.variableAComboBox.currentIndex()].isEqual(self.varObjectsList[self.variableBComboBox.currentIndex()]):
-            indexA = self.variableAComboBox.currentIndex()
-            indexB = self.variableBComboBox.currentIndex()
+        # Two different variables can be mix only of they have same Dg or (direction, tolerance) and unit
+        varA = self.varObjectsList[self.variableAComboBox.currentIndex()]
+        varB = self.varObjectsList[self.variableBComboBox.currentIndex()]
+        if not varA.isEqual(varB):
             QMessageBox.warning(self, "Trend definition error",
-                                "Can\'t mix two variables with different characteristic distance, research angle or tolerance value:\n"
-                                "{}: {}\n"
-                                "{}: {}".format(self.varObjectsList[indexA].getName(),
-                                                self.varObjectsList[indexA].getDg(),
-                                                self.varObjectsList[indexB].getName(),
-                                                self.varObjectsList[indexB].getDg()))
+                                "Can\'t mix two variables with different characteristic distance, research angle or tolerance value:\n \
+                                {}\n{}".format(varA.__repr__(), varB.__repr__()))
             return
-        newTrendCaseText = f'{self.variableAName}(i) {self.signType} {self.variableBName}(j)'
-        if newTrendCaseText in self.trendTextCases:
-            return
-        self.trendTextCases.append(newTrendCaseText)
-        # update the GUI
-        TrendCaseTextEdit = ""
-        for tc in self.trendTextCases:
-            TrendCaseTextEdit += tc + '\n'
-        self.trendListLabel.setText(TrendCaseTextEdit)
 
-        # Update trend cases list
-        QMessageBox.information(self, "MSTA Variables", "{}".format(self.variableAComboBox.currentIndex()))
-        # TODO: changer mstaTrendCAse par mstaComposedTrendCase et regarder si ca colle
-        newTrendCase = mstaTrendCase(self.varObjectsList[self.variableAComboBox.currentIndex()])
+        # Create a simple trend case
         if self.variableAName != self.variableBName: # In case varA is different to varB
-            QMessageBox.information(self, "MSTA Variables", "{}".format(self.variableBComboBox.currentIndex()))
-            newTrendCase.setRightVar(self.varObjectsList[self.variableBComboBox.currentIndex()])
-
-        newTrendCase.setComp(self.getComp(self.signType))
-        if newTrendCase.getID() == 0:
-            self.trendCases.addTrendCase(newTrendCase, '')
-            self.linkOperandComboBox.setEnabled(True)
+            simpleCase = mstaTrendCase([varA, varB], self.getComp(self.signType))
         else:
-            self.trendCases.addTrendCase(newTrendCase, self.linkOperand)
+            simpleCase = mstaTrendCase(varA, self.getComp(self.signType))
+        # Create the new composed trend case to add to the list
+        newTrendCase = mstaComposedTrendCase(simpleCase, self.linkOperand)
+        newTrendCase.setComposedGSTATrend(False)
+        for tc in self.theTrendObject.getTrend():
+            if tc == newTrendCase:
+                return
+        # Add the new composed trend case to the global list
+        self.theTrendObject.addTrendCase(newTrendCase, self.linkOperand)
+        # Update the text of defined trend cases
+        self.updateMSTATrendCaseText(self.theTrendObject)
         return
 
     def deleteTrendCase(self):
-        trendCaseToDelete = f'{self.variableAName}(i) {self.signType} {self.variableBName}(j)'
-        try:
-            id = self.trendTextCases.index(trendCaseToDelete)
-        except ValueError:
-            return
-        self.trendTextCases.remove(trendCaseToDelete)
-        # update the GUI
-        TrendCaseTextEdit = ""
-        for tc in self.trendTextCases:
-            TrendCaseTextEdit += tc + '\n'
-        self.trendListLabel.setText(TrendCaseTextEdit)
-
-        self.trendCases.deleteTrendCase(self.trendCases.getTrend(id))
+        varA = self.varObjectsList[self.variableAComboBox.currentIndex()]
+        varB = self.varObjectsList[self.variableBComboBox.currentIndex()]
+        # Create the current trend case
+        if self.variableAName != self.variableBName:  # In case varA is different to varB
+            simpleCase = mstaTrendCase([varA, varB], self.getComp(self.signType))
+        else:
+            simpleCase = mstaTrendCase(varA, self.getComp(self.signType))
+        # Create composed trend case to delete from the list
+        trendCaseToDelete = mstaComposedTrendCase(simpleCase, self.linkOperand)
+        for t in self.theTrendObject.getTrend():
+            if t == trendCaseToDelete:
+                self.theTrendObject.deleteTrendCase(t)
+        # Update the text of defined trend cases
+        self.updateMSTATrendCaseText(self.theTrendObject)
         return
 
-    def updateMSTATrendCaseText(self, _trendCases):
+    def updateMSTATrendCaseText(self, _trendList):
         # Erase all previous text
         self.TrendCaseTextEdit.clear()
-        # If no trends defined-> nothing to do
-        if _trendCases.getTrendCount() == 0:
-            return
         # Construction of the text
         textCasesTrend = ""
-        for tc in _trendCases.getTrend():
-            textCasesTrend += tc.getGSTATrendText()
+        for tc in _trendList:
+            textCasesTrend += tc.__repr__()
         textCasesTrend += '\n'
         # Print the text in the widget
         self.TrendCaseTextEdit.setText(textCasesTrend)
         return
 
-    def currentVariableATextChanged(self):
-        self.variableAName = self.variableAComboBox.currentText()
+    @pyqtSlot('const QString')
+    def currentVariableATextChanged(self, _str):
+        self.variableAName = _str
         self.variableBComboBox.setCurrentIndex(self.variableAComboBox.currentIndex())
         return
 
-    def currentVariableBTextChanged(self):
-        self.variableBName = self.variableBComboBox.currentText()
+    @pyqtSlot('const QString')
+    def currentVariableBTextChanged(self, _str):
+        self.variableBName = _str
         return
 
-    def currentSignTextChanged(self):
-        self.signType = self.comparatorComboBox.currentText()
+    @pyqtSlot('const QString')
+    def currentSignTextChanged(self, _str):
+        self.signType = _str
         return
 
-    def currentLinkOperandChanged(self):
-        self.linkOperand = self.linkOperandComboBox.currentText()
+    @pyqtSlot('const QString')
+    def currentLinkOperandChanged(self, _str):
+        self.linkOperand = _str
         return
 
     def getTrendCases(self):
-        return self.trendCases
+        return self.theTrendObject
 
 #############################################################################
 # Variable selection dialog
