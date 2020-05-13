@@ -122,7 +122,7 @@
     <rect>
      <x>160</x>
      <y>40</y>
-     <width>61</width>
+     <width>82</width>
      <height>91</height>
     </rect>
    </property>
@@ -179,6 +179,11 @@
       <pointsize>12</pointsize>
      </font>
     </property>
+    <item>
+     <property name="text">
+      <string/>
+     </property>
+    </item>
     <item>
      <property name="text">
       <string>AND</string>

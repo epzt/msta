@@ -503,10 +503,10 @@ class mstaComposedTrendCase():
     def __repr__(self): # Full printing of trend case without taking care of simple or complex cases (GSTA)
         if len(self.trendsList) == 0:
             return
-        retValue = "{"
+        retValue = ""
         for t in self.trendsList:
             retValue += t.__repr__() + '\n'
-        retValue += "}"
+        retValue += self.linkOperand + '\n'
         return(retValue)
 
     def __str__(self): # Complex print which take care of GSTA like trend cases
@@ -518,7 +518,7 @@ class mstaComposedTrendCase():
                 retValue += t.getGSTATrendText()
             else:
                 retValue += (t.__str__() + '\n')
-        retValue += '\n'
+        retValue += self.linkOperand + '\n'
         return(retValue)
 
     # For convenience and to be homogeneous with mstaTrendCase class

@@ -132,26 +132,31 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         self.temporaryLayer = None
 
     ###############################################
+    @pyqtSlot(bool)
     def DisplayAboutMSTA(self):
         #about=Ui_AboutDlg()
         #about.exec()
         QMessageBox.information(self, "Information", "MSTA plugin")
 
     ###############################################
+    @pyqtSlot(bool)
     def PrintVariableHelp(self):
         self.textwidget.setHtml("<p><strong>Variable\'s settings</strong> </p>\
         <p>Variables are loaded with the data set. By default, just the name found in the data set is used to access a variable.</p> \
         <p>In the menu \"Variables\", you can modify the variables setting after selected a variable name.<br> \
         <em>(\"Variables\" item is enabled only if a data set is loaded with it\'s corresponding variables)</em></p>")
 
+    @pyqtSlot(bool)
     def PrintTrendHelp(self):
         return
 
     ###############################################
+    @pyqtSlot(bool)
     def SetWorkingDirectory(self):
         self.workingDir = QFileDialog.getExistingDirectory(self, self.workingDir, "Select working directory...", QFileDialog.ShowDirsOnly)
 
     ###############################################
+    @pyqtSlot(bool)
     def DataFileImport(self):
         # Choice of the file name
         fullPathFileName,_= QFileDialog.getOpenFileName(self,"Open a data file", 
@@ -314,11 +319,13 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
             self.textwidget.append(f'{_text.__str__()}')
 
     ###############################################
+    @pyqtSlot(bool)
     def SetClearText(self):
         self.textwidget.clear()
 
     ###############################################
     # Print the current defined variable(s)
+    @pyqtSlot(bool)
     def PrintAllVariablesList(self):
         if not self.totalVariablesName:
             QMessageBox.information(self, "Variable", "No variables defined yet.")
@@ -328,6 +335,7 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
 
     ###############################################
     # Print the current selected variable(s)
+    @pyqtSlot(bool)
     def PrintSelectedVariablesList(self):
         if not self.selectedVariableNames:
             QMessageBox.information(self, "Variable", "No variables defined yet.")
@@ -337,6 +345,7 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
 
     ###############################################
     # Print the defined trend(s)
+    @pyqtSlot(bool)
     def PrintTrendsList(self):
         if self.theTrendObject.getTrendCount() == 0:
             QMessageBox.information(self, "Trend case", "No trend case(s) defined yet.")
@@ -345,6 +354,7 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
 
     ###############################################
     # Definition of the GSTA variables to use for mean, sorting and skewness
+    @pyqtSlot(bool)
     def SetGSTAVariables(self):
         # Use to fill the variable combobox of the dialog
         tmpVarObjectsList = self.variablesObjectsList.copy()
@@ -425,6 +435,7 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
             self.actionGSTALikeTrend.setEnabled(False)
 
     ###############################################
+    @pyqtSlot(bool)
     def ModifyVariables(self):
         # Open dialog of variables settings
         dlg = setMSTAVariableOptionDlg(self.variablesObjectsList)
@@ -445,6 +456,7 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         return
 
     ###############################################
+    @pyqtSlot(bool)
     def DeleteOneVariable(self):
         # Get the name of the variable to delete from user
         variable, ok = QInputDialog.getItem(self, 'Delete a variable', 'Select a variable', self.selectedVariableNames, 0,
@@ -479,6 +491,7 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
     '''
     ###############################################
     # Definition of the trend case(s) for a GSTA analysis
+    @pyqtSlot(bool)
     def SetGSTATrendCases(self):
         dlg = setGSTATrendCasesDlg(self.variablesObjectsList, self.theTrendObject)
         result = dlg.exec()
@@ -491,6 +504,7 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
                 self.computeMSTA.setEnabled(False)
 
     ###############################################
+    @pyqtSlot(bool)
     def SetMSTATrendCases(self):
         dlg = setMSTATrendCasesDlg(self.variablesObjectsList, self.theTrendObject) # Variable definition is the same for all points
         result = dlg.exec()
@@ -500,6 +514,7 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
             return
 
     ###############################################
+    @pyqtSlot(bool)
     def DeleteAllTrends(self):
         if self.theTrendObject.getTrendCount() == 0:
             QMessageBox.information(self, "Trend case(s)", "No trend case(s) defined yet.")
@@ -510,6 +525,7 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         return
 
     ###############################################
+    @pyqtSlot(bool)
     def ComputeMSTA(self):
         assert self.theTrendObject.getTrendCount() > 0 # Must have at least one trand to study
         assert len(self.variablesObjectsList) > 0 # Must have at least one variable in the current selected list
@@ -548,6 +564,7 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         return self.temporaryLayer.selectedFeatureIds()
 
     ###############################################
+    @pyqtSlot(bool)
     def SelectVariables(self):
         selVar = setSelectedVariablesDlg(self.variablesObjectsList, self.selectedVariableNames)
         selVar.exec_()
@@ -557,6 +574,7 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
             self.selectedVariableNames = selVar.getSelectedVariables().copy()
 
     ###############################################
+    @pyqtSlot(bool)
     def ClearSelectedVariables(self):
         if QMessageBox.question(self, "MSTA Variables management", "Do you really want to clear current selected variables ?") == QMessageBox.No:
             return

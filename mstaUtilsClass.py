@@ -580,6 +580,7 @@ class setMSTATrendCasesDlg(QDialog, setMSTATrendDlg):
         self.theTrendObject.addTrendCase(newTrendCase, self.linkOperand)
         # Update the text of defined trend cases
         self.updateMSTATrendCaseText(self.theTrendObject)
+        self.linkOperandComboBox.setEnabled(True)
         return
 
     @pyqtSlot(bool)
@@ -598,6 +599,8 @@ class setMSTATrendCasesDlg(QDialog, setMSTATrendDlg):
                 self.theTrendObject.deleteTrendCase(t)
         # Update the text of defined trend cases
         self.updateMSTATrendCaseText(self.theTrendObject)
+        if self.theTrendObject.getTrendCount() == 0:
+            self.linkOperandComboBox.setEnabled(False)
         return
 
     def updateMSTATrendCaseText(self, _trendList):
