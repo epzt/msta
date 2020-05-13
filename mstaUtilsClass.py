@@ -33,7 +33,7 @@ from .ui_msta_trend_definition import Ui_mstaTrendDefinitionDialog as setMSTATre
 
 from .mstaCoreClass import mstaTrendCase, mstaComposedTrendCase, mstaVariable
 
-import config
+import config as cfg
 
 #############################################################################
 # Just a class to print About information
@@ -221,7 +221,7 @@ class setGSTATrendCasesDlg(QDialog, setGSTATrendDlg):
         self.skewnessTrendText = ""
         self.skewnessTrend = mstaTrendCase(self.getNameFromVariableList(_variables, "Skewness"),"none")
         self.GSTATrendCaseListNames = []
-        self.linkOperand = OPERAND['et'] # Default operand which link multiple GSTA trend case
+        self.linkOperand = cfg.OPERAND['et'] # Default operand which link multiple GSTA trend case
         self.linkOperandComboBox.setEnabled(False)
 
         self.buttonAddGSTATrendCase.clicked.connect(self.addGSTATrendCase)
@@ -296,7 +296,7 @@ class setGSTATrendCasesDlg(QDialog, setGSTATrendDlg):
     @pyqtSlot(bool)
     def addGSTATrendCase(self):
         # New combined trend case object to add
-        newCombinedTC = mstaComposedTrendCase([self.meanTrend,self.sortingTrend,self.skewnessTrend], OPERAND['et'])
+        newCombinedTC = mstaComposedTrendCase([self.meanTrend,self.sortingTrend,self.skewnessTrend], cfg.OPERAND['et'])
         newCombinedTC.setComposedGSTATrend(True)  # It is a GSTA trend !! IMPORTANT TO SET IT AT TRUE
         for tc in self.theTrendObject.getTrend():
             if tc.isGSTATrend():  # Test if it is a GSTA trend
@@ -311,7 +311,7 @@ class setGSTATrendCasesDlg(QDialog, setGSTATrendDlg):
     @pyqtSlot(bool)
     def removeGSTATrendCase(self):
         # Current combined trend case object to remove
-        currentCombinedTC = mstaComposedTrendCase([self.meanTrend, self.sortingTrend, self.skewnessTrend], OPERAND['et'])
+        currentCombinedTC = mstaComposedTrendCase([self.meanTrend, self.sortingTrend, self.skewnessTrend], cfg.OPERAND['et'])
         currentCombinedTC.setComposedGSTATrend(True)
         for tc in self.theTrendObject.getTrend():
             if tc.isGSTATrend():  # Test if it is a GSTA trend
@@ -412,7 +412,7 @@ class setMSTAVariableOptionDlg(QDialog, setMSTAVariableDlg):
 
     @pyqtSlot('const QString')
     def currentUnitChanged(self, _unit):
-        if _unit in UNIT.keys():
+        if _unit in cfg.UNIT.keys():
             self.unit = _unit
             self.variableUnitComboBox.setCurrentIndex(self.variableUnitComboBox.findText(_unit))
 
@@ -517,8 +517,8 @@ class setMSTATrendCasesDlg(QDialog, setMSTATrendDlg):
         self.linkOperandComboBox.currentTextChanged.connect(self.currentLinkOperandChanged)
 
     def getComp(self, _sign):
-        assert _sign in COMP.values()
-        return list(COMP.keys())[list(COMP.values()).index(_sign)]
+        assert _sign in cfg.COMP.values()
+        return list(cfg.COMP.keys())[list(cfg.COMP.values()).index(_sign)]
 
     @pyqtSlot(bool)
     def ClearTrendListLabel(self):
@@ -546,7 +546,7 @@ class setMSTATrendCasesDlg(QDialog, setMSTATrendDlg):
         else:
             simpleCase = mstaTrendCase(varA, self.getComp(self.signType))
         # Create the new composed trend case to add to the list
-        if self.linkOperand == OPERAND['none']:
+        if self.linkOperand == cfg.OPERAND['none']:
             newTrendCase = mstaComposedTrendCase(simpleCase)
         else:
             newTrendCase = mstaComposedTrendCase(simpleCase, self.linkOperand)

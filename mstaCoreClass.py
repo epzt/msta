@@ -26,7 +26,7 @@ from qgis.core import QgsPoint
 import numpy as np
 import itertools
 
-import config
+import config as cfg
 
 #############################################################################
 ## class RANGE: manage variables range                                     ##
@@ -293,7 +293,7 @@ class mstaVariable():
         return self.alias
 
     def setUnit(self,_unit):
-        assert _unit in UNIT.keys()
+        assert _unit in cfg.UNIT.keys()
         self.unit = _unit
     def getUnit(self):
         return self.unit
@@ -337,7 +337,7 @@ class mstaVariable():
 
     # Return False only for phi units and other (not affected)
     def isMetric(self):
-        return not (self.getUnit() == UNIT['phi'] or self.getUnit() == UNIT['other'])
+        return not (self.getUnit() == cfg.UNIT['phi'] or self.getUnit() == cfg.UNIT['other'])
 
 #############################################################################
 ## class mstaTrendCase: manage trend case                                  ##
@@ -351,19 +351,19 @@ class mstaTrendCase():
         # it is eventually possible to manage 2 different variables
         if isinstance(_variables, list): # Two different variables
             assert len(_variables) == 2
-            assert _comp in COMP.keys()
+            assert _comp in cfg.COMP.keys()
             assert isinstance(_variables[0], mstaVariable) and isinstance(_variables[1], mstaVariable)
-            self.compSigne = COMP[_comp]
+            self.compSigne = cfg.COMP[_comp]
             self.leftVar = _variables[0]
             self.rightVar = _variables[1]
         elif _variables: # Same variable
-            assert _comp in COMP.keys()
+            assert _comp in cfg.COMP.keys()
             assert isinstance(_variables, mstaVariable)
-            self.compSigne = COMP[_comp]
+            self.compSigne = cfg.COMP[_comp]
             self.leftVar = _variables
             self.rightVar = _variables
         else: # Default init
-            self.compSigne = COMP['none']
+            self.compSigne = cfg.COMP['none']
             self.leftVar = mstaVariable()
             self.rightVar = mstaVariable()
 
@@ -400,7 +400,7 @@ class mstaTrendCase():
         assert isinstance(self.rightVar, mstaVariable)
         assert self.leftVar.getAlias() == self.rightVar.getAlias()  # The variables have to be the same (m, sd or sk)
         if self.leftVar.getAlias() == "mean":  # Mean
-            if self.compSigne == COMP['sup']:
+            if self.compSigne == cfg.COMP['sup']:
                 if self.leftVar.isMetric():
                     return 'F'
                 else:
@@ -411,12 +411,12 @@ class mstaTrendCase():
                 else:
                     return 'F'
         elif self.leftVar.getAlias() == "sorting":  # Sorting
-            if self.compSigne == COMP['sup']:
+            if self.compSigne == cfg.COMP['sup']:
                 return 'B'
             else:
                 return 'P'
         else:  # Skewness
-            if self.compSigne == COMP['sup']:
+            if self.compSigne == cfg.COMP['sup']:
                 if self.leftVar.isMetric():
                     return '-'
                 else:
@@ -432,7 +432,7 @@ class mstaTrendCase():
 
     def setComp(self, _op):
         assert _op != ''
-        self.compSigne = COMP[_op]
+        self.compSigne = cfg.COMP[_op]
 
     def getComp(self):
         return(self.compSigne)
@@ -463,18 +463,18 @@ class mstaComposedTrendCase():
         """Constructor."""
         self.composedGSTATrend = False # by default it is false, can be change through dedicated function
         if isinstance(_trendCase, list): # list of trend case
-            assert _op in OPERAND.values()
+            assert _op in cfg.OPERAND.values()
             self.trendsList = _trendCase
             self.linkOperand = _op # whatever the trend cases number, only one type of operand links them all
         elif isinstance(_trendCase, mstaTrendCase): # simple trend case (just one)
-            assert _op in OPERAND.values()
+            assert _op in cfg.OPERAND.values()
             self.trendsList = [_trendCase]
             # TODO: verifier qu'il est necessaire de donner un operand a tous les coups
             # voir si on ne peut/doit pas gérer ici le cas ou _op est "None"
             self.linkOperand = _op
         else:
             self.trendsList = []
-            self.linkOperand = OPERAND['none']
+            self.linkOperand = cfg.OPERAND['none']
 
     def __getitem__(self, item):
             return self.trendsList[item]
@@ -533,7 +533,7 @@ class mstaComposedTrendCase():
 
     # Change the operand
     def setOperand(self, _op):
-        assert _op in OPERAND.values()
+        assert _op in cfg.OPERAND.values()
         self.linkOperand = _op
 
     def getTrend(self, *args):
@@ -557,7 +557,7 @@ class mstaComposedTrendCase():
 
     def addTrendCase(self, _trendcase, _operand):
         assert isinstance(_trendcase, mstaTrendCase) or isinstance(_trendcase, mstaComposedTrendCase)
-        assert _operand in OPERAND.values()
+        assert _operand in cfg.OPERAND.values()
         self.linkOperand = _operand
         self.trendsList.append(_trendcase)
 
