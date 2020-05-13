@@ -214,6 +214,8 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         # Data set is loaded, variables and trends can be manage
         self.menuVariables.setEnabled(True)
         self.menuTrends.setEnabled(True)
+        # Save current directory in a variable
+        self.workingDir = os.path.dirname(fullPathFileName)
         return
 
     ###############################################

@@ -26,28 +26,7 @@ from qgis.core import QgsPoint
 import numpy as np
 import itertools
 
-# Trend operations
-COMP = {
-    'sup' : '>',
-    'inf' : '<',
-    'none' : ''
-}
-
-# Operand operations
-OPERAND = {
-    'ou' : 'OR',
-    'et' : 'AND',
-    'xou' : 'XOR',
-    'none' : ''
-}
-
-# Unit of variables
-UNIT = {
-    '%' : 'percent',
-    'metric' : 'metre',
-    'phi' : 'phi',
-    'other' : 'unknown'
-}
+import config
 
 #############################################################################
 ## class RANGE: manage variables range                                     ##

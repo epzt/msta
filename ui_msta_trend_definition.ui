@@ -122,7 +122,7 @@
     <rect>
      <x>160</x>
      <y>40</y>
-     <width>82</width>
+     <width>61</width>
      <height>91</height>
     </rect>
    </property>
@@ -181,7 +181,7 @@
     </property>
     <item>
      <property name="text">
-      <string/>
+      <string>None</string>
      </property>
     </item>
     <item>
@@ -201,7 +201,10 @@
     </item>
    </widget>
   </widget>
-  <widget class="QTextEdit" name="TrendCaseTextEdit">
+  <widget class="QTextEdit" name="trendCaseTextEdit">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
    <property name="geometry">
     <rect>
      <x>10</x>
@@ -209,6 +212,12 @@
      <width>141</width>
      <height>171</height>
     </rect>
+   </property>
+   <property name="autoFillBackground">
+    <bool>false</bool>
+   </property>
+   <property name="readOnly">
+    <bool>true</bool>
    </property>
   </widget>
  </widget>

@@ -2,11 +2,13 @@
 
 # Form implementation generated from reading ui file 'ui_msta_trend_definition.ui'
 #
-# Created by: PyQt5 UI code generator 5.9.2
+# Created by: PyQt5 UI code generator 5.14.1
 #
 # WARNING! All changes made in this file will be lost!
 
+
 from PyQt5 import QtCore, QtGui, QtWidgets
+
 
 class Ui_mstaTrendDefinitionDialog(object):
     def setupUi(self, mstaTrendDefinitionDialog):
@@ -48,7 +50,7 @@ class Ui_mstaTrendDefinitionDialog(object):
         self.label_2.setGeometry(QtCore.QRect(230, 103, 60, 16))
         self.label_2.setObjectName("label_2")
         self.layoutWidget = QtWidgets.QWidget(mstaTrendDefinitionDialog)
-        self.layoutWidget.setGeometry(QtCore.QRect(160, 40, 82, 91))
+        self.layoutWidget.setGeometry(QtCore.QRect(160, 40, 61, 91))
         self.layoutWidget.setObjectName("layoutWidget")
         self.verticalLayout_2 = QtWidgets.QVBoxLayout(self.layoutWidget)
         self.verticalLayout_2.setContentsMargins(0, 0, 0, 0)
@@ -74,13 +76,15 @@ class Ui_mstaTrendDefinitionDialog(object):
         self.linkOperandComboBox.setFont(font)
         self.linkOperandComboBox.setObjectName("linkOperandComboBox")
         self.linkOperandComboBox.addItem("")
-        self.linkOperandComboBox.setItemText(0, "")
         self.linkOperandComboBox.addItem("")
         self.linkOperandComboBox.addItem("")
         self.linkOperandComboBox.addItem("")
-        self.TrendCaseTextEdit = QtWidgets.QTextEdit(mstaTrendDefinitionDialog)
-        self.TrendCaseTextEdit.setGeometry(QtCore.QRect(10, 10, 141, 171))
-        self.TrendCaseTextEdit.setObjectName("TrendCaseTextEdit")
+        self.trendCaseTextEdit = QtWidgets.QTextEdit(mstaTrendDefinitionDialog)
+        self.trendCaseTextEdit.setEnabled(True)
+        self.trendCaseTextEdit.setGeometry(QtCore.QRect(10, 10, 141, 171))
+        self.trendCaseTextEdit.setAutoFillBackground(False)
+        self.trendCaseTextEdit.setReadOnly(True)
+        self.trendCaseTextEdit.setObjectName("trendCaseTextEdit")
 
         self.retranslateUi(mstaTrendDefinitionDialog)
         self.buttonBox.accepted.connect(mstaTrendDefinitionDialog.accept)
@@ -98,7 +102,7 @@ class Ui_mstaTrendDefinitionDialog(object):
         self.deletePushButton.setText(_translate("mstaTrendDefinitionDialog", ">>"))
         self.clearPushButton.setText(_translate("mstaTrendDefinitionDialog", "Clear"))
         self.label_3.setText(_translate("mstaTrendDefinitionDialog", "Link operand"))
+        self.linkOperandComboBox.setItemText(0, _translate("mstaTrendDefinitionDialog", "None"))
         self.linkOperandComboBox.setItemText(1, _translate("mstaTrendDefinitionDialog", "AND"))
         self.linkOperandComboBox.setItemText(2, _translate("mstaTrendDefinitionDialog", "OR"))
         self.linkOperandComboBox.setItemText(3, _translate("mstaTrendDefinitionDialog", "XOR"))
-

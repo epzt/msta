@@ -33,28 +33,7 @@ from .ui_msta_trend_definition import Ui_mstaTrendDefinitionDialog as setMSTATre
 
 from .mstaCoreClass import mstaTrendCase, mstaComposedTrendCase, mstaVariable
 
-# Unit of variables,must be the same as mstaCoreClass.py definition
-UNIT = {
-    '%': 'percent',
-    'metric': 'metre',
-    'phi': 'phi',
-    'other': 'unknown'
-}
-
-# Operand operations
-OPERAND = {
-    'ou' : 'OR',
-    'et' : 'AND',
-    'xou' : 'XOR',
-    'none' : ''
-}
-
-# Trend operations
-COMP = {
-    'sup' : '>',
-    'inf' : '<',
-    'none' : ''
-}
+import config
 
 #############################################################################
 # Just a class to print About information
@@ -529,8 +508,6 @@ class setMSTATrendCasesDlg(QDialog, setMSTATrendDlg):
         self.signType = self.comparatorComboBox.currentText()
         self.linkOperand = self.linkOperandComboBox.currentText()
 
-        self.linkOperandComboBox.setEnabled(False)
-
         self.clearPushButton.clicked.connect(self.ClearTrendListLabel)
         self.addPushButton.clicked.connect(self.addMSTATrendCase)
         self.deletePushButton.clicked.connect(self.deleteTrendCase)
@@ -548,10 +525,8 @@ class setMSTATrendCasesDlg(QDialog, setMSTATrendDlg):
         msg = 'Are you sure you want delete all trends ?'
         if QMessageBox.information(self, "MSTA Variables", msg, QMessageBox.Yes | QMessageBox.No) == QMessageBox.No:
             return
-        self.trendListLabel.clear()
-        self.trendTextCases.clear()
+        self.trendCaseTextEdit.clear()
         self.theTrendObject = mstaComposedTrendCase()
-        self.linkOperandComboBox.setEnabled(False)
         return
 
     @pyqtSlot(bool)
@@ -571,7 +546,10 @@ class setMSTATrendCasesDlg(QDialog, setMSTATrendDlg):
         else:
             simpleCase = mstaTrendCase(varA, self.getComp(self.signType))
         # Create the new composed trend case to add to the list
-        newTrendCase = mstaComposedTrendCase(simpleCase, self.linkOperand)
+        if self.linkOperand == OPERAND['none']:
+            newTrendCase = mstaComposedTrendCase(simpleCase)
+        else:
+            newTrendCase = mstaComposedTrendCase(simpleCase, self.linkOperand)
         newTrendCase.setComposedGSTATrend(False)
         for tc in self.theTrendObject.getTrend():
             if tc == newTrendCase:
@@ -580,7 +558,6 @@ class setMSTATrendCasesDlg(QDialog, setMSTATrendDlg):
         self.theTrendObject.addTrendCase(newTrendCase, self.linkOperand)
         # Update the text of defined trend cases
         self.updateMSTATrendCaseText(self.theTrendObject)
-        self.linkOperandComboBox.setEnabled(True)
         return
 
     @pyqtSlot(bool)
@@ -599,20 +576,18 @@ class setMSTATrendCasesDlg(QDialog, setMSTATrendDlg):
                 self.theTrendObject.deleteTrendCase(t)
         # Update the text of defined trend cases
         self.updateMSTATrendCaseText(self.theTrendObject)
-        if self.theTrendObject.getTrendCount() == 0:
-            self.linkOperandComboBox.setEnabled(False)
         return
 
     def updateMSTATrendCaseText(self, _trendList):
         # Erase all previous text
-        self.TrendCaseTextEdit.clear()
+        self.trendCaseTextEdit.clear()
         # Construction of the text
         textCasesTrend = ""
         for tc in _trendList:
             textCasesTrend += tc.__repr__()
         textCasesTrend += '\n'
         # Print the text in the widget
-        self.TrendCaseTextEdit.setText(textCasesTrend)
+        self.trendCaseTextEdit.setText(textCasesTrend)
         return
 
     @pyqtSlot('const QString')
