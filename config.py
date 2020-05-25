@@ -22,24 +22,30 @@
  ***************************************************************************/
 """
 
-# Unit of variables,must be the same as mstaCoreClass.py definition
-UNIT = {
-    '%': 'percent',
-    'metric': 'metre',
-    'phi': 'phi',
-    'other': 'unknown'
-}
-# Operand operations, must be same as those defined in mstaCoreClass.py
-OPERAND = {
-    'ou' : 'OR',
-    'et' : 'AND',
-    'xou' : 'XOR',
-    'none' : 'None'
-}
-# Trend operations
-COMP = {
-    'sup' : '>',
-    'inf' : '<',
-    'none' : ''
-}
+class config:
+    def __init__(self):
+        # Unit of variables,must be the same as mstaCoreClass.py definition
+        self.UNIT = {
+            '%': 'percent',
+            'metric': 'metre',
+            'phi': 'phi',
+            'other': 'unknown'
+        }
+        # Operand operations, must be same as those defined in mstaCoreClass.py
+        self.OPERAND = {
+            'ou' : 'OR',
+            'et' : 'AND',
+            'xou' : 'XOR',
+            'none' : 'None'
+        }
+        # Trend operations
+        self.COMP = {
+            'sup' : '>',
+            'inf' : '<',
+            'none' : ''
+        }
+
+    def __str__(self):
+        print("Variables : UNIT, COMP, OPERAND")
+
 

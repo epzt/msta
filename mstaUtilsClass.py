@@ -33,7 +33,7 @@ from .ui_msta_trend_definition import Ui_mstaTrendDefinitionDialog as setMSTATre
 
 from .mstaCoreClass import mstaTrendCase, mstaComposedTrendCase, mstaVariable
 
-import config as cfg
+from config import config as cfg
 
 #############################################################################
 # Just a class to print About information
@@ -325,7 +325,7 @@ class setGSTATrendCasesDlg(QDialog, setGSTATrendDlg):
     def updateGSTATrendCases(self, _newTC):
         assert isinstance(_newTC, list)
         # New combined trend case object to add
-        newCombinedTC = mstaComposedTrendCase(_newTC, OPERAND['et'])
+        newCombinedTC = mstaComposedTrendCase(_newTC, cfg.OPERAND['et'])
         newCombinedTC.setComposedGSTATrend(True)  # It is a GSTA trend !! IMPORTANT TO SET IT AT TRUE
         for tc in self.theTrendObject.getTrend():
             if tc.isGSTATrend(): # Test if it is a GSTA trend

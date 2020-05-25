@@ -42,6 +42,7 @@ SOURCES = \
 	multi_sediment_trend_analysis_dialog.py \
 	mstaCoreClass.py \
 	mstaUtilsClass.py \
+	config.py \
 	pyMstaTextFileAnalysisDialog.py \
 	ui_multi_sediment_trend_analysis_dialog_base.py \
 	ui_msta_text_file_analysis.py \
@@ -61,6 +62,7 @@ PY_FILES = \
 	mstaCoreClass.py \
 	pyMstaTextFileAnalysisDialog.py \
 	mstaUtilsClass.py \
+	config.py \
 	ui_multi_sediment_trend_analysis_dialog_base.py \
 	ui_msta_text_file_analysis.py \
 	ui_gsta_trend_definition.py \
