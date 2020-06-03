@@ -26,7 +26,7 @@ from qgis.core import QgsPoint
 import numpy as np
 import itertools
 
-from config import config as cfg
+from . import config as cfg
 
 #############################################################################
 ## class RANGE: manage variables range                                     ##
@@ -293,7 +293,7 @@ class mstaVariable():
         return self.alias
 
     def setUnit(self,_unit):
-        assert _unit in UNIT.keys()
+        assert _unit in cfg.UNIT.values()
         self.unit = _unit
     def getUnit(self):
         return self.unit
@@ -337,7 +337,7 @@ class mstaVariable():
 
     # Return False only for phi units and other (not affected)
     def isMetric(self):
-        return not (self.getUnit() == UNIT['phi'] or self.getUnit() == UNIT['other'])
+        return not (self.getUnit() == cfg.UNIT['phi'] or self.getUnit() == cfg.UNIT['other'])
 
 #############################################################################
 ## class mstaTrendCase: manage trend case                                  ##
@@ -351,32 +351,26 @@ class mstaTrendCase():
         # it is eventually possible to manage 2 different variables
         if isinstance(_variables, list): # Two different variables
             assert len(_variables) == 2
-            assert _comp in COMP.keys()
+            assert _comp in cfg.COMP.keys()
             assert isinstance(_variables[0], mstaVariable) and isinstance(_variables[1], mstaVariable)
-            self.compSigne = COMP[_comp]
+            self.compSigne = cfg.COMP[_comp]
             self.leftVar = _variables[0]
             self.rightVar = _variables[1]
         elif _variables: # Same variable
-            assert _comp in COMP.keys()
+            assert _comp in cfg.COMP.keys()
             assert isinstance(_variables, mstaVariable)
-            self.compSigne = COMP[_comp]
+            self.compSigne = cfg.COMP[_comp]
             self.leftVar = _variables
             self.rightVar = _variables
         else: # Default init
-            self.compSigne = COMP['none']
+            self.compSigne = cfg.COMP['none']
             self.leftVar = mstaVariable()
             self.rightVar = mstaVariable()
 
     # Print itself
     def __str__(self):
         if self.compSigne != '':
-            return (f'{self.ID}:{self.leftVar.getName()}(i) {self.compSigne} {self.rightVar.getName()}(j)')
-        else:
-            return ''
-
-    def __repr__(self):
-        if self.compSigne != '':
-            return (f'{self.ID}:{self.leftVar.getAlias()}(i) {self.compSigne} {self.rightVar.getAlias()}(j)')
+            return (f'{self.leftVar.getName()} {self.compSigne} {self.rightVar.getName()}')
         else:
             return ''
 
@@ -399,40 +393,42 @@ class mstaTrendCase():
         assert isinstance(self.leftVar, mstaVariable)
         assert isinstance(self.rightVar, mstaVariable)
         assert self.leftVar.getAlias() == self.rightVar.getAlias()  # The variables have to be the same (m, sd or sk)
-        if self.leftVar.getAlias() == "mean":  # Mean
-            if self.compSigne == COMP['sup']:
+        retValue = ""
+        if self.leftVar.getAlias() == "Mean":  # Mean
+            if self.compSigne == cfg.COMP['sup']:
                 if self.leftVar.isMetric():
-                    return 'F'
+                    retValue += 'F'
                 else:
-                    return 'C'
+                    retValue += 'C'
             else:
                 if self.leftVar.isMetric():
-                    return 'C'
+                    retValue += 'C'
                 else:
-                    return 'F'
-        elif self.leftVar.getAlias() == "sorting":  # Sorting
-            if self.compSigne == COMP['sup']:
-                return 'B'
+                    retValue += 'F'
+        elif self.leftVar.getAlias() == "Sorting":  # Sorting
+            if self.compSigne == cfg.COMP['sup']:
+                retValue += 'B'
             else:
-                return 'P'
-        else:  # Skewness
-            if self.compSigne == COMP['sup']:
+                retValue += 'P'
+        elif self.leftVar.getAlias() == "Skewness":  # Skewness
+            if self.compSigne == cfg.COMP['sup']:
                 if self.leftVar.isMetric():
-                    return '-'
+                    retValue += '+'
                 else:
-                    return '+'
+                    retValue += '-'
             else:
                 if self.leftVar.isMetric():
-                    return '+'
+                    retValue += '-'
                 else:
-                    return '-'
+                    retValue += '+'
+        return (retValue)
 
     def getID(self):
         return self.ID
 
     def setComp(self, _op):
         assert _op != ''
-        self.compSigne = COMP[_op]
+        self.compSigne = cfg.COMP[_op]
 
     def getComp(self):
         return(self.compSigne)
@@ -451,6 +447,12 @@ class mstaTrendCase():
     def getRightVar(self):
         return self.rightVar
 
+    def getVars(self):
+        if self.leftVar == self.rightVar:
+            return self.leftVar
+        else:
+            return [self.leftVar, self.rightVar]
+
 #############################################################################
 ## class mstaComposedTrendCase: manage trend case                          ##
 #############################################################################
@@ -460,49 +462,49 @@ class mstaComposedTrendCase():
     # initialized with a simple trend case or a list of trend case (GSTA). In this latter case _op must be given also.
     def __init__(self, _trendCase = None, _op = None):
         self.ID = next(mstaComposedTrendCase.mCTC)
-        """Constructor."""
+        """Constructor for trend case"""
         self.composedGSTATrend = False # by default it is false, can be change through dedicated function
         if isinstance(_trendCase, list): # list of trend case
-            assert _op in OPERAND.values()
+            assert isinstance(_op, list) or _op # if list of trend case, then a least one operand must be defined
+            if isinstance(_op, list):
+                self.operandList = _op  # A list of operand is given
+            else:
+                self.operandList = [_op]
             self.trendsList = _trendCase
-            self.linkOperand = _op # whatever the trend cases number, only one type of operand links them all
         elif isinstance(_trendCase, mstaTrendCase): # simple trend case (just one)
-            assert _op in OPERAND.values()
+            self.operandList = list()  # By default empty if just one trend case
             self.trendsList = [_trendCase]
-            # TODO: verifier qu'il est necessaire de donner un operand a tous les coups
-            # voir si on ne peut/doit pas gérer ici le cas ou _op est "None"
-            self.linkOperand = _op
         else:
-            self.trendsList = []
-            self.linkOperand = OPERAND['none']
+            self.trendsList = list()
+            self.operandList = list()
 
     def __getitem__(self, item):
-            return self.trendsList[item]
-
-    def __repr__(self): # Full printing of trend case without taking care of simple or complex cases (GSTA)
-        if len(self.trendsList) == 0:
-            return
-        retValue = ""
-        for t in self.trendsList:
-            retValue += t.__repr__() + '\n'
-        retValue += self.linkOperand + '\n'
-        return(retValue)
+        return self.trendsList[item]
 
     def __str__(self): # Complex print which take care of GSTA like trend cases
         if len(self.trendsList) == 0:
-            return
+            return ""
         retValue = ""
+        op = 0
         for t in self.trendsList:
             if t.isGSTATrend():
                 retValue += t.getGSTATrendText()
             else:
-                retValue += (t.__str__() + '\n')
-        retValue += self.linkOperand + '\n'
-        return(retValue)
+                retValue += t.__str__()
+            retValue += ' '
+            if op < len(self.operandList):
+                retValue += self.operandList[op].__str__() + '\n'
+                op += 1
+        return retValue
 
     # For convenience and to be homogeneous with mstaTrendCase class
     def getGSTATrendText(self):
-        return self.__str__()
+        assert isinstance(self, mstaComposedTrendCase)
+        retValue = ""
+        for c in self.getTrend():
+            assert isinstance(c, mstaTrendCase)
+            retValue += c.getGSTATrendText()
+        return retValue
 
     def setComposedGSTATrend(self, _bool):
         self.composedGSTATrend = _bool
@@ -514,18 +516,20 @@ class mstaComposedTrendCase():
         return self.ID
 
     # Equality between two mstaComposedTrendCase objects
-    def __eq__(self,_other):
+    def __eq__(self, _other):
         assert isinstance(_other, mstaComposedTrendCase)
         if self.getTrendCount() != _other.getTrendCount(): # if not same length of trend list -> equal = False
             return False
-        # Both list have same length
-        for i in range(self.getTrendCount()):
-            if self.getTrend(i) != _other.getTrend(i): # It is consider that order is the same in both list
-                return False
-        return True
+        # from here both list have same length
+        # now compare the trend
+        nCommonTrends = sum(1 for i in self.getTrend() if i in _other.getTrend())
+        if self.getTrendCount() == nCommonTrends:  # Same elements
+            return True
+        else:
+            return False
 
     # return the higher ID of mstaTrendCase object in the list
-    def getMaxCaseID(self):
+    def getMaxID(self):
         if len(self.trendsList) > 0:
             return max(t.getID for t in self.trendsList)
         else:
@@ -533,12 +537,12 @@ class mstaComposedTrendCase():
 
     # Change the operand
     def setOperand(self, _op):
-        assert _op in OPERAND.values()
-        self.linkOperand = _op
+        assert _op in cfg.OPERAND.values()
+        self.operandList = _op
 
     def getTrend(self, *args):
         if len(args) > 0:
-            _id = args[0]
+            _id = args[0]  # args[0] is an integer
             assert _id < len(self.trendsList)
             return self.trendsList[_id]
         else:
@@ -557,8 +561,9 @@ class mstaComposedTrendCase():
 
     def addTrendCase(self, _trendcase, _operand):
         assert isinstance(_trendcase, mstaTrendCase) or isinstance(_trendcase, mstaComposedTrendCase)
-        assert _operand in OPERAND.values()
-        self.linkOperand = _operand
+        assert _operand in cfg.OPERAND.values()
+        if _operand != cfg.OPERAND['none']:
+            self.operandList.append(_operand)
         self.trendsList.append(_trendcase)
 
     def deleteTrendCase(self, _trendcase):
@@ -566,7 +571,71 @@ class mstaComposedTrendCase():
             if t == _trendcase:
                 index = self.trendsList.index(t)
                 self.trendsList.remove(t)
-        return
 
+    def getVars(self):
+        print([t.getVars() for t in self.trendsList])
+        return [t.getVars() for t in self.trendsList]
 
-   
+#############################################################################
+## class mstaOperand: manage trend case                                    ##
+#############################################################################
+class mstaOperand():
+    mOP = itertools.count()
+    def __init__(self, _op = cfg.OPERAND['none'], _idLeft = None, _idRight = None, _level = None):
+        self.ID = next(mstaOperand.mOP)
+        if _op != cfg.OPERAND['none']:  # if an operand is given there must be two trend cases given
+            assert _idLeft != None
+            assert _idRight != None
+            assert _level != None
+        self.idLeft = _idLeft       # ID of the left case
+        self.idRight = _idRight     # ID of the left case
+        self.level = _level     # Level of the trend case
+        self.op = _op           # operand between the two cases
+
+    def __str__(self):
+        return self.op
+
+    def setOperand(self, _op, _idLeft, _idRight, _level = None):
+        assert _op != cfg.OPERAND['none'] and _op in cfg.OPERAND.values()
+        assert _idLeft != None
+        assert _idRight != None
+        assert _level != None
+        self.idLeft = _idLeft
+        self.idRight = _idRight
+        self.level = _level
+        self.op = _op
+
+    def getOP(self):
+        return self.op
+
+    def getLeftID(self):
+        return (self.idLeft)
+
+    def setLeftID(self, _id):
+        assert _id != None
+        self.idLeft = _id
+
+    def getRightID(self):
+        return (self.idRight)
+
+    def setRightID(self, _id):
+        assert _id != None
+        self.idRight = _id
+
+    # Return IDs of trend cases left and right
+    def getIDS(self):
+        return ([self.idLeft, self.idRight])
+
+    def getLevel(self):
+        return (self.level)
+
+    def setLevel(self, _level):
+        self.level = _level
+
+    # return a list with operand first, the two cases IDs and the level
+    def getOperandSettings(self):
+        return ([self.op, self.idLeft, self.idRight, self.level])
+
+    # Return current ID of the operand
+    def getID(self):
+        return (self.ID)
