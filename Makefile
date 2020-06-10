@@ -49,7 +49,8 @@ SOURCES = \
 	ui_gsta_trend_definition.py \
 	ui_set_gsta_variables_dialog.py \
 	ui_msta_variable_definition.py \
-	ui_msta_trend_definition.py
+	ui_msta_trend_definition.py \
+	ui_msta_expression_builder_dialog.py
 #	ui_about_msta.py \#
 
 
@@ -68,7 +69,8 @@ PY_FILES = \
 	ui_gsta_trend_definition.py \
 	ui_set_gsta_variables_dialog.py \
 	ui_msta_variable_definition.py \
-	ui_msta_trend_definition.py
+	ui_msta_trend_definition.py \
+	ui_msta_expression_builder_dialog.py
 #	ui_about_msta.py \#
 
 UI_FILES = ui_multi_sediment_trend_analysis_dialog_base.ui \
@@ -76,7 +78,8 @@ UI_FILES = ui_multi_sediment_trend_analysis_dialog_base.ui \
 	ui_gsta_trend_definition.ui \
 	ui_set_gsta_variables_dialog.ui \
 	ui_msta_variable_definition.ui \
-	ui_msta_trend_definition.ui
+	ui_msta_trend_definition.ui \
+	ui_msta_expression_builder_dialog.ui
 #	ui_about_msta.ui \ #
 
 EXTRAS = metadata.txt icon.png logogeoceano.png

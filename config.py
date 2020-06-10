@@ -22,30 +22,23 @@
  ***************************************************************************/
 """
 
+UNIT = dict(percent='%', metric='metre', phi='phi', other='undefined')
+OPERAND = dict(ou='OR', et='AND', xou='XOR', none='None')
+COMP = dict(sup='>', inf='<', none='')
+GSTAVAR = ["Mean","Sorting","Skewness","mean","sorting","skewness","m","so","sk"]
+
+'''
 class config:
     def __init__(self):
         # Unit of variables,must be the same as mstaCoreClass.py definition
-        self.UNIT = {
-            '%': 'percent',
-            'metric': 'metre',
-            'phi': 'phi',
-            'other': 'unknown'
-        }
+        self.UNIT = dict(percent='%', metric='metre', phi='phi', other='undefined')
+
         # Operand operations, must be same as those defined in mstaCoreClass.py
-        self.OPERAND = {
-            'ou' : 'OR',
-            'et' : 'AND',
-            'xou' : 'XOR',
-            'none' : 'None'
-        }
+        self.OPERAND = dict(ou='OR', et='AND', xou='XOR', none='None')
+
         # Trend operations
-        self.COMP = {
-            'sup' : '>',
-            'inf' : '<',
-            'none' : ''
-        }
+        self.COMP = dict(sup='>', inf='<', none='')
 
     def __str__(self):
         print("Variables : UNIT, COMP, OPERAND")
-
-
+'''

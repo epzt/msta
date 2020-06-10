@@ -1,6 +1,7 @@
 <RCC>
   <qresource prefix="icon">
     <file>icon.png</file>
+    <file>arrowdown.png</file>
   </qresource>
   <qresource prefix="geoceano">
     <file>logogeoceano.png</file>

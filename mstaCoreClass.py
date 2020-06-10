@@ -24,7 +24,7 @@
 
 from qgis.core import QgsPoint
 import numpy as np
-import itertools
+import itertools as it
 
 from . import config as cfg
 
@@ -140,7 +140,7 @@ class mstaPoint(QgsPoint):
 ## class mstaVariable: manage variable                                     ##
 #############################################################################
 class mstaVariable():
-    mVR = itertools.count()
+    mVR = it.count()
     def __init__(self):
         """Constructor."""
         self.ID = next(mstaVariable.mVR)
@@ -343,7 +343,7 @@ class mstaVariable():
 ## class mstaTrendCase: manage trend case                                  ##
 #############################################################################
 class mstaTrendCase():
-    mTC = itertools.count()
+    mTC = it.count()
     def __init__(self, _variables = None, _comp = None):
         """Constructor."""
         self.ID = next(mstaTrendCase.mTC)
@@ -448,23 +448,20 @@ class mstaTrendCase():
         return self.rightVar
 
     def getVars(self):
-        if self.leftVar == self.rightVar:
-            return self.leftVar
-        else:
-            return [self.leftVar, self.rightVar]
+        return [self.leftVar, self.rightVar]
 
 #############################################################################
 ## class mstaComposedTrendCase: manage trend case                          ##
 #############################################################################
 class mstaComposedTrendCase():
-    mCTC = itertools.count()
+    mCTC = it.count()
     # By default _trendCase is null, but most of the time a mstaComposedTrendCase is
     # initialized with a simple trend case or a list of trend case (GSTA). In this latter case _op must be given also.
     def __init__(self, _trendCase = None, _op = None):
         self.ID = next(mstaComposedTrendCase.mCTC)
         """Constructor for trend case"""
         self.composedGSTATrend = False # by default it is false, can be change through dedicated function
-        if isinstance(_trendCase, list): # list of trend case
+        if isinstance(_trendCase, list): # list of trend cases
             assert isinstance(_op, list) or _op # if list of trend case, then a least one operand must be defined
             if isinstance(_op, list):
                 self.operandList = _op  # A list of operand is given
@@ -535,10 +532,21 @@ class mstaComposedTrendCase():
         else:
             return 0
 
-    # Change the operand
-    def setOperand(self, _op):
+    # Add an operand to the list
+    def addOperand(self, _op):
         assert _op in cfg.OPERAND.values()
-        self.operandList = _op
+        self.operandList.append(_op)
+
+    def getOperand(self, *args):
+        if len(args) > 0:
+            _id = args[0]
+            assert _id < len(self.operandList)
+            return self.operandList[_id]
+        else:
+            return self.operandList
+
+    def getOperandCount(self):
+        return len(self.operandList)
 
     def getTrend(self, *args):
         if len(args) > 0:
@@ -547,6 +555,11 @@ class mstaComposedTrendCase():
             return self.trendsList[_id]
         else:
             return self.trendsList
+
+    def getTrendByID(self, _id):
+        for tc in self.trendsList:
+            if tc.getID() == _id:
+                return tc
 
     def getFirstTrend(self):
         assert len(self.trendsList) >= 1
@@ -573,22 +586,21 @@ class mstaComposedTrendCase():
                 self.trendsList.remove(t)
 
     def getVars(self):
-        print([t.getVars() for t in self.trendsList])
         return [t.getVars() for t in self.trendsList]
 
 #############################################################################
 ## class mstaOperand: manage trend case                                    ##
 #############################################################################
 class mstaOperand():
-    mOP = itertools.count()
+    mOP = it.count()
     def __init__(self, _op = cfg.OPERAND['none'], _idLeft = None, _idRight = None, _level = None):
         self.ID = next(mstaOperand.mOP)
         if _op != cfg.OPERAND['none']:  # if an operand is given there must be two trend cases given
             assert _idLeft != None
             assert _idRight != None
             assert _level != None
-        self.idLeft = _idLeft       # ID of the left case
-        self.idRight = _idRight     # ID of the left case
+        self.idTrendLeft = _idLeft       # ID of the left case
+        self.idTrendRight = _idRight     # ID of the left case
         self.level = _level     # Level of the trend case
         self.op = _op           # operand between the two cases
 
@@ -600,31 +612,31 @@ class mstaOperand():
         assert _idLeft != None
         assert _idRight != None
         assert _level != None
-        self.idLeft = _idLeft
-        self.idRight = _idRight
+        self.idTrendLeft = _idLeft
+        self.idTrendRight = _idRight
         self.level = _level
         self.op = _op
 
     def getOP(self):
         return self.op
 
-    def getLeftID(self):
-        return (self.idLeft)
+    def getLeftTrendID(self):
+        return (self.idTrendLeft)
 
-    def setLeftID(self, _id):
+    def setLeftTrendID(self, _id):
         assert _id != None
-        self.idLeft = _id
+        self.idTrendLeft = _id
 
-    def getRightID(self):
-        return (self.idRight)
+    def getRightTrendID(self):
+        return (self.idTrendRight)
 
-    def setRightID(self, _id):
+    def setRightTrendID(self, _id):
         assert _id != None
-        self.idRight = _id
+        self.idTrendRight = _id
 
     # Return IDs of trend cases left and right
-    def getIDS(self):
-        return ([self.idLeft, self.idRight])
+    def getTrendIDS(self):
+        return ([self.idTrendLeft, self.idTrendRight])
 
     def getLevel(self):
         return (self.level)
@@ -634,7 +646,7 @@ class mstaOperand():
 
     # return a list with operand first, the two cases IDs and the level
     def getOperandSettings(self):
-        return ([self.op, self.idLeft, self.idRight, self.level])
+        return ([self.op, self.idTrendLeft, self.idTrendRight, self.level])
 
     # Return current ID of the operand
     def getID(self):

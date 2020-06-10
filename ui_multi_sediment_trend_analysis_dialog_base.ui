@@ -20,7 +20,7 @@
      <x>0</x>
      <y>0</y>
      <width>641</width>
-     <height>20</height>
+     <height>23</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -29,6 +29,7 @@
     </property>
     <addaction name="actionSetWorkingDirectory"/>
     <addaction name="actionFileImport"/>
+    <addaction name="actionCloseDataSet"/>
     <addaction name="separator"/>
     <addaction name="actionAppQuit"/>
    </widget>
@@ -43,23 +44,11 @@
      <addaction name="actionVariableListAll"/>
      <addaction name="actionVariableListSelected"/>
     </widget>
-    <addaction name="actionSelectVariables"/>
-    <addaction name="actionClearSelect"/>
-    <addaction name="menuList"/>
     <addaction name="actionModifyVariables"/>
+    <addaction name="menuList"/>
     <addaction name="actionDeleteVariables"/>
     <addaction name="separator"/>
     <addaction name="actionGSTALikeVariable"/>
-   </widget>
-   <widget class="QMenu" name="menuTrends">
-    <property name="title">
-     <string>Trends</string>
-    </property>
-    <addaction name="actionTrendSet"/>
-    <addaction name="actionTrendList"/>
-    <addaction name="actionDeleteAllTrends"/>
-    <addaction name="separator"/>
-    <addaction name="actionGSTALikeTrend"/>
    </widget>
    <widget class="QMenu" name="menuSettings">
     <property name="title">
@@ -92,12 +81,38 @@
     <addaction name="actionCluster"/>
     <addaction name="actionPCA"/>
    </widget>
+   <widget class="QMenu" name="menuExpressions">
+    <property name="title">
+     <string>Expressions</string>
+    </property>
+    <widget class="QMenu" name="menuTrends">
+     <property name="title">
+      <string>Trends</string>
+     </property>
+     <addaction name="actionSetTrend"/>
+     <addaction name="actionListTrend"/>
+    </widget>
+    <widget class="QMenu" name="menuGSTA_trends">
+     <property name="title">
+      <string>GSTA trends...</string>
+     </property>
+     <addaction name="actionSetGSTATrend"/>
+     <addaction name="actionListGSTATrend"/>
+    </widget>
+    <addaction name="menuTrends"/>
+    <addaction name="menuGSTA_trends"/>
+    <addaction name="actionAllDeleteTrends"/>
+    <addaction name="separator"/>
+    <addaction name="actionBuild"/>
+    <addaction name="actionDelete"/>
+    <addaction name="actionList"/>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuSettings"/>
    <addaction name="menuVariables"/>
-   <addaction name="menuTrends"/>
-   <addaction name="menuProcessing"/>
+   <addaction name="menuExpressions"/>
    <addaction name="computeMSTA"/>
+   <addaction name="menuProcessing"/>
    <addaction name="menuHelp"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
@@ -192,11 +207,6 @@
     <string>About</string>
    </property>
   </action>
-  <action name="actionGSTALikeTrend">
-   <property name="text">
-    <string>GSTA like trend...</string>
-   </property>
-  </action>
   <action name="actionGSTA">
    <property name="text">
     <string>GSTA...</string>
@@ -209,7 +219,7 @@
   </action>
   <action name="actionGSTALikeVariable">
    <property name="text">
-    <string>GSTA like variables...</string>
+    <string>GSTA variables...</string>
    </property>
   </action>
   <action name="actionTrendSet">
@@ -313,6 +323,61 @@
   <action name="actionPCA">
    <property name="text">
     <string>PCA...</string>
+   </property>
+  </action>
+  <action name="actionCloseDataSet">
+   <property name="text">
+    <string>Close data set...</string>
+   </property>
+  </action>
+  <action name="actionSetTrend">
+   <property name="text">
+    <string>Set/modify...</string>
+   </property>
+  </action>
+  <action name="actionDeleteTrends">
+   <property name="text">
+    <string>Delete all</string>
+   </property>
+  </action>
+  <action name="actionListTrend">
+   <property name="text">
+    <string>List</string>
+   </property>
+  </action>
+  <action name="actionBuild">
+   <property name="text">
+    <string>Build...</string>
+   </property>
+  </action>
+  <action name="actionDelete">
+   <property name="text">
+    <string>Delete...</string>
+   </property>
+  </action>
+  <action name="actionList">
+   <property name="text">
+    <string>List</string>
+   </property>
+  </action>
+  <action name="actionSetGSTATrend">
+   <property name="text">
+    <string>Set/modify</string>
+   </property>
+  </action>
+  <action name="actionDeleteGSTATrends">
+   <property name="text">
+    <string>Delete all</string>
+   </property>
+  </action>
+  <action name="actionListGSTATrend">
+   <property name="text">
+    <string>List</string>
+   </property>
+  </action>
+  <action name="actionAllDeleteTrends">
+   <property name="text">
+    <string>Delete all trends</string>
    </property>
   </action>
  </widget>
