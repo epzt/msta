@@ -80,34 +80,34 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         self.actionFileImport.triggered.connect(self.DataFileImport)
         self.actionAbout.triggered.connect(self.DisplayAboutMSTA)
         self.actionSetWorkingDirectory.triggered.connect(self.SetWorkingDirectory)
+        self.actionComputeMSTA.triggered.connect(self.ComputeMSTA)
+        self.actionClearViewText.triggered.connect(self.SetClearText)
+        self.actionCloseDataSet.triggered.connect(self.CloseCurrentDataSet)
+        #
         self.actionVariableListAll.triggered.connect(self.PrintAllVariablesList)
         self.actionVariableListSelected.triggered.connect(self.PrintSelectedVariablesList)
-        #self.actionSelectOneVariable.triggered.connect(self.SelectOneVariable)
-        #self.actionSelectAllVariables.triggered.connect(self.SelectAllVariables)
-        self.actionGSTALikeVariable.triggered.connect(self.SetGSTAVariables)
-        self.actionSetGSTATrend.triggered.connect(self.SetGSTATrendCases)
-        self.actionClearViewText.triggered.connect(self.SetClearText)
-        self.actionListTrend.triggered.connect(self.PrintTrendsList)
-        self.actionSetTrend.triggered.connect(self.SetMSTATrendCases)
+        self.actionVariableSettings.triggered.connect(self.PrintVariableHelp)
+        self.actionVariableSettings.triggered.connect(self.PrintVariableHelp)
         self.actionModifyVariables.triggered.connect(self.ModifyVariables)
         self.actionDeleteVariables.triggered.connect(self.DeleteOneVariable)
-        #  self.actionResetInitial.triggered.connect(self.resetInitialVariables)
-        self.actionDeleteAllTrends.triggered.connect(self.DeleteAllTrends)
-        self.actionComputeMSTA.triggered.connect(self.ComputeMSTA)
-        self.actionVariableSettings.triggered.connect(self.PrintVariableHelp)
+        self.actionGSTALikeVariable.triggered.connect(self.SetGSTAVariables)
+        #
+        self.actionSetGSTATrend.triggered.connect(self.SetGSTATrendCases)
+        self.actionListTrend.triggered.connect(self.PrintTrendsList)
+        self.actionSetTrend.triggered.connect(self.SetMSTATrendCases)
         self.actionTrendSettings.triggered.connect(self.PrintTrendHelp)
-        self.actionCloseDataSet.triggered.connect(self.CloseCurrentDataSet)
+        self.actionDeleteTrend.triggered.connect(self.DeleteTrends)
+        #
         self.actionBuild.triggered.connect(self.ExpressionBuild)
         self.actionDelete.triggered.connect(self.ExpressionDelete)
         self.actionList.triggered.connect(self.ExpressionList)
-        #self.actionClearSelect.triggered.connect(self.ClearSelectedVariables)
 
         self.setGeometry(10, 10, 400, 400)
         self.setWindowTitle('Multi Sediment Trend Analysis')
 
         self.menuVariables.setEnabled(False)
-        self.menuTrends.setEnabled(False)
         self.actionSetGSTATrend.setEnabled(False)
+        self.actionSetTrend.setEnabled(False)
         self.computeMSTA.setEnabled(False)
         self.actionClearSelect.setEnabled(False)
         #self.actionVariableListSelected.setEnabled(False)
@@ -221,7 +221,7 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         #self.selectedVariableNames = self.totalVariablesName.copy()
         # Data set is loaded, variables and trends can be manage
         self.menuVariables.setEnabled(True)
-        self.menuTrends.setEnabled(True)
+        self.actionSetTrend.setEnabled(True)
         # Save current directory in a variable
         self.workingDir = os.path.dirname(fullPathFileName)
         return
@@ -478,6 +478,7 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
             #self.actionVariableListSelected.setEnabled(True)
             # GSTA variables are defined, trends can be manage
             self.actionSetGSTATrend.setEnabled(True)
+            self.actionSetTrend.setEnabled(True)
         else:
             QMessageBox.information(self, "GSTA variable definition", "3 variables must defined for a GSTA analysis\nOnly {} actually defined".format(len(self.selectedVariableNames)))
             #self.selectedVariableNames.clear()
@@ -485,6 +486,7 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
             #self.actionVariableListSelected.setEnabled(False)
             # GSTA variables are defined, trends can be manage
             self.actionSetGSTATrend.setEnabled(False)
+            self.actionSetTrend.setEnabled(True)
 
     ###############################################
     @pyqtSlot(bool)
@@ -584,16 +586,24 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
 
     ###############################################
     @pyqtSlot(bool)
-    def DeleteAllTrends(self):
+    def DeleteTrends(self):
         #if self.theTrendsList.getTrendCount() == 0:
         if len(self.theTrendsList) == 0:
             QMessageBox.information(self, "Trend case(s)", "No trend case(s) defined yet.")
             return
-        if QMessageBox.question(self, "Trend cases(s)", "Are you sure you want to delete all defined trends ?") == QMessageBox.Yes:
-            #self.theTrendsList = mstaComposedTrendCase()
+        delDlg = DeleteTrendCaseDlg(self.theTrendsList)
+        if not  delDlg.exec():
+            return
+        if delDlg.GetTrendCaseList():
+            self.theTrendsList = delDlg.GetTrendCaseList()
+        else:
             self.theTrendsList = list()
-            self.selectedVariableNames = list()
-            self.computeMSTA.setEnabled(False)
+
+        #if QMessageBox.question(self, "Trend cases(s)", "Are you sure you want to delete all defined trends ?") == QMessageBox.Yes:
+        #    #self.theTrendsList = mstaComposedTrendCase()
+        #    self.theTrendsList = list()
+        #    self.selectedVariableNames = list()
+        #    self.computeMSTA.setEnabled(False)
         return
 
     ###############################################

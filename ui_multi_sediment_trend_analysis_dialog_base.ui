@@ -85,23 +85,10 @@
     <property name="title">
      <string>Expressions</string>
     </property>
-    <widget class="QMenu" name="menuTrends">
-     <property name="title">
-      <string>Trends</string>
-     </property>
-     <addaction name="actionSetTrend"/>
-     <addaction name="actionListTrend"/>
-    </widget>
-    <widget class="QMenu" name="menuGSTA_trends">
-     <property name="title">
-      <string>GSTA trends...</string>
-     </property>
-     <addaction name="actionSetGSTATrend"/>
-     <addaction name="actionListGSTATrend"/>
-    </widget>
-    <addaction name="menuTrends"/>
-    <addaction name="menuGSTA_trends"/>
-    <addaction name="actionAllDeleteTrends"/>
+    <addaction name="actionSetTrend"/>
+    <addaction name="actionSetGSTATrend"/>
+    <addaction name="actionListTrend"/>
+    <addaction name="actionDeleteTrend"/>
     <addaction name="separator"/>
     <addaction name="actionBuild"/>
     <addaction name="actionDelete"/>
@@ -161,11 +148,6 @@
     <string>All</string>
    </property>
   </action>
-  <action name="actionTrendsSelection">
-   <property name="text">
-    <string>Selection...</string>
-   </property>
-  </action>
   <action name="actionSelectAllVariables">
    <property name="text">
     <string>All</string>
@@ -179,16 +161,6 @@
   <action name="actionModifyTrends">
    <property name="text">
     <string>Modify...</string>
-   </property>
-  </action>
-  <action name="actionDeleteAllTrends">
-   <property name="text">
-    <string>Delete all...</string>
-   </property>
-  </action>
-  <action name="actionDeleteOneTrends">
-   <property name="text">
-    <string>One...</string>
    </property>
   </action>
   <action name="actionSetWorkingDirectory">
@@ -335,16 +307,6 @@
     <string>Set/modify...</string>
    </property>
   </action>
-  <action name="actionDeleteTrends">
-   <property name="text">
-    <string>Delete all</string>
-   </property>
-  </action>
-  <action name="actionListTrend">
-   <property name="text">
-    <string>List</string>
-   </property>
-  </action>
   <action name="actionBuild">
    <property name="text">
     <string>Build...</string>
@@ -360,24 +322,24 @@
     <string>List</string>
    </property>
   </action>
-  <action name="actionSetGSTATrend">
+  <action name="actionDeleteTrend">
    <property name="text">
-    <string>Set/modify</string>
+    <string>Delete...</string>
    </property>
   </action>
-  <action name="actionDeleteGSTATrends">
-   <property name="text">
-    <string>Delete all</string>
-   </property>
-  </action>
-  <action name="actionListGSTATrend">
+  <action name="actionListTrend">
    <property name="text">
     <string>List</string>
    </property>
   </action>
-  <action name="actionAllDeleteTrends">
+  <action name="actionSetTrend">
    <property name="text">
-    <string>Delete all trends</string>
+    <string>Classical trends...</string>
+   </property>
+  </action>
+  <action name="actionSetGSTATrend">
+   <property name="text">
+    <string>GSTA trends...</string>
    </property>
   </action>
  </widget>

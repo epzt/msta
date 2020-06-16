@@ -21,10 +21,11 @@
  *                                                                         *
  ***************************************************************************/
 """
-
-from PyQt5.QtWidgets import  QMessageBox, QDialog, QInputDialog, QCheckBox, QGroupBox, QVBoxLayout, QGridLayout, QDialogButtonBox
+from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtWidgets import  QMessageBox, QDialog, QInputDialog, QCheckBox, QGroupBox, QVBoxLayout, QGridLayout, QDialogButtonBox, QLineEdit, QPushButton
 from PyQt5.QtCore import QObject, pyqtSlot
 import itertools as it
+from functools import partial
 
 #from .ui_about_msta import Ui_AboutDlg
 from .ui_set_gsta_variables_dialog import Ui_setGSTAVariablesDialog as setGSTAVarDlg
@@ -724,7 +725,7 @@ class setSelectedVariablesDlg(QDialog):
 
 
 #############################################################################
-# MSTA trend definition
+# MSTA expression definition
 #############################################################################
 class setMSTAExpressionBuilderDlg(QDialog, setMSTAExpressionDlg):
     def __init__(self, _trendsList, _mainTrend, parent=None):
@@ -763,7 +764,7 @@ class setMSTAExpressionBuilderDlg(QDialog, setMSTAExpressionDlg):
             if tc.__str__() == self.definedTrendCaseComboBox.currentText():
                 currentTrend = tc
         #self.expressionTextEdit.insertPlainText(currentTrend.__str__())
-        self.mainTrend.addTrendCase(currentTrend, "And")
+        self.mainTrend.addTrendCase(currentTrend, cfg.OPERAND['none'])
         self.UpdaTextEditor()
         return
 
@@ -772,9 +773,13 @@ class setMSTAExpressionBuilderDlg(QDialog, setMSTAExpressionDlg):
         self.UpdaTextEditor()
         return
 
+    def check(self):
+        errorFormat = False
+        expressionDoc = self.expressionTextEdit.document()
+
     def UpdaTextEditor(self):
         # if the main trend case does not containts anythink, nothing to do
-        if self.mainTrend.getOperand() == 0:
+        if self.mainTrend.getOperandCount() == 0:
             return
         # Clear the text of the widget
         self.expressionTextEdit.clear()
@@ -784,3 +789,105 @@ class setMSTAExpressionBuilderDlg(QDialog, setMSTAExpressionDlg):
                                                     op.getOP(),
                                                     self.mainTrend.getTrendByID()[op.getRightTrendID()]))
 
+#############################################################################
+# Class which mange trend to delete - created on the fly
+#############################################################################
+class DeleteTrendCaseDlg(QDialog):
+    def __init__(self, _trendList, parent=None):
+        super(DeleteTrendCaseDlg, self).__init__(parent)
+        self.setWindowTitle("Delete trend case(s)")
+        self.trendList = _trendList
+        # Construction of the layout content
+        self.gridLayout = QGridLayout()
+        self.trendGroupBox = QGroupBox("Trend case list")
+        self.tcLayout = QVBoxLayout()
+        self.checkBoxTrendDict = dict()
+        for tc in self.trendList:
+            # Construction of the initial dictionary of checkboxes and IDs
+            self.checkBoxTrendDict[tc.getID()] = QCheckBox(tc.__str__())
+            self.tcLayout.addWidget(self.checkBoxTrendDict[tc.getID()])
+        self.tcLayout.addStretch(1)
+        self.trendGroupBox.setLayout(self.tcLayout)
+        self.gridLayout.addWidget(self.trendGroupBox, 0, 0)
+        self.undoButton = QPushButton("Undo")
+        self.gridLayout.addWidget(self.undoButton, 0, 1)
+        self.delButton = QPushButton("Delete selected")
+        self.gridLayout.addWidget(self.delButton, 1, 0)
+        #self.closeButton = QPushButton("Close")
+        self.buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        self.gridLayout.addWidget(self.buttonBox, 2, 0)
+        self.setLayout(self.gridLayout)
+        # Variale declaration
+        self.checkedTrendIDList = list()
+        # Connections
+        for k, cb in self.checkBoxTrendDict.items():
+            cb.stateChanged.connect(partial(self.UpdateCheckedList, cb)) # Special syntax for parameter passing
+        #self.closeButton.clicked.connect(self.close)
+        self.delButton.clicked.connect(self.DeleteTrendCase)
+        self.undoButton.clicked.connect(self.UndoLastDelete)
+        self.buttonBox.accepted.connect(self.accept)
+        self.buttonBox.rejected.connect(self.reject)
+
+    # Check if almost one trend case is checked
+    def IsTrendCaseChecked(self):
+        for id, cb in self.checkBoxTrendDict.items():
+            if cb.isChecked():
+                return True
+        return False
+
+    @pyqtSlot(bool)
+    def DeleteTrendCase(self):
+        if not self.IsTrendCaseChecked():
+            QMessageBox.information(self, "Delete trend case", "Not trend case selected.\nSelect at least one.")
+            return
+        #if len(self.checkedTrendIDList) == 0:
+        #    QMessageBox.information(self, "Delete trend case", "Not trend case selected.\nSelect at least one.")
+        #   return
+        if QMessageBox.question(self, "Dete trend case", "Are you sure you want to delete trend case(s) ?") == QMessageBox.Yes:
+            self.RefreshTrendCaseDlg()
+
+    @pyqtSlot(bool)
+    def UndoLastDelete(self):
+        if len(self.checkedTrendIDList) == 0:
+            return
+        del self.checkedTrendIDList[-1]
+        self.RefreshTrendCaseDlg()
+
+    @pyqtSlot(QCheckBox)
+    def UpdateCheckedList(self, _cb):
+        keys = list(self.checkBoxTrendDict.keys())
+        values = list(self.checkBoxTrendDict.values())
+        id = keys[values.index(_cb)]
+        #id = [k for (k, v) in self.checkBoxTrendDict.items() if v == _cb]
+        if _cb.isChecked():
+            if not id in self.checkedTrendIDList:
+                self.checkedTrendIDList.append(id)
+        else:
+            if id in self.checkedTrendIDList:
+                self.checkedTrendIDList.remove(id)
+
+    def RefreshTrendCaseDlg(self):
+        self.trendGroupBox.close()
+        self.trendGroupBox = QGroupBox("Trend case list")
+        self.tcLayout = QVBoxLayout()
+        for tc in self.trendList:
+            if not tc.getID() in self.checkedTrendIDList:
+                self.tcLayout.addWidget(self.checkBoxTrendDict[tc.getID()])
+        self.tcLayout.addStretch(1)
+        self.trendGroupBox.setLayout(self.tcLayout)
+        self.gridLayout.addWidget(self.trendGroupBox, 0, 0)
+        # Just to be sure that on trend case is checked
+        for id, cb in self.checkBoxTrendDict.items():
+            if cb.isChecked() and not id in self.checkedTrendIDList:
+                cb.setChecked(False)
+        self.update()
+
+    # Return the new trend case list
+    def GetTrendCaseList(self):
+        if len(self.checkedTrendIDList) == 0:
+            return
+        newTrendCaseList = list()
+        for tc in self.trendList:
+            if not tc.getID() in self.checkedTrendIDList:
+                newTrendCaseList.append(tc)
+        return newTrendCaseList
