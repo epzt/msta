@@ -466,10 +466,11 @@ class mstaComposedTrendCase():
             if isinstance(_op, list):
                 self.operandList = _op  # A list of operand is given
             else:
-                self.operandList = [_op]
+                self.operandList = [_op] # One object is given, the list is created with this object as first element
             self.trendsList = _trendCase
         elif isinstance(_trendCase, mstaTrendCase) or isinstance(_trendCase, mstaComposedTrendCase): # one trend object
             if _op:
+                print("** Attention un operand incomple **")
                 self.operandList = [_op] # Should not append as an operand object point on two trend cases
             else:
                 self.operandList = list()
@@ -480,11 +481,16 @@ class mstaComposedTrendCase():
 
     # Function to check if all the trend IDs present in the operand list are present in the trend case list
     def check(self):
+        if len(self.trendsList) == 0:
+            return True, ""
         errorStr = ""
         for op in self.operandList:
-            for tc in self.trendsList:
-                if not tc.getTrendByID(op.getLeftTrendID()):
-                    errorStr += "{} not in list".format(tc.__str__())
+            if op:
+                for tc in self.trendsList:
+                    if not tc.getTrendByID(op.getLeftTrendID()):
+                        errorStr += "{} not in list".format(tc.__str__())
+            else:
+                self.operandList.remove(op)
         return errorStr == "", errorStr
 
     def __getitem__(self, item):
@@ -495,16 +501,30 @@ class mstaComposedTrendCase():
         if len(self.trendsList) == 0:
             return ""
         retValue = ""
-        op = 0
-        for t in self.trendsList:
-            if t.isGSTATrend():
-                retValue += t.getGSTATrendText()
+        if len(self.operandList) > 1:
+            retValue += "({}".format(self.operandList[0].getLeftTrend(self.trendsList).__str__())
+            for op in self.operandList:
+                retValue += " {} {}".format(op.__str__(), op.getRightTrend(self.trendsList).__str__())
+            retValue += ")"
+        elif len(self.operandList) == 1:
+            if self.operandList[0].getRightTrendID():
+                retValue = "({} {} {})".format(self.operandList[0].getLeftTrend(self.trendsList).__str__(),
+                                           self.operandList[0].__str__(),
+                                           self.operandList[0].getRightTrend(self.trendsList).__str__())
             else:
-                retValue += t.__str__()
-            retValue += ' '
-            if op < len(self.operandList):
-                retValue += self.operandList[op].__str__() + '\n'
-                op += 1
+                retValue = self.trendsList[0].__str__()
+        else:
+            retValue = self.trendsList[0].__str__()
+        #op = 0
+        #for t in self.trendsList:
+        #    if t.isGSTATrend():
+        #        retValue += t.getGSTATrendText()
+        #    else:
+        #        retValue += t.__str__()
+            #retValue += ' '
+            #if op < len(self.operandList):
+            #    retValue += self.operandList[op].__str__() + '\n'
+            #    op += 1
         return retValue
 
     # For convenience and to be homogeneous with mstaTrendCase class
@@ -514,6 +534,7 @@ class mstaComposedTrendCase():
         for c in self.getTrend():
             assert isinstance(c, mstaTrendCase)
             retValue += c.getGSTATrendText()
+        retValue += "\n"
         return retValue
 
     def setComposedGSTATrend(self, _bool):
@@ -547,7 +568,7 @@ class mstaComposedTrendCase():
 
     # Add an operand to the list
     def addOperand(self, _op):
-        assert _op in cfg.OPERAND.values()
+        assert isinstance(_op, mstaOperand)
         self.operandList.append(_op)
 
     def getOperand(self, *args):
@@ -587,18 +608,31 @@ class mstaComposedTrendCase():
     def getTrendCount(self):
         return len(self.trendsList)
 
-    def addTrendCase(self, _trendcase, _operand):
+    def addTrendCase(self, _trendcase, _operand = None):
         assert isinstance(_trendcase, mstaTrendCase) or isinstance(_trendcase, mstaComposedTrendCase)
-        assert _operand in cfg.OPERAND.values()
-        if _operand != cfg.OPERAND['none']: # If no operand just store the trend case
+        if _operand != cfg.OPERAND['none'] and not _operand: # If no operand just store the trend case
             self.operandList.append(_operand)
         self.trendsList.append(_trendcase)
 
     def deleteTrendCase(self, _trendcase):
+        assert _trendcase in self.trendsList
         for t in self.trendsList:
             if t == _trendcase:
-                index = self.trendsList.index(t)
+                for op in self.operandList:
+                    if t.getID() in op.getTrendIDS(): # The trend to delete is used in an operand
+                        if t.getID() == op.getLeftTrendID():
+                            print("ce qui ne devait pas arriver ...est arrivé")
+                            op.eraseLeftTrendID() # Should normally not append
+                        else:
+                            print("efface un ID d'un trend case à droite")
+                            op.eraseRightTrendID() # Should be the case all the time
                 self.trendsList.remove(t)
+
+    def deleteOperand(self, _op):
+        assert _op in self.operandList
+        for op in self.operandList:
+            if op == _op:
+                self.operandList.remove(op)
 
     def getVars(self):
         return [t.getVars() for t in self.trendsList]
@@ -614,14 +648,20 @@ class mstaOperand():
             assert _idLeft != None
             assert _idRight != None
             assert _level != None
-        self.idTrendLeft = _idLeft       # ID of the left case
-        self.idTrendRight = _idRight     # ID of the left case
-        self.level = _level     # Level of the trend case
-        self.op = _op           # operand between the two cases
+            self.idTrendLeft = _idLeft       # ID of the left case
+            self.idTrendRight = _idRight     # ID of the right case
+            self.level = _level     # Level of the trend case
+            self.op = _op           # operand between the two cases
+        else:
+            self.idTrendLeft = None     # ID of the left case
+            self.idTrendRight = None    # ID of the right case
+            self.level = None     # Level of the trend case
+            self.op =  cfg.OPERAND['none']
 
     def __str__(self):
         return self.op
 
+    # Set full OPERAND information
     def setOperand(self, _op, _idLeft, _idRight, _level = None):
         assert _op != cfg.OPERAND['none'] and _op in cfg.OPERAND.values()
         assert _idLeft != None
@@ -632,22 +672,45 @@ class mstaOperand():
         self.level = _level
         self.op = _op
 
+    # just set the operand variable
+    def setOP(self, _op):
+        assert _op != cfg.OPERAND['none'] and _op in cfg.OPERAND.values()
+        self.op = _op
+
     def getOP(self):
         return self.op
 
     def getLeftTrendID(self):
-        return (self.idTrendLeft)
+        return self.idTrendLeft
+
+    def getLeftTrend(self, _trendList):
+        for tc in _trendList:
+            if tc.getID() == self.idTrendLeft:
+                return tc
+        return None
 
     def setLeftTrendID(self, _id):
         assert _id != None
         self.idTrendLeft = _id
 
+    def eraseLeftTrendID(self):
+        self.idTrendLeft = None
+
     def getRightTrendID(self):
         return self.idTrendRight
+
+    def getRightTrend(self, _trendList):
+        for tc in _trendList:
+            if tc.getID() == self.idTrendRight:
+                return tc
+        return None
 
     def setRightTrendID(self, _id):
         assert _id != None
         self.idTrendRight = _id
+
+    def eraseRightTrendID(self):
+        self.idTrendRight = None
 
     # Return IDs of trend cases left and right
     def getTrendIDS(self):

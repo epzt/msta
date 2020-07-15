@@ -138,9 +138,9 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
     ###############################################
     @pyqtSlot(bool)
     def DisplayAboutMSTA(self):
-        #about=Ui_AboutDlg()
-        #about.exec()
-        QMessageBox.information(self, "Information", "MSTA plugin")
+        aboutDlg=aboutMSTA()
+        aboutDlg.exec()
+        #QMessageBox.information(self, "Information", "MSTA plugin")
 
     ###############################################
     @pyqtSlot(bool)
@@ -672,14 +672,21 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         if len(self.theTrendsList) == 0:
             QMessageBox.information(self, "Trend case", "No trend case(s) defined yet.")
             return
-        dlg = setMSTAExpressionBuilderDlg(self.theTrendsList, self.theMainTrendObject)
-        dlg.exec()
-        return
+        dlg = SetMSTAExpressionDlg(self.theTrendsList, self.theMainTrendObject)
+        result = dlg.exec_()
+        if result:
+            self.theMainTrendObject = dlg.GetMSTAExpressionTrendCase()
+
 
     @pyqtSlot(bool)
     def ExpressionDelete(self):
-        return
+        if not QMessageBox.question(self, "Delete current expression", "Do you realy want to delete current expression\n{}".format(self.theMainTrendObject.__str__())):
+            return
+        self.theMainTrendObject = mstaComposedTrendCase()
 
     @pyqtSlot(bool)
     def ExpressionList(self):
-        return
+        if self.theMainTrendObject.getTrendCount() == 0:
+            QMessageBox.information(self, "List expression", "No expression defined yet.")
+            return
+        self.updateLogViewPort(2, self.theMainTrendObject.__str__())

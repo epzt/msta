@@ -24,7 +24,7 @@ class Ui_AboutDlg(object):
         self.label_3.setGeometry(QtCore.QRect(230, 250, 301, 16))
         self.label_3.setObjectName("label_3")
         self.label_5 = QtWidgets.QLabel(AboutDlg)
-        self.label_5.setGeometry(QtCore.QRect(170, 210, 206, 22))
+        self.label_5.setGeometry(QtCore.QRect(270, 200, 206, 31))
         font = QtGui.QFont()
         font.setPointSize(14)
         font.setItalic(True)
@@ -60,9 +60,8 @@ class Ui_AboutDlg(object):
         _translate = QtCore.QCoreApplication.translate
         AboutDlg.setWindowTitle(_translate("AboutDlg", "About MSTA"))
         self.okButton.setText(_translate("AboutDlg", "Ok"))
-        self.label_3.setText(_translate("AboutDlg", "Author: E. Poizot (emmanuel.poizot@lecnam.net)"))
+        self.label_3.setText(_translate("AboutDlg", "Contact: E. Poizot (emmanuel.poizot@lecnam.net)"))
         self.label_5.setText(_translate("AboutDlg", "http://www.geoceano.fr"))
         self.label.setText(_translate("AboutDlg", "Mutli-Sediment Trend Analysis"))
         self.label_2.setText(_translate("AboutDlg", "MSTA"))
 
-from .resources import *

@@ -22,29 +22,26 @@
  ***************************************************************************/
 """
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtWidgets import  QMessageBox, QDialog, QInputDialog, QCheckBox, QGroupBox, QVBoxLayout, QGridLayout, QDialogButtonBox, QLineEdit, QPushButton
-from PyQt5.QtCore import QObject, pyqtSlot
+from PyQt5.QtWidgets import  QRadioButton, QMessageBox, QDialog, QInputDialog, QCheckBox, QGroupBox, QVBoxLayout, QGridLayout, QDialogButtonBox, QLineEdit, QPushButton, QHBoxLayout
+from PyQt5.QtCore import QObject, pyqtSlot, Qt
 import itertools as it
 from functools import partial
 
-#from .ui_about_msta import Ui_AboutDlg
+from .ui_about_msta import Ui_AboutDlg
 from .ui_set_gsta_variables_dialog import Ui_setGSTAVariablesDialog as setGSTAVarDlg
 from .ui_gsta_trend_definition import Ui_setGSTATrendCaseDialog as setGSTATrendDlg
 from .ui_msta_variable_definition import Ui_SetMSTAVarOptionsDlg as setMSTAVariableDlg
 from .ui_msta_trend_definition import Ui_mstaTrendDefinitionDialog as setMSTATrendDlg
-from .ui_msta_expression_builder_dialog import Ui_mstaExpressionBuilderDlg as setMSTAExpressionDlg
-
 from .mstaCoreClass import mstaTrendCase, mstaComposedTrendCase, mstaVariable, mstaOperand
-
 from . import config as cfg
 
 #############################################################################
 # Just a class to print About information
 #############################################################################
-# class aboutMSTA(QDialog, Ui_AboutDlg):
-#    def __int__(self, parent=None):
-#        super(aboutMSTA,self).__init__(parent)
-#        self.setupUi(self)
+class aboutMSTA(QDialog, Ui_AboutDlg):
+    def __int__(self, parent=None):
+        super(aboutMSTA,self).__init__(parent)
+        self.setupUi(self)
 
 #############################################################################
 # GSTA variables definition from global variable list
@@ -225,14 +222,14 @@ class setGSTATrendCasesDlg(QDialog, setGSTATrendDlg):
 
         # In case there is/are trend(s) defined, set default operand
         #if self.mainTrends.getTrendCount() > 0:
-        if len(self.mainTrends) > 0:
-            self.linkOperand = cfg.OPERAND['et'] # Default operand to link multiple GSTA trend case
-            self.linkOperandComboBox.setCurrentText(cfg.OPERAND['et'])
-            self.linkOperandComboBox.setEnabled(True)
-        else:
-            self.linkOperand = cfg.OPERAND['none'] # No operand yet
-            self.linkOperandComboBox.setCurrentText(cfg.OPERAND['none'])
-            self.linkOperandComboBox.setEnabled(False)
+        #if len(self.mainTrends) > 0:
+        #    self.linkOperand = cfg.OPERAND['et'] # Default operand to link multiple GSTA trend case
+        #    self.linkOperandComboBox.setCurrentText(cfg.OPERAND['et'])
+        #    self.linkOperandComboBox.setEnabled(True)
+        #else:
+        #    self.linkOperand = cfg.OPERAND['none'] # No operand yet
+        #    self.linkOperandComboBox.setCurrentText(cfg.OPERAND['none'])
+        #    self.linkOperandComboBox.setEnabled(False)
 
         self.buttonAddGSTATrendCase.clicked.connect(self.addTrendCase)
         self.buttonRemoveGSTATrendCase.clicked.connect(self.removeGSTATrendCase)
@@ -246,7 +243,7 @@ class setGSTATrendCasesDlg(QDialog, setGSTATrendDlg):
         self.radioGSTASkewnessPlus.toggled.connect(self.setSkewnessTrend)
         self.radioGSTASkewnessMinus.toggled.connect(self.setSkewnessTrend)
         self.radioGSTASkewnessNone.toggled.connect(self.setSkewnessTrend)
-        self.linkOperandComboBox.currentTextChanged.connect(self.currentTextChanged)
+        #self.linkOperandComboBox.currentTextChanged.connect(self.currentTextChanged)
 
         self.updateGSTATrendCasesText(self.mainTrends)
 
@@ -320,9 +317,9 @@ class setGSTATrendCasesDlg(QDialog, setGSTATrendDlg):
                 return # The new GSTA trend was previously defined
         #self.mainTrends.addTrendCase(newCombinedTC, self.linkOperand)  # New GSTA trend case is added to the global object
         self.mainTrends.append(newCombinedTC)  # New GSTA trend case is added to the global object
-        self.linkOperand = cfg.OPERAND['et'] # Default operand to link multiple GSTA trend case
-        self.linkOperandComboBox.setCurrentText(cfg.OPERAND['et'])
-        self.linkOperandComboBox.setEnabled(True)
+        #self.linkOperand = cfg.OPERAND['et'] # Default operand to link multiple GSTA trend case
+        #self.linkOperandComboBox.setCurrentText(cfg.OPERAND['et'])
+        #self.linkOperandComboBox.setEnabled(True)
         self.updateGSTATrendCasesText(self.mainTrends)
         return
 
@@ -339,25 +336,11 @@ class setGSTATrendCasesDlg(QDialog, setGSTATrendDlg):
                 if tc == currentCombinedTC:  # The current GSTA trend is defined
                     self.mainTrends.remove(tc)  # The GSTA trend case is deleted of the global object
         #if self.mainTrends.getTrendCount() <= 0:
-        if len(self.mainTrends) == 0:
-            self.linkOperandComboBox.setEnabled(False)
+        #if len(self.mainTrends) == 0:
+        #    self.linkOperandComboBox.setEnabled(False)
         self.updateGSTATrendCasesText(self.mainTrends)
         return
 
-    ###############################################
-    '''
-    def updateGSTATrendCases(self, _newTC):
-        assert isinstance(_newTC, list)
-        # New combined trend case object to add
-        newCombinedTC = mstaComposedTrendCase(_newTC, cfg.OPERAND['et'])
-        newCombinedTC.setComposedGSTATrend(True)  # It is a GSTA trend !! IMPORTANT TO SET IT AT TRUE
-        for tc in self.mainTrends.getTrend():
-            if tc.isGSTATrend(): # Test if it is a GSTA trend
-                if tc == newCombinedTC: # The new GSTA trend is defined
-                    return
-        self.mainTrends.addTrendCase(newCombinedTC, '') # New GSTA trend case is added to the global list
-        return
-    '''
     ###############################################
     def updateGSTATrendCasesText(self, _theTrendCase):
         # Erase all previous text
@@ -380,12 +363,12 @@ class setGSTATrendCasesDlg(QDialog, setGSTATrendDlg):
         return
 
     ###############################################
-    def getGSTATrendCaseListNames(self):
+    #def getGSTATrendCaseListNames(self):
         #if self.mainTrends.getTrendCount() > 0:
-        if len(self.mainTrends) > 0:
-            return [t.__str__() for t in self.mainTrends]
-        else:
-            return list()
+    #    if len(self.mainTrends) > 0:
+    #        return [t.__str__() for t in self.mainTrends]
+    #    else:
+    #        return list()
 
     ###############################################
     def getTrendCases(self):
@@ -393,9 +376,9 @@ class setGSTATrendCasesDlg(QDialog, setGSTATrendDlg):
         return self.mainTrends
 
     ###############################################
-    @pyqtSlot('const QString')
-    def currentTextChanged(self, _text):
-        self.linkOperand = _text
+    #@pyqtSlot('const QString')
+    #def currentTextChanged(self, _text):
+    #    self.linkOperand = _text
 
     ###############################################
     def getNameFromVariableList(self, _varList, _name):
@@ -544,7 +527,7 @@ class setMSTATrendCasesDlg(QDialog, setMSTATrendDlg):
         self.variableAName = self.variableAComboBox.currentText()
         self.variableBName = self.variableBComboBox.currentText()
         self.signType = self.comparatorComboBox.currentText()
-        self.linkOperand = self.linkOperandComboBox.currentText()
+        #self.linkOperand = self.linkOperandComboBox.currentText()
 
         self.clearPushButton.clicked.connect(self.ClearTrendListLabel)
         self.addPushButton.clicked.connect(self.addTrendCase)
@@ -552,7 +535,7 @@ class setMSTATrendCasesDlg(QDialog, setMSTATrendDlg):
         self.variableAComboBox.currentTextChanged.connect(self.currentVariableATextChanged)
         self.variableBComboBox.currentTextChanged.connect(self.currentVariableBTextChanged)
         self.comparatorComboBox.currentTextChanged.connect(self.currentSignTextChanged)
-        self.linkOperandComboBox.currentTextChanged.connect(self.currentLinkOperandChanged)
+        #self.linkOperandComboBox.currentTextChanged.connect(self.currentLinkOperandChanged)
 
     def getComp(self, _sign):
         assert _sign in cfg.COMP.values()
@@ -585,10 +568,10 @@ class setMSTATrendCasesDlg(QDialog, setMSTATrendDlg):
         else:
             simpleCase = mstaTrendCase(varA, self.getComp(self.signType))
         # Create the new composed trend case to add to the list
-        if self.linkOperand == cfg.OPERAND['none']:
-            newTrendCase = mstaComposedTrendCase(simpleCase)
-        else:
-            newTrendCase = mstaComposedTrendCase(simpleCase, self.linkOperand)
+        #if self.linkOperand == cfg.OPERAND['none']:
+        newTrendCase = mstaComposedTrendCase(simpleCase)
+        #else:
+            #newTrendCase = mstaComposedTrendCase(simpleCase, self.linkOperand)
         newTrendCase.setComposedGSTATrend(False)
         #for tc in self.mainTrends.getTrend():
         for tc in self.mainTrends:
@@ -596,11 +579,11 @@ class setMSTATrendCasesDlg(QDialog, setMSTATrendDlg):
                 return
         # An operand must be set when adding more than one trend
         #if self.mainTrends.getTrendCount() > 0 and self.linkOperand == cfg.OPERAND['none']:
-        if len(self.mainTrends) > 0 and self.linkOperand == cfg.OPERAND['none']:
-            QMessageBox.warning(self, "Trend definition error", \
-                                "Two successive trends must be link with an operand\n \
-                                Actual selected: {}\n".format(self.linkOperand))
-            return
+        #if len(self.mainTrends) > 0 and self.linkOperand == cfg.OPERAND['none']:
+        #    QMessageBox.warning(self, "Trend definition error", \
+        #                        "Two successive trends must be link with an operand\n \
+        #                        Actual selected: {}\n".format(self.linkOperand))
+        #    return
         # Add the new composed trend case to the global list
         #self.mainTrends.addTrendCase(newTrendCase, self.linkOperand)
         self.mainTrends.append(newTrendCase)
@@ -618,7 +601,8 @@ class setMSTATrendCasesDlg(QDialog, setMSTATrendDlg):
         else:
             simpleCase = mstaTrendCase(varA, self.getComp(self.signType))
         # Create composed trend case to delete from the list
-        trendCaseToDelete = mstaComposedTrendCase(simpleCase, self.linkOperand)
+        #trendCaseToDelete = mstaComposedTrendCase(simpleCase, self.linkOperand)
+        trendCaseToDelete = mstaComposedTrendCase(simpleCase)
         #for t in self.mainTrends.getTrend():
         for tc in self.mainTrends:
             if tc == trendCaseToDelete:
@@ -659,10 +643,10 @@ class setMSTATrendCasesDlg(QDialog, setMSTATrendDlg):
         self.signType = _str
         return
 
-    @pyqtSlot('const QString')
-    def currentLinkOperandChanged(self, _str):
-        self.linkOperand = _str
-        return
+    #@pyqtSlot('const QString')
+    #def currentLinkOperandChanged(self, _str):
+    #    self.linkOperand = _str
+    #    return
 
     def getSelectedMSTAVarnames(self):
         retValue = list()
@@ -723,72 +707,6 @@ class setSelectedVariablesDlg(QDialog):
                 retValue.append(self.layout.itemAt(i).widget().text())
         return retValue
 
-
-#############################################################################
-# MSTA expression definition
-#############################################################################
-class setMSTAExpressionBuilderDlg(QDialog, setMSTAExpressionDlg):
-    def __init__(self, _trendsList, _mainTrend, parent=None):
-        super(setMSTAExpressionBuilderDlg, self).__init__(parent)
-        self.setupUi(self)
-        # _trends should not be empty here
-        assert len(_trendsList) > 0
-        # all defined trends are in one main mstaComposedTrendCase
-        assert isinstance(_mainTrend, mstaComposedTrendCase)
-        self.trendList = _trendsList
-        self.mainTrend = _mainTrend
-
-        # Initialisation of combobox
-        self.definedTrendCaseComboBox.addItems([tc.__str__() for tc in self.trendList])
-        self.andRadioButton.setChecked(True)
-
-        # Definition of connectors to handle user action
-        self.leftParenthesisButton.clicked.connect(self.AddLeftParenthesis)
-        self.rightParenthesisButton.clicked.connect(self.AddRightParenthesis)
-        self.addToolButton.clicked.connect(self.AddTrendCase)
-        self.addOperandToolButton.clicked.connect(self.AddOperand)
-
-    @pyqtSlot(bool)
-    def AddLeftParenthesis(self):
-        self.UpdaTextEditor()
-        return
-
-    @pyqtSlot(bool)
-    def AddRightParenthesis(self):
-        self.UpdaTextEditor()
-        return
-
-    @pyqtSlot(bool)
-    def AddTrendCase(self):
-        for tc in self.trendList:
-            if tc.__str__() == self.definedTrendCaseComboBox.currentText():
-                currentTrend = tc
-        #self.expressionTextEdit.insertPlainText(currentTrend.__str__())
-        self.mainTrend.addTrendCase(currentTrend, cfg.OPERAND['none'])
-        self.UpdaTextEditor()
-        return
-
-    @pyqtSlot(bool)
-    def AddOperand(self):
-        self.UpdaTextEditor()
-        return
-
-    def check(self):
-        errorFormat = False
-        expressionDoc = self.expressionTextEdit.document()
-
-    def UpdaTextEditor(self):
-        # if the main trend case does not containts anythink, nothing to do
-        if self.mainTrend.getOperandCount() == 0:
-            return
-        # Clear the text of the widget
-        self.expressionTextEdit.clear()
-        # Insert the text of the defined trend cases
-        for op in self.mainTrend.getOperand():
-            self.expressionTextEdit.insertPlainText("{} {} {} ".format(self.mainTrend.getTrendByID()[op.getLeftTrendID()],
-                                                    op.getOP(),
-                                                    self.mainTrend.getTrendByID()[op.getRightTrendID()]))
-
 #############################################################################
 # Class which mange trend to delete - created on the fly
 #############################################################################
@@ -843,7 +761,7 @@ class DeleteTrendCaseDlg(QDialog):
         #if len(self.checkedTrendIDList) == 0:
         #    QMessageBox.information(self, "Delete trend case", "Not trend case selected.\nSelect at least one.")
         #   return
-        if QMessageBox.question(self, "Dete trend case", "Are you sure you want to delete trend case(s) ?") == QMessageBox.Yes:
+        if QMessageBox.question(self, "Delete trend case", "Are you sure you want to delete trend case(s) ?") == QMessageBox.Yes:
             self.RefreshTrendCaseDlg()
 
     @pyqtSlot(bool)
@@ -891,3 +809,320 @@ class DeleteTrendCaseDlg(QDialog):
             if not tc.getID() in self.checkedTrendIDList:
                 newTrendCaseList.append(tc)
         return newTrendCaseList
+
+#############################################################################
+# Class which allows to create the expression to be appied to the data set
+#############################################################################
+class SetMSTAExpressionDlg(QDialog):
+    def __init__(self, _trendList, _expression=None, parent=None):
+        super(SetMSTAExpressionDlg, self).__init__(parent)
+        self.setWindowTitle("MSTA expression")
+        self.trendList = _trendList
+        self.checkedTrendIDList = list()
+        # All the expression will be contained in an mstaComposedTrendCAse object
+        if not _expression:
+            self.mstaExpressionTrendCase = mstaComposedTrendCase()
+        else:
+            self.mstaExpressionTrendCase = _expression
+        self.mstaExpressionOperand = None
+        # Construction of the layout content
+        self.gridLayout = QGridLayout()
+        # Trend cases defined
+        self.trendGroupBox = QGroupBox("Trend case list")
+        self.tcLayout = QHBoxLayout()
+        self.checkBoxTrendDict = dict()
+        for tc in self.trendList:
+            # Construction of the initial dictionary of checkboxes and IDs
+            self.checkBoxTrendDict[tc.getID()] = QCheckBox(tc.__str__())
+            self.tcLayout.addWidget(self.checkBoxTrendDict[tc.getID()])
+        self.trendGroupBox.setLayout(self.tcLayout)
+        self.scroll = QtWidgets.QScrollArea()
+        self.scroll.setWidget(self.trendGroupBox)
+        self.scroll.setWidgetResizable(True)
+        self.scroll.setFixedWidth(500)
+        self.gridLayout.addWidget(self.scroll, 0, 0)
+        # Choice between the operands which are going to link trend cases
+        self.operandGroupBox = QGroupBox("Link operands")
+        self.operandLayout = QHBoxLayout()
+        self.And = QRadioButton(cfg.OPERAND['et'])
+        self.And.setChecked(True) # By default "And" is selected
+        self.Or = QRadioButton(cfg.OPERAND['ou'])
+        self.Xor = QRadioButton(cfg.OPERAND['xou'])
+        self.operandLayout.addWidget(self.And)
+        self.operandLayout.addWidget(self.Or)
+        self.operandLayout.addWidget(self.Xor)
+        self.operandGroupBox.setLayout(self.operandLayout)
+        self.gridLayout.addWidget(self.operandGroupBox, 0, 1)
+        # Buttons to manage trend case selections to set the expression
+        self.addSetTrendCase = QPushButton("Add set")
+        if len(self.trendList) <= 1:
+            self.addSetTrendCase.setEnabled(False)
+        self.addSingleTrendCase = QPushButton("Add single")
+        if len(self.trendList) == 0:
+            self.addSingleTrendCase.setEnabled(False)
+        self.addOperand = QPushButton("Add")
+        self.gridLayout.addWidget(self.addOperand, 1, 1)
+        self.buttonAddLayout = QHBoxLayout()
+        self.buttonAddLayout.addWidget(self.addSetTrendCase)
+        self.buttonAddLayout.addWidget(self.addSingleTrendCase)
+        self.gridLayout.addLayout(self.buttonAddLayout, 1, 0)
+        # Buttons "Clear" and "Undo"
+        self.buttonManageLayout = QVBoxLayout()
+        self.clearTextEdit = QPushButton("Clear")
+        self.undoTextEdit = QPushButton("Undo")
+        self.buttonManageLayout.addWidget(self.undoTextEdit)
+        self.buttonManageLayout.addWidget(self.clearTextEdit)
+        self.gridLayout.addLayout(self.buttonManageLayout, 2, 1)
+        # Text of the expression build using trend cases and operands
+        self.expressionTextEdit = QtWidgets.QTextEdit()
+        #self.expressionTextEdit.setAlignment(Qt.AlignCenter)
+        self.expressionTextEdit.setUndoRedoEnabled(True)
+        self.gridLayout.addWidget(self.expressionTextEdit, 2, 0)
+        # Bottom buttons "Cancel", "Ok"
+        self.buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        self.gridLayout.addWidget(self.buttonBox, 3, 1)
+        self.setLayout(self.gridLayout)
+        # Connections
+        for k, cb in self.checkBoxTrendDict.items():
+            cb.stateChanged.connect(partial(self.UpdateCheckedCaseList, cb)) # Special syntax for parameter passing
+        self.addSetTrendCase.clicked.connect(self.AddSetTrendCase)
+        self.addSingleTrendCase.clicked.connect(self.AddSingleTrend)
+        self.addOperand.clicked.connect(self.AddOperand)
+        #self.addOperand.setEnabled(False)
+        self.clearTextEdit.clicked.connect(self.ClearTexEdit)
+        #self.clearTextEdit.setEnabled(False)
+        self.undoTextEdit.clicked.connect(self.UndoTextEdit)
+        #self.undoTextEdit.setEnabled(False)
+        self.buttonBox.accepted.connect(self.accept)
+        self.buttonBox.rejected.connect(self.reject)
+        # Update the dialog in case a previous expression was defined
+        if self.mstaExpressionTrendCase.getTrendCount() > 0:  # A previous expression was defined
+            self.expressionTextEdit.append(self.mstaExpressionTrendCase.__str__()) # Only one trend case
+            self.addOperand.setEnabled(True)
+            self.operandGroupBox.setEnabled(True)
+            self.clearTextEdit.setEnabled(True)
+            self.undoTextEdit.setEnabled(True)
+            self.addSetTrendCase.setEnabled(False)
+            self.addSingleTrendCase.setEnabled(False)
+            self.trendGroupBox.setEnabled(False)
+        else:  # No previous expression defined
+            self.addOperand.setEnabled(False)
+            self.operandGroupBox.setEnabled(False)
+            self.clearTextEdit.setEnabled(False)
+            self.undoTextEdit.setEnabled(False)
+            self.addSetTrendCase.setEnabled(True)
+            self.addSingleTrendCase.setEnabled(True)
+            self.trendGroupBox.setEnabled(True)
+
+    @pyqtSlot(bool)
+    def ClearTexEdit(self):
+        if QMessageBox.question(self,"Clear the expression", "Are you sure you want to erase all the expression ?") == QMessageBox.Yes:
+            self.expressionTextEdit.clear()
+            self.mstaExpressionTrendCase = mstaComposedTrendCase()
+            self.mstaExpressionOperand = None
+            self.undoTextEdit.setEnabled(False)
+            self.clearTextEdit.setEnabled(False)
+            self.addOperand.setEnabled(False)
+            self.operandGroupBox.setEnabled(False)
+            self.addSetTrendCase.setEnabled(True)
+            self.addSingleTrendCase.setEnabled(True)
+            self.trendGroupBox.setEnabled(True)
+
+    @pyqtSlot(bool)
+    def UndoTextEdit(self):
+        self.expressionTextEdit.undo()
+        if self.expressionTextEdit.document().isEmpty():
+            self.undoTextEdit.setEnabled(False)
+            self.clearTextEdit.setEnabled(False)
+            self.addOperand.setEnabled(False)
+            self.operandGroupBox.setEnabled(False)
+            self.addSetTrendCase.setEnabled(True)
+            self.addSingleTrendCase.setEnabled(True)
+            self.trendGroupBox.setEnabled(True)
+            self.mstaExpressionTrendCase = mstaComposedTrendCase()
+            self.mstaExpressionOperand = None
+            return
+        if self.expressionTextEdit.document().lastBlock().text() in cfg.OPERAND.values():
+            # The last trend case is deleted
+            self.addOperand.setEnabled(False)
+            self.operandGroupBox.setEnabled(False)
+            self.addSetTrendCase.setEnabled(True)
+            self.addSingleTrendCase.setEnabled(True)
+            self.trendGroupBox.setEnabled(True)
+            self.mstaExpressionTrendCase.deleteTrendCase(self.mstaExpressionTrendCase.getLastTrend())
+        else:
+            # The last operand is deleted
+            self.addOperand.setEnabled(True)
+            self.operandGroupBox.setEnabled(True)
+            self.addSetTrendCase.setEnabled(False)
+            self.addSingleTrendCase.setEnabled(False)
+            self.trendGroupBox.setEnabled(False)
+            self.mstaExpressionTrendCase.deleteOperand(self.mstaExpressionOperand)
+            self.mstaExpressionOperand = None
+
+    @pyqtSlot(QCheckBox)
+    def UpdateCheckedCaseList(self, _cb):
+        keys = list(self.checkBoxTrendDict.keys())
+        values = list(self.checkBoxTrendDict.values())
+        id = keys[values.index(_cb)]
+        if _cb.isChecked():
+            if not id in self.checkedTrendIDList:
+                self.checkedTrendIDList.append(id)
+        else:
+            if id in self.checkedTrendIDList:
+                self.checkedTrendIDList.remove(id)
+        # Update buttons accessibility
+        if len(self.checkedTrendIDList) > 1:
+            self.addSingleTrendCase.setEnabled(False)
+            self.addSetTrendCase.setEnabled(True)
+        elif len(self.checkedTrendIDList) == 1:
+            self.addSingleTrendCase.setEnabled(True)
+            self.addSetTrendCase.setEnabled(False)
+        else:
+            self.addSingleTrendCase.setEnabled(False)
+            self.addSetTrendCase.setEnabled(False)
+        return
+
+    @pyqtSlot(bool)
+    def AddSetTrendCase(self):
+        if len(self.checkedTrendIDList) == 0:
+            QMessageBox.information(self, "Build expression", "No trend case selected.")
+            return
+        if len(self.checkedTrendIDList) == 1:
+            QMessageBox.information(self, "Build expression", "Just one trend case selected.\nUse \"Add single\" button")
+            return
+        # Dialog to choose an operand to put between the trend cases
+        opDlg = SetMSTAOperandDlg()
+        if not opDlg.exec_():
+            return
+        selectedOPValue = opDlg.GetSelectedOperandValue()
+        strToAdd = "("
+        for id in self.checkedTrendIDList:
+            strToAdd += f" {self.checkBoxTrendDict[id].text()}"
+            if not id == self.checkedTrendIDList[-1]:
+                strToAdd += f" {selectedOPValue}"
+        strToAdd += " )"
+        self.expressionTextEdit.append(strToAdd)
+        self.undoTextEdit.setEnabled(True)
+        self.clearTextEdit.setEnabled(True)
+        self.addOperand.setEnabled(True)
+        self.operandGroupBox.setEnabled(True)
+        self.addSetTrendCase.setEnabled(False)
+        self.addSingleTrendCase.setEnabled(False)
+        self.trendGroupBox.setEnabled(False)
+        # Construction of the list  of operands for the current composed trend case
+        linkOP = list()
+        for id in range(len(self.checkedTrendIDList)-1):
+            linkOP.append(mstaOperand(selectedOPValue, self.checkedTrendIDList[id], self.checkedTrendIDList[id+1], 0))
+        # Construction of the list of trend cases used for the current composed trend case
+        trendCases = list()
+        for tc in self.trendList:
+            if tc.getID() in self.checkedTrendIDList:
+                trendCases.append(tc)
+        # Create a new composed trend case from the chosen ID trend case list
+        newComposedTrend = mstaComposedTrendCase(trendCases, linkOP)
+        # add the new trend case to the main (global) composed trend case
+        self.mstaExpressionTrendCase.addTrendCase(newComposedTrend)
+        if self.mstaExpressionOperand: # if a first trend case has been set for the current operand
+            print("OP ID {} has TC ID droit {}".format(self.mstaExpressionOperand.getID(), self.mstaExpressionTrendCase.getLastTrend().getID()))
+            self.mstaExpressionOperand.setRightTrendID(self.mstaExpressionTrendCase.getLastTrend().getID()) # Set the second (last) ID
+            self.mstaExpressionTrendCase.addOperand(self.mstaExpressionOperand) # Storage of the operand in the main composed trend case
+            self.mstaExpressionOperand = None
+        #self.mstaExpressionOperand = mstaOperand()  # Set to default, ready for next choice
+        #self.mstaExpressionOperand.setLeftTrendID(self.mstaExpressionTrendCase.getLastTrend().getID())
+
+    @pyqtSlot(bool)
+    def AddSingleTrend(self):
+        if len(self.checkedTrendIDList) == 0:
+            QMessageBox.information(self, "Build expression", "No trend case selected.")
+            return
+        if len(self.checkedTrendIDList) > 1:
+            QMessageBox.information(self, "Build expression", "To much trend cases selected.\nUse \"Add set\" button")
+            return
+        strToAdd = ""
+        for id in self.checkedTrendIDList:
+            strToAdd += f" {self.checkBoxTrendDict[id].text()}"
+        self.expressionTextEdit.append(strToAdd)
+        self.undoTextEdit.setEnabled(True)
+        self.clearTextEdit.setEnabled(True)
+        self.addOperand.setEnabled(True)
+        self.operandGroupBox.setEnabled(True)
+        self.addSetTrendCase.setEnabled(False)
+        self.addSingleTrendCase.setEnabled(False)
+        self.trendGroupBox.setEnabled(False)
+        # Retreive the trend case from the chosen trend case list (normally with just one element)
+        for tc in self.trendList:
+            if tc.getID() == self.checkedTrendIDList[0]:
+                newTrend = tc
+        # add the new trend case to the main (global) composed trend case
+        self.mstaExpressionTrendCase.addTrendCase(newTrend)
+        if self.mstaExpressionOperand: # if a first trend case has been set previously for the current operand
+            print("OP ID {} has TC ID droit {}".format(self.mstaExpressionOperand.getID(), self.mstaExpressionTrendCase.getLastTrend().getID()))
+            self.mstaExpressionOperand.setRightTrendID(self.mstaExpressionTrendCase.getLastTrend().getID())  # Set the second (last) ID
+            self.mstaExpressionTrendCase.addOperand(self.mstaExpressionOperand)  # Storage of the operand in the main composed trend case
+            self.mstaExpressionOperand = None
+        #self.mstaExpressionOperand = mstaOperand()  # Set to default, ready for next choice
+        #self.mstaExpressionOperand.setLeftTrendID(self.mstaExpressionTrendCase.getLastTrend().getID()) # Just set the first (left) trend case ID
+
+    @pyqtSlot(bool)
+    def AddOperand(self):
+        assert self.mstaExpressionTrendCase.getTrendCount() >= 1
+        self.undoTextEdit.setEnabled(True)
+        self.addOperand.setEnabled(False)
+        self.operandGroupBox.setEnabled(False)
+        self.addSetTrendCase.setEnabled(True)
+        self.addSingleTrendCase.setEnabled(True)
+        self.trendGroupBox.setEnabled(True)
+        self.mstaExpressionOperand = mstaOperand()  # Set to default, ready for next choice
+        if self.And.isChecked():
+            self.expressionTextEdit.append(cfg.OPERAND['et'])
+            self.mstaExpressionOperand.setOP(cfg.OPERAND['et'])
+        elif self.Or.isChecked():
+            self.expressionTextEdit.append(cfg.OPERAND['ou'])
+            self.mstaExpressionOperand.setOP(cfg.OPERAND['ou'])
+        else:
+            self.expressionTextEdit.append(cfg.OPERAND['xou'])
+            self.mstaExpressionOperand.setOP(cfg.OPERAND['xou'])
+        self.mstaExpressionOperand.setLeftTrendID(
+            self.mstaExpressionTrendCase.getLastTrend().getID())  # Just set the first (left) trend case ID
+
+    def GetMSTAExpressionTrendCase(self):
+        res, msg  = self.mstaExpressionTrendCase.check()
+        if not res:
+            QMessageBox.information(self, "Invalid expression", msg)
+        return self.mstaExpressionTrendCase
+
+#############################################################################
+# Class to allows to select an operand between "And", "Or" and "Xor"
+#############################################################################
+class SetMSTAOperandDlg(QDialog):
+    def __init__(self, parent=None):
+        super(SetMSTAOperandDlg, self).__init__(parent)
+        self.setWindowTitle("MSTA expression")
+        self.operandGroupBox = QGroupBox("")
+        self.gridLayout = QGridLayout()
+        self.labelText = QtWidgets.QLabel("Select an operand to insert between the trend cases:")
+        self.gridLayout.addWidget(self.labelText, 0, 0, 1, -1)
+        self.operandLayout = QHBoxLayout()
+        self.And = QRadioButton(cfg.OPERAND['et'])
+        self.And.setChecked(True) # By default "And" is selected
+        self.Or = QRadioButton(cfg.OPERAND['ou'])
+        self.Xor = QRadioButton(cfg.OPERAND['xou'])
+        self.operandLayout.addWidget(self.And)
+        self.operandLayout.addWidget(self.Or)
+        self.operandLayout.addWidget(self.Xor)
+        self.operandGroupBox.setLayout(self.operandLayout)
+        self.gridLayout.addWidget(self.operandGroupBox, 1, 0, 1, -1)
+        self.buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        self.gridLayout.addWidget(self.buttonBox, 2, 1)
+        self.setLayout(self.gridLayout)
+        self.buttonBox.accepted.connect(self.accept)
+        self.buttonBox.rejected.connect(self.reject)
+
+    def GetSelectedOperandValue(self):
+        if self.And.isChecked():
+            return cfg.OPERAND['et']
+        elif self.Or.isChecked():
+            return cfg.OPERAND['ou']
+        else:
+            return cfg.OPERAND['xou']

@@ -85,18 +85,24 @@
     <property name="title">
      <string>Expressions</string>
     </property>
-    <addaction name="actionSetTrend"/>
-    <addaction name="actionSetGSTATrend"/>
-    <addaction name="actionListTrend"/>
-    <addaction name="actionDeleteTrend"/>
     <addaction name="separator"/>
     <addaction name="actionBuild"/>
     <addaction name="actionDelete"/>
     <addaction name="actionList"/>
    </widget>
+   <widget class="QMenu" name="menuTrends">
+    <property name="title">
+     <string>Trends</string>
+    </property>
+    <addaction name="actionSetTrend"/>
+    <addaction name="actionDeleteTrend"/>
+    <addaction name="actionListTrend"/>
+    <addaction name="actionSetGSTATrend"/>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuSettings"/>
    <addaction name="menuVariables"/>
+   <addaction name="menuTrends"/>
    <addaction name="menuExpressions"/>
    <addaction name="computeMSTA"/>
    <addaction name="menuProcessing"/>
