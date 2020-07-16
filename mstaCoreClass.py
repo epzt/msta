@@ -484,13 +484,10 @@ class mstaComposedTrendCase():
         if len(self.trendsList) == 0:
             return True, ""
         errorStr = ""
+        IDList = self.getTrendIDList()
         for op in self.operandList:
-            if op:
-                for tc in self.trendsList:
-                    if not tc.getTrendByID(op.getLeftTrendID()):
-                        errorStr += "{} not in list".format(tc.__str__())
-            else:
-                self.operandList.remove(op)
+            if not op.getLeftTrendID() in IDList or not op.getRightTrendID() in IDList:
+                errorStr += "{} or {} not in list\n".format(self.getTrendByID(op.getLeftTrendID()).__str__(),self.getTrendByID(op.getRightTrendID()).__str__())
         return errorStr == "", errorStr
 
     def __getitem__(self, item):
@@ -566,6 +563,23 @@ class mstaComposedTrendCase():
         else:
             return 0
 
+    def getFlatTrendIDList(self):
+        retValue = list()
+        if len(self.trendsList) > 0:
+            for tc in self.trendsList:
+                if isinstance(tc, mstaComposedTrendCase):
+                    retValue += tc.getTrendIDList()
+                else:
+                    retValue.append(tc.getID())
+        return retValue
+
+    def getTrendIDList(self):
+        retValue = list()
+        if len(self.trendsList) > 0:
+            for tc in self.trendsList:
+                    retValue.append(tc.getID())
+        return retValue
+
     # Add an operand to the list
     def addOperand(self, _op):
         assert isinstance(_op, mstaOperand)
@@ -610,8 +624,8 @@ class mstaComposedTrendCase():
 
     def addTrendCase(self, _trendcase, _operand = None):
         assert isinstance(_trendcase, mstaTrendCase) or isinstance(_trendcase, mstaComposedTrendCase)
-        if _operand != cfg.OPERAND['none'] and not _operand: # If no operand just store the trend case
-            self.operandList.append(_operand)
+        #if _operand != cfg.OPERAND['none'] and not _operand: # If no operand just store the trend case
+        #    self.operandList.append(_operand)
         self.trendsList.append(_trendcase)
 
     def deleteTrendCase(self, _trendcase):

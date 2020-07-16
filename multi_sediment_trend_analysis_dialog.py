@@ -513,16 +513,20 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
     @pyqtSlot(bool)
     def DeleteOneVariable(self):
         # Get the name of the variable to delete from user
-        variable, ok = QInputDialog.getItem(self, 'Delete a variable', 'Select a variable', self.selectedVariableNames, 0,
+        variable, rep = QInputDialog.getItem(self, 'Delete a variable', 'Select a variable', self.selectedVariableNames, 0,
                                             False)
-        if ok:
+        if rep:
             for vol in self.theVariablesObject:
                 if vol.getName() == variable:
+                    for tc in self.theTrendsList:
+                        for var in tc.getVars():
+                            if var.getName() == variable:
+                                QMessageBox.information(self, "Delete variable", "variable {} is used in a trend case. Delete according trend case first before deleting {}".fomrat(variable,variable))
+                                return
                     if QMessageBox.question(self, "Variable", "Are you sure you want to delete variable {} ?".format(variable)) == QMessageBox.Yes:
                         # Delete the variable name only from selected variable name list, variableObjectsList is not modified
                         del self.selectedVariableNames[self.selectedVariableNames.index(variable)]
                         self.updateLogViewPort(1, "Variable {} has been delete.".format(variable))
-                        # TODO: gérer ici le fait que si des trend sont définis avec cette variable, ils vont être effacés
                     break
 
     '''
@@ -587,29 +591,38 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
     ###############################################
     @pyqtSlot(bool)
     def DeleteTrends(self):
-        #if self.theTrendsList.getTrendCount() == 0:
         if len(self.theTrendsList) == 0:
             QMessageBox.information(self, "Trend case(s)", "No trend case(s) defined yet.")
             return
         delDlg = DeleteTrendCaseDlg(self.theTrendsList)
-        if not  delDlg.exec():
+        if not delDlg.exec():
             return
-        if delDlg.GetTrendCaseList():
-            self.theTrendsList = delDlg.GetTrendCaseList()
+        newTrendList = delDlg.GetTrendCaseList()
+        deletedElementList = list()
+        if len(newTrendList) > 0:
+            for tc in self.theTrendsList:
+                if not tc.getID() in [ntc.getID() for ntc in newTrendList]:
+                    deletedElementList.append(tc) # Construction of list of deleted trend case
         else:
             self.theTrendsList = list()
-
-        #if QMessageBox.question(self, "Trend cases(s)", "Are you sure you want to delete all defined trends ?") == QMessageBox.Yes:
-        #    #self.theTrendsList = mstaComposedTrendCase()
-        #    self.theTrendsList = list()
-        #    self.selectedVariableNames = list()
-        #    self.computeMSTA.setEnabled(False)
+            return
+        if len(deletedElementList) > 0:
+            if self.theMainTrendObject.getTrendCount() > 0: # If an expression was previously defined
+                for dtc in deletedElementList:
+                    if dtc.getID() in self.theMainTrendObject.getFlatTrendIDList(): # Check if one of the deleted trend case is present in the expression
+                        if QMessageBox.question(self, "Delete trend",
+                                                "Trend case ({}) is present in global expression to apply.\n If you continue, global expression will be erased.\n Do you want to continue ?".format(dtc.__str__())) \
+                                == QMessageBox.Yes:
+                            self.theMainTrendObject = mstaComposedTrendCase()
+                            self.theTrendsList = newTrendList
+            else:
+                self.theTrendsList = newTrendList
         return
 
     ###############################################
     @pyqtSlot(bool)
     def ComputeMSTA(self):
-        assert len(self.theTrendsList) > 0 # Must have at least one trand to study
+        assert len(self.theTrendsList) > 0 # Must have at least one trend to study
         assert len(self.theVariablesObject) > 0 # Must have at least one variable in the current selected list
         assert self.temporaryLayer # Check the temporary layer is set
 
@@ -676,7 +689,6 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         result = dlg.exec_()
         if result:
             self.theMainTrendObject = dlg.GetMSTAExpressionTrendCase()
-
 
     @pyqtSlot(bool)
     def ExpressionDelete(self):

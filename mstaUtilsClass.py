@@ -1024,7 +1024,6 @@ class SetMSTAExpressionDlg(QDialog):
         # add the new trend case to the main (global) composed trend case
         self.mstaExpressionTrendCase.addTrendCase(newComposedTrend)
         if self.mstaExpressionOperand: # if a first trend case has been set for the current operand
-            print("OP ID {} has TC ID droit {}".format(self.mstaExpressionOperand.getID(), self.mstaExpressionTrendCase.getLastTrend().getID()))
             self.mstaExpressionOperand.setRightTrendID(self.mstaExpressionTrendCase.getLastTrend().getID()) # Set the second (last) ID
             self.mstaExpressionTrendCase.addOperand(self.mstaExpressionOperand) # Storage of the operand in the main composed trend case
             self.mstaExpressionOperand = None
@@ -1057,7 +1056,6 @@ class SetMSTAExpressionDlg(QDialog):
         # add the new trend case to the main (global) composed trend case
         self.mstaExpressionTrendCase.addTrendCase(newTrend)
         if self.mstaExpressionOperand: # if a first trend case has been set previously for the current operand
-            print("OP ID {} has TC ID droit {}".format(self.mstaExpressionOperand.getID(), self.mstaExpressionTrendCase.getLastTrend().getID()))
             self.mstaExpressionOperand.setRightTrendID(self.mstaExpressionTrendCase.getLastTrend().getID())  # Set the second (last) ID
             self.mstaExpressionTrendCase.addOperand(self.mstaExpressionOperand)  # Storage of the operand in the main composed trend case
             self.mstaExpressionOperand = None
