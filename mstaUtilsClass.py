@@ -22,7 +22,18 @@
  ***************************************************************************/
 """
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtWidgets import  QRadioButton, QMessageBox, QDialog, QInputDialog, QCheckBox, QGroupBox, QVBoxLayout, QGridLayout, QDialogButtonBox, QLineEdit, QPushButton, QHBoxLayout
+from PyQt5.QtWidgets import  (QRadioButton,
+                              QMessageBox,
+                              QDialog,
+                              QInputDialog,
+                              QCheckBox,
+                              QGroupBox,
+                              QVBoxLayout,
+                              QGridLayout,
+                              QDialogButtonBox,
+                              QLineEdit,
+                              QPushButton,
+                              QHBoxLayout)
 from PyQt5.QtCore import QObject, pyqtSlot, Qt
 import itertools as it
 from functools import partial
@@ -413,8 +424,9 @@ class setMSTAVariableOptionDlg(QDialog, setMSTAVariableDlg):
         # Initialisation from previous variable
         self.variableDgLineEdit.setText("0.0")
         self.pmVariableRangeLineEdit.setText("0.0")
-        self.directionVariableLineEdit.setText("0.0")
-        self.tolangVariableLineEdit.setText("0.0")
+        self.directionSlider.setValue(0.0)
+        self.majorAxisLineEdit.setText("0.0")
+        self.minorAxisLineEdit.setText("0.0")
         self.variableUnitComboBox.setCurrentText(self.unit)
 
         # Connection définition
@@ -447,8 +459,13 @@ class setMSTAVariableOptionDlg(QDialog, setMSTAVariableDlg):
                     self.variableAliasLineEdit.setText(v.getAlias())
                 self.setVariableDg(v.getDg())
                 self.setVariableRange(v.getRange())
-                self.setVariableAnysotropyDirection(v.getDirection())
-                self.setVariableAnysotropyToAngle(v.getTolerance())
+                if not v.getSearch().isCircle():
+                    self.anysotropyGroup.setChecked(True)
+                    self.setVariableAnysotropy(v.getSearch())
+                    self.setVariableDg(0.0)
+                else:
+                    self.anysotropyGroup.setChecked(False)
+                    self.setVariableDg(v.getDg())
                 self.nameChanged = True
                 return
 
@@ -457,9 +474,14 @@ class setMSTAVariableOptionDlg(QDialog, setMSTAVariableDlg):
         newvar.setName(self.getVariableName())
         newvar.setAlias(self.getVariableAlias())
         newvar.setUnit(self.getVariableUnit())
-        newvar.setDg(self.getVariableDg())
+        if self.anysotropyGroup.isChecked():
+            anysotropy = self.getVariableAnysotropy()
+            newvar.setSearch(anysotropy[0], anysotropy[1], anysotropy[2]) # Ellipse
+            newvar.setDg(0.0)
+        else:
+            newvar.setDg(self.getVariableDg())
+            newvar.setSearch(self.getVariableDg(), self.getVariableDg(), 0.0) # Circle
         newvar.setRange(self.getVariableRange())
-        newvar.setSearch(self.getVariableAnysotropyDirection(), self.getVariableAnysotropyTolangle())
         return newvar
 
     def getVariableName(self):
@@ -487,17 +509,13 @@ class setMSTAVariableOptionDlg(QDialog, setMSTAVariableDlg):
     def setVariableRange(self, _range):
         self.pmVariableRangeLineEdit.setText(str(_range))
 
-    def getVariableAnysotropyDirection(self):
-        return float(self.directionVariableLineEdit.text())
+    def getVariableAnysotropy(self):
+        return [float(self.majorAxisLineEdit.text()), float(self.minorAxisLineEdit.text()), float(self.directionSlider.value())]
 
-    def setVariableAnysotropyDirection(self, _anisotropy):
-        self.directionVariableLineEdit.setText(str(_anisotropy))
-
-    def getVariableAnysotropyTolangle(self):
-        return float(self.tolangVariableLineEdit.text())
-
-    def setVariableAnysotropyToAngle(self, _angle):
-        self.tolangVariableLineEdit.setText(str(_angle))
+    def setVariableAnysotropy(self, _anisotropy):
+        self.majorAxisLineEdit.setText(str(_anisotropy.getMajor()))
+        self.minorAxisLineEdit.setText(str(_anisotropy.getMinor()))
+        self.directionSlider.setValue(_anisotropy.getDirection())
 
 #############################################################################
 # MSTA trend definition
@@ -558,7 +576,7 @@ class setMSTATrendCasesDlg(QDialog, setMSTATrendDlg):
         varB = self.varObjectsList[self.variableBComboBox.currentIndex()]
         if not varA.isEqual(varB):
             QMessageBox.warning(self, "Trend definition error",
-                                "Can\'t mix two variables with different characteristic distance, research angle or tolerance value:\n \
+                                "Can\'t mix two variables with different characteristic distance, research angle, tolerance value or units:\n \
                                 {}\n{}".format(varA.__repr__(), varB.__repr__()))
             return
 
@@ -650,10 +668,12 @@ class setMSTATrendCasesDlg(QDialog, setMSTATrendDlg):
 
     def getSelectedMSTAVarnames(self):
         retValue = list()
+        #for tc in self.mainTrends:
+        #    for vtc in list(it.chain(*tc.getVars())): # Flatten the list of list in a list
+        #        retValue.append(vtc.getName())
         for tc in self.mainTrends:
-            for vtc in list(it.chain(*tc.getVars())): # Flatten the list of list in a list
-                retValue.append(vtc.getName())
-        return list(set(retValue)) # Allows to have unique element in the returned list
+            retValue += tc.getVars()
+        return retValue
 
     def getTrendCases(self):
         return self.mainTrends #, usedVariables

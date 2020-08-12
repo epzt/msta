@@ -22,7 +22,11 @@
  ***************************************************************************/
 """
 
-from qgis.core import QgsPoint
+from qgis.core import (QgsPoint, QgsVectorLayer, QgsEllipse,
+                       QgsGeometry,
+                       QgsFeatureRequest,
+                       QgsProcessing,
+                       QgsExpression)
 import numpy as np
 import itertools as it
 
@@ -54,21 +58,38 @@ class RANGE():
 #############################################################################
 
 class ELLIPSE():
-    def __init__(self, _d, _t):
-        self.direction = _d
-        self.tolerance = _t
+    def __init__(self, _M, _m, _d=0):
+        self.major = _M
+        self.minor = _m
+        self.direction = _d # Direction is stored in degrees
+
+    def __repr__(self):
+        if self.isCircle():
+            return "Dg: {}".format(self.getMajor())
+        else:
+            return "M: {}, m: {}, D: {}".format(self.getMajor(), self.getMinor(), self.getDirection())
 
     def __eq__(self, _other):
-        return self.direction == _other.getDirection() and self.tolerance == _other.getTolerance()
+        return self.direction == _other.getDirection() and self.major == _other.getMajor() and self.minor == _other.getMinor()
 
     def getDirection(self):
         return self.direction
 
-    def getTolerance(self):
-        return self.tolerance
+    def setDirection(self, _d):
+        assert _d >= 0.0 and _d <= 360.0
+        self.direction = _d
 
-    def isCircular(self, _r):
-        return _r == self.tolerance
+    def getDirectionRadian(self):
+        return np.deg2rad(self.direction)
+
+    def getMajor(self):
+        return self.major
+
+    def getMinor(self):
+        return self.minor
+
+    def isCircle(self):
+        return self.major == self.minor
 
 #############################################################################
 ## class mstaPoint: manage data points                                     ##
@@ -99,10 +120,8 @@ class mstaPoint(QgsPoint):
                 # Backup the value of the variable for this point because this is the only field
                 # the user cannot change/modify
                 _newVar.setValue(v.getValue())
-                # Delete the variable to update in the list
-                del self.variables[self.variables.index(v)]
-                # Append the updated variable
-                self.variables.append(_newVar)
+                # Replace the variable with the new one in the list
+                self.variables[self.variables.index(v)] = _newVar
                 return
 
     def addVariable(self, _newvar):
@@ -150,7 +169,7 @@ class mstaVariable():
         self.value = 0.0
         self.dg = 0.0
         self.range = 0.0 # +/- range centred around value
-        self.search = ELLIPSE(0.0,  self.dg) # By default circle search
+        self.search = ELLIPSE(self.dg,  self.dg, 0.0) # By default circle search
 
     # Default operations
     # + addition
@@ -251,32 +270,27 @@ class mstaVariable():
             return False
     # < lower than
     def __lt__(self, _other):
-        return(self.getMax() < _other.getMin())
+        return self.getMax() < _other.getMin()
     def __le__(self, _other):
-        return(self.getMax() <= _other.getMin())
+        return self.getMax() <= _other.getMin()
     # > upper thn
     def __gt__(self, _other):
-        return(self.getMin() > _other.getMax())
+        return self.getMin() > _other.getMax()
     def __ge__(self, _other):
-        return(self.getMin() >= _other.getMax())
+        return self.getMin() >= _other.getMax()
 
     # Print itself
     def __repr__(self):
         return(f'Name: {self.name}, alias: {self.alias}\n \
-                distance: {self.dg}, unit: {self.unit}\n \
-                range: +/-{self.getRange()}\n \
-                dir : {self.getDirection()}, Tol: {self.getTolerance()}')
+                unit: {self.unit}, range: +/-{self.getRange()}\n \
+                {self.getSearch()}')
 
     # Test if the current variable as same Dg, direction and tolerance than variable _other
     # convenient during process
     def isEqual(self, _other):
-        retValue = True
-        if self.getDg() != _other.getDg():
-            retValue = False
-        if self.getSearch() != _other.getSearch():
-            retValue = False
-        if self.getUnit() != _other.getUnit():
-            retValue = False
+        assert isinstance(_other, mstaVariable)
+        retValue = (self.getDg() == _other.getDg()) and (self.getSearch() == _other.getSearch()) and (self.getUnit() == _other.getUnit())
+        print("{} and {} : {}".format(self.getID(), _other.getID(), retValue))
         return retValue
 
     def getID(self):
@@ -308,17 +322,10 @@ class mstaVariable():
     def getMax(self):
         return self.value + self.getRange()
 
-    def setSearch(self,_d, _t):
-        assert isinstance(_d, float)
-        assert isinstance(_t, float)
-        self.search = ELLIPSE(_d,_t)
+    def setSearch(self, _M, _m, _d):
+        self.search = ELLIPSE(_M, _m, _d)
     def getSearch(self):
         return self.search
-
-    def getDirection(self):
-        return self.search.getDirection() # Direction is stored as the first element of the list
-    def getTolerance(self):
-        return self.search.getTolerance() # Tol. angle is stored as the second element of the list
 
     def setDg(self, _dg):
         assert isinstance(_dg, float)
@@ -338,6 +345,27 @@ class mstaVariable():
     # Return False only for phi units and other (not affected)
     def isMetric(self):
         return not (self.getUnit() == cfg.UNIT['phi'] or self.getUnit() == cfg.UNIT['other'])
+
+    ###############################################
+    # Geographic functions
+    ###############################################
+    # Return features of the temporary layer which are neighboors of the variable
+    def GetNeiborhoodPointsID(self, temporaryLayer, centralPoint):
+        assert isinstance(centralPoint, QgsPoint)
+        assert isinstance(temporaryLayer, QgsVectorLayer)
+        retValue = list()
+        # Construct an ellipse geometry or circle when semiMajor = semiMinor
+        ellipse = QgsEllipse(centralPoint, self.getSearch().getMajor(), self.getSearch().getMinor(),self.getSearch().getDirection())
+        if ellipse.area() == 0.0:   # If ellipse have 0 area
+            return retValue             # return an empty list
+        # Select in the bounding box of the ellipse/circle geometry to restrict the list of points to look at
+        request = QgsFeatureRequest()
+        request.setFilterRect(ellipse.boundingBox())    #.setFlags(QgsFeatureRequest.NoGeometry)
+        # Loop over the select points inside the box if any
+        for f in temporaryLayer.getFeatures(request):
+            if QgsGeometry(ellipse.toPolygon()).contains(f.geometry()):
+                retValue.append(f.id())
+        return retValue
 
 #############################################################################
 ## class mstaTrendCase: manage trend case                                  ##
@@ -449,6 +477,10 @@ class mstaTrendCase():
 
     def getVars(self):
         return [self.leftVar, self.rightVar]
+
+    # Compare the two variables and return if they have same research parameters (Dg, angle) and same units
+    def isValidTrend(self):
+        return self.leftVar.isEqual(self.rightVar)
 
 #############################################################################
 ## class mstaComposedTrendCase: manage trend case                          ##
@@ -648,8 +680,23 @@ class mstaComposedTrendCase():
             if op == _op:
                 self.operandList.remove(op)
 
+    # Return a flatten list of the variables present in the various defined trends
     def getVars(self):
-        return [t.getVars() for t in self.trendsList]
+        retValue = list()
+        for t in self.trendsList:
+            if isinstance(t, mstaComposedTrendCase):
+                for tt in t.getTrend():
+                    retValue += tt.getVars()
+            else:
+                retValue += t.getVars()
+        return retValue
+
+    # Compare the two variables and return if they have same research parameters (Dg, angle) and same units
+    def isValidTrend(self):
+        retValue = True
+        for t in self.trendsList:
+            retValue = t.isValidTrend()
+        return retValue
 
 #############################################################################
 ## class mstaOperand: manage trend case                                    ##
