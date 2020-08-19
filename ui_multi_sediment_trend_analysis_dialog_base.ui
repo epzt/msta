@@ -24,7 +24,7 @@
      <x>0</x>
      <y>0</y>
      <width>641</width>
-     <height>23</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -76,6 +76,8 @@
     <property name="title">
      <string>Run</string>
     </property>
+    <addaction name="actionBarrierLayers"/>
+    <addaction name="separator"/>
     <addaction name="actionComputeMSTA"/>
    </widget>
    <widget class="QMenu" name="menuProcessing">
@@ -350,6 +352,11 @@
   <action name="actionSetGSTATrend">
    <property name="text">
     <string>GSTA trends...</string>
+   </property>
+  </action>
+  <action name="actionBarrierLayers">
+   <property name="text">
+    <string>Barrier layer(s)...</string>
    </property>
   </action>
  </widget>

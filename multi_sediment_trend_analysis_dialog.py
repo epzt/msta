@@ -42,6 +42,7 @@ from .mstaCoreClass import mstaPoint as mp
 from .mstaCoreClass import mstaVariable as mv
 from .mstaCoreClass import mstaTrendCase, mstaComposedTrendCase, mstaOperand
 from .mstaUtilsClass import *
+from . import config as cfg
 
 CONTEXTINFO = {1:"Variable(s) information",
                2:"Trend(s) information",
@@ -81,6 +82,7 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         self.actionAbout.triggered.connect(self.DisplayAboutMSTA)
         self.actionSetWorkingDirectory.triggered.connect(self.SetWorkingDirectory)
         self.actionComputeMSTA.triggered.connect(self.ComputeMSTA)
+        self.actionBarrierLayers.triggered.connect(self.BarrierLayers)
         self.actionClearViewText.triggered.connect(self.SetClearText)
         self.actionCloseDataSet.triggered.connect(self.CloseCurrentDataSet)
         #
@@ -134,6 +136,7 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         fontWeight = self.textwidget.currentFont().weight()
         self.textwidget.setTabStopWidth(fontWeight)
         self.temporaryLayer = ""
+        self.barrierListLayers = list()
 
     ###############################################
     @pyqtSlot(bool)
@@ -215,8 +218,6 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         self.totalVariablesName = varnames.copy()
         self.updateLogViewPort(6, f'{len(self.points)} points created')
         self.updateLogViewPort(1, self.totalVariablesName)
-        # All variables are selected by default at the beginning
-        #self.selectedVariableNames = self.totalVariablesName.copy()
         # Data set is loaded, variables and trends can be manage
         self.menuVariables.setEnabled(True)
         self.actionSetTrend.setEnabled(True)
@@ -255,7 +256,8 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
 
         # add features
         for i in range(_dataset.shape[0]):
-            fet = QgsFeature(i)  #  Set the ID in the same time so as to correspond with ID of the database
+            fet = QgsFeature()
+            fet.setId(i+1)  # Set the ID doing to way to ensure id is set correctly
             fet.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(_coordsset[_coordsnames[0]][i],_coordsset[_coordsnames[1]][i])))
             pr.addFeatures([fet])
 
@@ -515,9 +517,13 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
     ###############################################
     @pyqtSlot(bool)
     def DeleteOneVariable(self):
+        if len(self.selectedVariableNames) == 0:
+            QMessageBox.information(self, "Selected variable", "No variables selected/used yet\nNothing to delete.")
+            return
         # Get the name of the variable to delete from user
-        variable, rep = QInputDialog.getItem(self, 'Delete a variable', 'Select a variable', self.selectedVariableNames, 0,
-                                            False)
+        variable, rep = QInputDialog.getItem(self, 'Delete a variable', 'Select a variable',
+                                             [sv.getName() for sv in self.selectedVariableNames],
+                                             0, False)
         if rep:
             for vol in self.theVariablesObject:
                 if vol.getName() == variable:
@@ -556,7 +562,7 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
     @pyqtSlot(bool)
     def SetMSTATrendCases(self):
         # Construction of the list of variables that are NOT used by GSTA
-        theVariablesList = [v for v in self.theVariablesObject if not v.getAlias() in ["Mean", "Sorting", "Skewness"]]
+        theVariablesList = [v for v in self.theVariablesObject if not v.getName() in self.selectedVariableNames]
         # Construction of the list of available variables, i.e. those which are not used yet
         #theVariablesList = [v for v in self.theVariablesObject if not v.getName() in self.selectedVariableNames]
         if len(theVariablesList) == 0:
@@ -614,6 +620,7 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         if result:
             self.theExpressionObject = dlg.GetMSTAExpressionTrendCase()
 
+    ###############################################
     @pyqtSlot(bool)
     def ExpressionDelete(self):
         if not QMessageBox.question(self, "Delete current expression",
@@ -629,6 +636,14 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
             QMessageBox.information(self, "List expression", "No expression defined yet.")
             return
         self.updateLogViewPort(2, self.theExpressionObject.__str__())
+
+    ###############################################
+    @pyqtSlot(bool)
+    def BarrierLayers(self):
+        dlg = SelectBarrierLayerDlg(self.iface.mapCanvas(), self.barrierListLayers)
+        result = dlg.exec_()
+        if result:
+            self.barrierListLayers = dlg.GetBarrierLIst()
 
     ###############################################
     @pyqtSlot(bool)
@@ -653,25 +668,40 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
 
         # Declaration of the dictionary which will containt variables and surrounding point IDs
         surroundingWorkingDict = dict()
-        #for v in varsList:
-        #    surroundingWorkingDict[v.getName] = list()  # List of point IDs is empty at the begining
-
-        # Normally no use to check validity of expression as it should have been done during construction process
+        # Loop over the points of the temporary layer
         for point in self.points:
             for v in varsList:
-                points = v.GetNeiborhoodPointsID(self.temporaryLayer, point)
-                surroundingWorkingDict[v.getName] = points # Storage of the surrounding points if any
-                if len(points) == 0:
+                nbPoints = v.GetNeiborhoodPoints(self.temporaryLayer, point, self.points)
+                # Continue if no neiboring points
+                if len(nbPoints) == 0:
                     continue
-
+                pointsToRemoved = list()
+                # eventually deselect points which cross barrier layer(s)
+                for barrier in self.barrierListLayers:
+                    # Select in the bounding box of the self.temporaryLayer to restrict the list of features to look at
+                    barrier.selectByRect(self.temporaryLayer.extent())
+                    for nbp in nbPoints:
+                        line = QgsFeature()
+                        line.setGeometry(QgsLineString([point, nbp]))
+                        for f in barrier.selectedFeatures():
+                            if line.geometry().crosses(f.geometry()):
+                                pointsToRemoved.append(nbp.getID())
+                # store the surrounding points in a dictionnary (keys are variable names)
+                surroundingWorkingDict[v.getName] = [rp for rp in nbPoints if not rp.getID() in pointsToRemoved]
+            # Apply expression for each central point (point)
+            for nbPointsList in surroundingWorkingDict.values():
+                for nbp in nbPointsList:
+                    # DEBUG
+                    print("id: {} versus id {} -> {}".format(point.getID(), nbp.getID(), self.theExpressionObject.result(point, nbp)))
             # TODO:
-            # 1 - construction the ellipse/circle for each variable
-            # 2 - select all points inside the ellipse/circle for each variable
-            # 3 - deselect the current central point (working point)
-            # 4 - apply the expression corresponding to each trend case/variables involved
+            # 1 - construction the ellipse/circle for each variable -> DONE
+            # 2 - select all points inside the ellipse/circle for each variable -> DONE
+            # 3 - deselect the current central point (working point) -> DONE
+            # 4 - deselect eventually points which cross selected barrier layer(s) -> DONE
+            # 5 - apply the expression corresponding to each trend case/variables involved
 
-                # pointIdList = self.GetNeiborhoodPointsID(point, )
+
         return
 
-
+    ###############################################
 

@@ -37,6 +37,8 @@ from PyQt5.QtWidgets import  (QRadioButton,
 from PyQt5.QtCore import QObject, pyqtSlot, Qt
 import itertools as it
 from functools import partial
+from qgis.gui import QgsMapLayerComboBox,QgsMapCanvas
+from qgis.core import QgsMapLayerProxyModel, QgsMapLayerType
 
 from .ui_about_msta import Ui_AboutDlg
 from .ui_set_gsta_variables_dialog import Ui_setGSTAVariablesDialog as setGSTAVarDlg
@@ -1144,3 +1146,42 @@ class SetMSTAOperandDlg(QDialog):
             return cfg.OPERAND['ou']
         else:
             return cfg.OPERAND['xou']
+
+#############################################################################
+# Class to select layer(s) used as barrier
+#############################################################################
+class SelectBarrierLayerDlg(QDialog):
+    def __init__(self, canvas, barrierLayerList, parent=None):
+        super(SelectBarrierLayerDlg, self).__init__(parent)
+        self.setWindowTitle("MSTA barrier layer(s)")
+        assert isinstance(canvas, QgsMapCanvas)
+        assert isinstance(barrierLayerList, list)
+        layers = canvas.layers()
+        self.layersGroupBox = QGroupBox("Vector layer(s)")
+        self.gridLayout = QGridLayout()
+        self.layersLayout = QVBoxLayout()
+        self.checkBoxLayerDict = dict()
+        self.mapLayersDict = dict()
+        for vl in layers:
+            # Construction of the initial dictionary of checkboxes and IDs
+            if vl.type() == QgsMapLayerType.VectorLayer:
+                self.checkBoxLayerDict[vl.name()] = QCheckBox(vl.name())
+                self.mapLayersDict[vl.name()] = vl
+                if vl.name() in [bl.name() for bl in barrierLayerList]:
+                    self.checkBoxLayerDict[vl.name()].setChecked(True)
+                self.layersLayout.addWidget(self.checkBoxLayerDict[vl.name()])
+        self.layersGroupBox.setLayout(self.layersLayout)
+        self.gridLayout.addWidget(self.layersGroupBox, 0, 0)
+        self.buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        self.gridLayout.addWidget(self.buttonBox, 1, 0)
+        self.setLayout(self.gridLayout)
+        self.buttonBox.accepted.connect(self.accept)
+        self.buttonBox.rejected.connect(self.reject)
+
+    # return a list of selected vector file layers
+    def GetBarrierLIst(self):
+        retValue = list()
+        for key in self.checkBoxLayerDict:
+            if self.checkBoxLayerDict[key].isChecked():
+                retValue.append(self.mapLayersDict[key])
+        return retValue

@@ -122,7 +122,7 @@ class mstaPoint(QgsPoint):
                 _newVar.setValue(v.getValue())
                 # Replace the variable with the new one in the list
                 self.variables[self.variables.index(v)] = _newVar
-                return
+                return True
 
     def addVariable(self, _newvar):
         # Check if _newvar is still present the variable list at this point
@@ -130,29 +130,25 @@ class mstaPoint(QgsPoint):
         if _newvar in self.variables:
             return False
         self.variables.append(_newvar)
-        return(True)
+        return True
 
     def getVariableByName(self, _varname):
-        retValue = None
+        assert _varname in self.variables
         for i in self.variables:
             if i.getName() == _varname:
-                retValue = i
-                break
-        return retValue
+                return i
 
     def getVariableByID(self, _varid):
-        retValue = None
         for i in self.variables:
             if i.getID() == _varid:
-                retValue = i
-                break
-        return retValue
+                return i
 
     def getVariableValueByName(self, _varname):
-        self.getVariableByName(_varname).getValue()
+        assert _varname in self.variables
+        return self.getVariableByName(_varname).getValue()
 
     def getVariableValueByID(self, _varid):
-        self.getVariableByID(_varid).getValue()
+        return self.getVariableByID(_varid).getValue()
 
 
 #############################################################################
@@ -228,12 +224,12 @@ class mstaVariable():
         else:
             res.setName(self.getName())
         res = mstaVariable()
-        res.range = (_other.getValue()*self.getRange())+(self.getValue()*_other.getRange())
-        res.setValue(self.getValue()*_other.getValue())
+        res.range = (_other.getValue() * self.getRange()) + (self.getValue() * _other.getRange())
+        res.setValue(self.getValue() * _other.getValue())
         return res
     def __imul__(self, _other):
-        self.range = (_other.getValue()*self.getRange())+(self.getValue()*_other.getRange())
-        self.setvalue = self.value*_other.getValue()
+        self.range = (_other.getValue() * self.getRange()) + (self.getValue() * _other.getRange())
+        self.setvalue = self.value * _other.getValue()
         return self
     # / division
     def __truediv__(self, _other):
@@ -258,6 +254,8 @@ class mstaVariable():
         return self
     # == equality
     def __eq__(self, _other):
+        if isinstance(_other, str):  # Convenient to compare directly variables names
+            return self.getName() == _other
         if self.isInRange(_other.getValue()) or _other.isInRange(self.getValue()):
             return True
         else:
@@ -282,6 +280,7 @@ class mstaVariable():
     # Print itself
     def __repr__(self):
         return(f'Name: {self.name}, alias: {self.alias}\n \
+                value : {self.getValue()}\n \
                 unit: {self.unit}, range: +/-{self.getRange()}\n \
                 {self.getSearch()}')
 
@@ -290,7 +289,8 @@ class mstaVariable():
     def isEqual(self, _other):
         assert isinstance(_other, mstaVariable)
         retValue = (self.getDg() == _other.getDg()) and (self.getSearch() == _other.getSearch()) and (self.getUnit() == _other.getUnit())
-        print("{} and {} : {}".format(self.getID(), _other.getID(), retValue))
+        # DEBUG
+        print("{} == {} : {}".format(self.getID(), _other.getID(), retValue))
         return retValue
 
     def getID(self):
@@ -330,6 +330,7 @@ class mstaVariable():
     def setDg(self, _dg):
         assert isinstance(_dg, float)
         self.dg = _dg
+        self.setSearch(_dg, _dg, 0) # Ellipse is  a circle if DG is set
     def getDg(self):
         return self.dg
 
@@ -350,8 +351,8 @@ class mstaVariable():
     # Geographic functions
     ###############################################
     # Return features of the temporary layer which are neighboors of the variable
-    def GetNeiborhoodPointsID(self, temporaryLayer, centralPoint):
-        assert isinstance(centralPoint, QgsPoint)
+    def GetNeiborhoodPoints(self, temporaryLayer, centralPoint, pointsDB):
+        assert isinstance(centralPoint, mstaPoint)
         assert isinstance(temporaryLayer, QgsVectorLayer)
         retValue = list()
         # Construct an ellipse geometry or circle when semiMajor = semiMinor
@@ -360,11 +361,11 @@ class mstaVariable():
             return retValue             # return an empty list
         # Select in the bounding box of the ellipse/circle geometry to restrict the list of points to look at
         request = QgsFeatureRequest()
-        request.setFilterRect(ellipse.boundingBox())    #.setFlags(QgsFeatureRequest.NoGeometry)
+        request.setFilterRect(ellipse.boundingBox()).setFlags(QgsFeatureRequest.ExactIntersect)
         # Loop over the select points inside the box if any
         for f in temporaryLayer.getFeatures(request):
-            if QgsGeometry(ellipse.toPolygon()).contains(f.geometry()):
-                retValue.append(f.id())
+            if QgsGeometry(ellipse.toPolygon()).contains(f.geometry()) and f.id() != centralPoint.getID():
+                retValue.append(pointsDB[f.id()-1])  # Construction of the list of neighbor mstaPoints
         return retValue
 
 #############################################################################
@@ -414,6 +415,9 @@ class mstaTrendCase():
 
     # Convenient to test if a case is of type GSTA. mstaTrendCase are never of type GSTA -> always False
     def isGSTATrend(self):
+        return False
+
+    def isComposed(self):
         return False
 
     # Use for specific printing in case of a GSTA trend
@@ -482,6 +486,19 @@ class mstaTrendCase():
     def isValidTrend(self):
         return self.leftVar.isEqual(self.rightVar)
 
+    # Get the result of the comparison between centralPoint value and neiborPoint value
+    def result(self, centralPoint, neighborPoint):
+        centralPointVariable = centralPoint.getVariableByName(self.getLeftVar().getName())
+        neighborPointVariable = neighborPoint.getVariableByName(self.getRightVar().getName())
+        if self.getComp() == cfg.COMP['sup']:
+            return centralPointVariable > neighborPointVariable
+        elif self.getComp() == cfg.COMP['inf']:
+            return centralPointVariable < neighborPointVariable
+        elif self.getComp() == cfg.COMP['eq']:
+            return centralPointVariable == neighborPointVariable
+        else:  # Should normally never be the case
+            return False
+
 #############################################################################
 ## class mstaComposedTrendCase: manage trend case                          ##
 #############################################################################
@@ -502,7 +519,7 @@ class mstaComposedTrendCase():
             self.trendsList = _trendCase
         elif isinstance(_trendCase, mstaTrendCase) or isinstance(_trendCase, mstaComposedTrendCase): # one trend object
             if _op:
-                print("** Attention un operand incomple **")
+                print("** Attention un operand incomplet **")
                 self.operandList = [_op] # Should not append as an operand object point on two trend cases
             else:
                 self.operandList = list()
@@ -527,9 +544,9 @@ class mstaComposedTrendCase():
         return self.trendsList[item]
 
     def __str__(self): # Complex print which take care of GSTA like trend cases
-        if len(self.trendsList) == 0:
-            return ""
         retValue = ""
+        if len(self.trendsList) == 0:
+            return retValue
         if len(self.operandList) > 1:
             retValue += "({}".format(self.operandList[0].getLeftTrend(self.trendsList).__str__())
             for op in self.operandList:
@@ -537,23 +554,13 @@ class mstaComposedTrendCase():
             retValue += ")"
         elif len(self.operandList) == 1:
             if self.operandList[0].getRightTrendID():
-                retValue = "({} {} {})".format(self.operandList[0].getLeftTrend(self.trendsList).__str__(),
+                retValue = "{} {} {}".format(self.operandList[0].getLeftTrend(self.trendsList).__str__(),
                                            self.operandList[0].__str__(),
                                            self.operandList[0].getRightTrend(self.trendsList).__str__())
             else:
                 retValue = self.trendsList[0].__str__()
         else:
             retValue = self.trendsList[0].__str__()
-        #op = 0
-        #for t in self.trendsList:
-        #    if t.isGSTATrend():
-        #        retValue += t.getGSTATrendText()
-        #    else:
-        #        retValue += t.__str__()
-            #retValue += ' '
-            #if op < len(self.operandList):
-            #    retValue += self.operandList[op].__str__() + '\n'
-            #    op += 1
         return retValue
 
     # For convenience and to be homogeneous with mstaTrendCase class
@@ -571,6 +578,9 @@ class mstaComposedTrendCase():
 
     def isGSTATrend(self):
         return self.composedGSTATrend
+
+    def isComposed(self):
+        return True
 
     def getID(self):
         return self.ID
@@ -696,6 +706,21 @@ class mstaComposedTrendCase():
         retValue = True
         for t in self.trendsList:
             retValue = t.isValidTrend()
+        return retValue
+
+    # Get the result of the comparison between centralPoint value and neighborPoint value
+    def result(self, centralPoint, neighborPoint):
+        retValue = self.getFirstTrend().result(centralPoint, neighborPoint)
+        for op in self.operandList:
+            opSettings = op.getOperandSettings()
+            if opSettings[0] == cfg.OPERAND['et']:
+                retValue &= opSettings[2].result(centralPoint, neighborPoint)
+            elif opSettings[0] == cfg.OPERAND['ou']:
+                retValue |= opSettings[2].result(centralPoint, neighborPoint)
+            elif opSettings[0] == cfg.OPERAND['xou']:
+                retValue ^= opSettings[2].result(centralPoint, neighborPoint)
+            else:
+                return False
         return retValue
 
 #############################################################################
