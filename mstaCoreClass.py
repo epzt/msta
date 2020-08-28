@@ -119,10 +119,15 @@ class mstaPoint(QgsPoint):
             if v.getName() == _newVar.getName():
                 # Backup the value of the variable for this point because this is the only field
                 # the user cannot change/modify
-                _newVar.setValue(v.getValue())
+                #_newVar.setValue(v.getValue())
                 # Replace the variable with the new one in the list
-                self.variables[self.variables.index(v)] = _newVar
-                return True
+                #self.variables[self.variables.index(v)] = _newVar
+                v.setAlias(_newVar.getAlias())
+                v.setUnit(_newVar.getUnit())
+                v.setSearch(_newVar.getSearch().getMajor(), _newVar.getSearch().getMinor(), _newVar.getSearch().getDirection())
+                v.setDg(_newVar.getDg())
+                v.setRange(_newVar.getRange())
+        return True
 
     def addVariable(self, _newvar):
         # Check if _newvar is still present the variable list at this point
@@ -133,15 +138,18 @@ class mstaPoint(QgsPoint):
         return True
 
     def getVariableByName(self, _varname):
-        assert _varname in self.variables
-        for i in self.variables:
-            if i.getName() == _varname:
-                return i
+        variablesNames = [v.getName() for v in self.variables]
+        assert _varname in variablesNames
+        for vn in self.variables:
+            if vn.getName() == _varname:
+                return vn
 
     def getVariableByID(self, _varid):
-        for i in self.variables:
-            if i.getID() == _varid:
-                return i
+        variablesID = [v.getID() for v in self.variables]
+        assert _varid in variablesID
+        for vid in self.variables:
+            if vid.getID() == _varid:
+                return vid
 
     def getVariableValueByName(self, _varname):
         assert _varname in self.variables
@@ -280,7 +288,6 @@ class mstaVariable():
     # Print itself
     def __repr__(self):
         return(f'Name: {self.name}, alias: {self.alias}\n \
-                value : {self.getValue()}\n \
                 unit: {self.unit}, range: +/-{self.getRange()}\n \
                 {self.getSearch()}')
 
@@ -289,8 +296,6 @@ class mstaVariable():
     def isEqual(self, _other):
         assert isinstance(_other, mstaVariable)
         retValue = (self.getDg() == _other.getDg()) and (self.getSearch() == _other.getSearch()) and (self.getUnit() == _other.getUnit())
-        # DEBUG
-        print("{} == {} : {}".format(self.getID(), _other.getID(), retValue))
         return retValue
 
     def getID(self):
@@ -330,7 +335,6 @@ class mstaVariable():
     def setDg(self, _dg):
         assert isinstance(_dg, float)
         self.dg = _dg
-        self.setSearch(_dg, _dg, 0) # Ellipse is  a circle if DG is set
     def getDg(self):
         return self.dg
 
@@ -645,7 +649,6 @@ class mstaComposedTrendCase():
             return self.trendsList[_id]
         else:
             return self.trendsList
-        return None
 
     def getTrendByID(self, _id):
         for tc in self.trendsList:
@@ -714,11 +717,11 @@ class mstaComposedTrendCase():
         for op in self.operandList:
             opSettings = op.getOperandSettings()
             if opSettings[0] == cfg.OPERAND['et']:
-                retValue &= opSettings[2].result(centralPoint, neighborPoint)
+                retValue &= self.getTrendByID(opSettings[2]).result(centralPoint, neighborPoint)
             elif opSettings[0] == cfg.OPERAND['ou']:
-                retValue |= opSettings[2].result(centralPoint, neighborPoint)
+                retValue |= self.getTrendByID(opSettings[2]).result(centralPoint, neighborPoint)
             elif opSettings[0] == cfg.OPERAND['xou']:
-                retValue ^= opSettings[2].result(centralPoint, neighborPoint)
+                retValue ^= self.getTrendByID(opSettings[2]).result(centralPoint, neighborPoint)
             else:
                 return False
         return retValue

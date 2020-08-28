@@ -27,3 +27,18 @@ OPERAND = dict(ou='OR', et='AND', xou='XOR', none='None')
 COMP = dict(sup='>', inf='<', eq='==', none='')
 GSTAVAR = ["Mean","Sorting","Skewness","mean","sorting","skewness","m","so","sk"]
 
+CONTEXTINFO = {1:"Variable(s) information",
+               2:"Trend(s) information",
+               3:"GSTA variable information",
+               4:"GSTA trend(s) information",
+               5:"Current selected variable",
+               6:"Points information",
+               7:"__DEBUG__",
+               999:""}
+
+# constante definitions
+UPDATEDB = {'varalias' : 0,
+            'varrange' : 1,
+            'varvalue' : 2,
+            'vartrend' : 3,
+            'varsearch' : 4}

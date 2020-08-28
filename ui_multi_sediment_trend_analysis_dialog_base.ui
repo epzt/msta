@@ -61,6 +61,8 @@
     <addaction name="actionSaveViewText"/>
     <addaction name="actionLoadViewText"/>
     <addaction name="actionClearViewText"/>
+    <addaction name="separator"/>
+    <addaction name="actionViewDataSet"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -357,6 +359,11 @@
   <action name="actionBarrierLayers">
    <property name="text">
     <string>Barrier layer(s)...</string>
+   </property>
+  </action>
+  <action name="actionViewDataSet">
+   <property name="text">
+    <string>View data set...</string>
    </property>
   </action>
  </widget>

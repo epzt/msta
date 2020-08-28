@@ -33,7 +33,9 @@ from PyQt5.QtWidgets import  (QRadioButton,
                               QDialogButtonBox,
                               QLineEdit,
                               QPushButton,
-                              QHBoxLayout)
+                              QHBoxLayout,
+                              QTableWidget,
+                              QTableWidgetItem)
 from PyQt5.QtCore import QObject, pyqtSlot, Qt
 import itertools as it
 from functools import partial
@@ -404,7 +406,7 @@ class setGSTATrendCasesDlg(QDialog, setGSTATrendDlg):
     def getSelectedMSTAVarnames(self):
         retValue = list()
         for tc in self.mainTrends:
-            for vtc in list(it.chain(*tc.getVars())): # Flatten the list of list in a list
+            for vtc in tc.getVars():         # list(it.chain(*tc.getVars())): # Flatten the list of list in a list
                 retValue.append(vtc.getName())
         return list(set(retValue)) # Allows to have unique element in the returned list
 
@@ -426,7 +428,7 @@ class setMSTAVariableOptionDlg(QDialog, setMSTAVariableDlg):
         # Initialisation from previous variable
         self.variableDgLineEdit.setText("0.0")
         self.pmVariableRangeLineEdit.setText("0.0")
-        self.directionSlider.setValue(0.0)
+        self.directionSlider.setValue(0)
         self.majorAxisLineEdit.setText("0.0")
         self.minorAxisLineEdit.setText("0.0")
         self.variableUnitComboBox.setCurrentText(self.unit)
@@ -674,7 +676,8 @@ class setMSTATrendCasesDlg(QDialog, setMSTATrendDlg):
         #    for vtc in list(it.chain(*tc.getVars())): # Flatten the list of list in a list
         #        retValue.append(vtc.getName())
         for tc in self.mainTrends:
-            retValue += tc.getVars()
+            for v in tc.getVars():
+                retValue += v.getName()
         return retValue
 
     def getTrendCases(self):
@@ -1185,3 +1188,111 @@ class SelectBarrierLayerDlg(QDialog):
             if self.checkBoxLayerDict[key].isChecked():
                 retValue.append(self.mapLayersDict[key])
         return retValue
+
+#############################################################################
+# Class to visualize the value of the variables stored at each point
+#############################################################################
+class ViewDataBaseDlg(QDialog):
+    def __init__(self, _pointsDB, parent=None):
+        super(ViewDataBaseDlg, self).__init__(parent)
+        assert isinstance(_pointsDB, list)
+        self.setWindowTitle("Current data set")
+        self.gridLayout = QGridLayout()
+        self.tableWidget = QTableWidget(len(_pointsDB), len(_pointsDB[0].getVariables()))
+        self.tableWidget.setHorizontalHeaderLabels([v.getAlias() for v in _pointsDB[0].getVariables()])
+        l = 0
+        for p in _pointsDB:
+            c = 0
+            for v in p.getVariables():
+                newItem = QTableWidgetItem("{}".format(v.getValue()))
+                self.tableWidget.setItem(l,c,newItem)
+                c += 1
+            l += 1
+        self.gridLayout.addWidget(self.tableWidget, 0, 0)
+        self.buttonBox = QDialogButtonBox(QDialogButtonBox.Ok)
+        self.gridLayout.addWidget(self.buttonBox, 1, 0)
+        self.setLayout(self.gridLayout)
+        self.buttonBox.accepted.connect(self.accept)
+
+#############################################################################
+# Class to store and manage results of MSTA computation
+#############################################################################
+class mstaResults():
+    def __init__(self, _varname=None):
+        if _varname:
+            self.varname = _varname
+        else:
+            self.varname = ""
+        self.usedNeighborPointCount = 0
+        self.neighborPoint = list()
+        self.easting = list()
+        self.northing = list()
+        self.distance = list()
+
+    def __repr__(self):
+        str = "\nVariable: {}\nNeighbor: {} (used)\nEasting: {}\nNorthing: {}\n" \
+              "Distance: {}".format(self.varname,
+                                    self.usedNeighborPointCount,
+                                    self.easting,
+                                    self.northing,
+                                    self.distance)
+        return str
+
+    def SetVarname(self, _varname):
+        self.varname = _varname
+
+    def GetVarname(self):
+        return self.varname
+
+    def SetEasting(self, _value):
+        assert isinstance(_value, float)
+        self.easting.append(_value)
+
+    def GetEasting(self, *args):
+        if len(args) > 0:
+            _id = args[0]  # args[0] is an integer
+            assert _id < len(self.easting)
+            return self.easting[_id]
+        else:
+            return sum(self.easting)
+
+    def SetNorthing(self, _value):
+        assert isinstance(_value, float)
+        self.northing.append(_value)
+
+    def GetNorthing(self, *args):
+        if len(args) > 0:
+            _id = args[0]  # args[0] is an integer
+            assert _id < len(self.northing)
+            return self.northing[_id]
+        else:
+            return sum(self.northing)
+
+    def GetDistance(self, *args):
+        if len(args) > 0:
+            _id = args[0]  # args[0] is an integer
+            assert _id < len(self.distance)
+            return self.distance[_id]
+        else:
+            return sum(self.distance)
+
+    def SetDistance(self, _value):
+        assert isinstance(_value, float)
+        self.distance.append(_value)
+
+    def GetNeighborCount(self):
+        return len(self.neighborPoint)
+
+    def SetNeighborList(self, _nb):
+        assert isinstance(_nb, list)
+        self.neighborPoint = _nb
+
+    def GetNeighborList(self):
+        return self.neighborPoint
+
+    def SetUsedNeighbor(self, _nbc):
+        assert isinstance(_nbc, int)
+        self.usedNeighborPointCount = _nbc
+
+    def GetUsedNeighbor(self):
+        return self.usedNeighborPointCount

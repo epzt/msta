@@ -139,6 +139,8 @@ class Ui_MainWindow(object):
         self.actionSetGSTATrend.setObjectName("actionSetGSTATrend")
         self.actionBarrierLayers = QtWidgets.QAction(MainWindow)
         self.actionBarrierLayers.setObjectName("actionBarrierLayers")
+        self.actionViewDataSet = QtWidgets.QAction(MainWindow)
+        self.actionViewDataSet.setObjectName("actionViewDataSet")
         self.menuFile.addAction(self.actionSetWorkingDirectory)
         self.menuFile.addAction(self.actionFileImport)
         self.menuFile.addAction(self.actionCloseDataSet)
@@ -154,6 +156,8 @@ class Ui_MainWindow(object):
         self.menuSettings.addAction(self.actionSaveViewText)
         self.menuSettings.addAction(self.actionLoadViewText)
         self.menuSettings.addAction(self.actionClearViewText)
+        self.menuSettings.addSeparator()
+        self.menuSettings.addAction(self.actionViewDataSet)
         self.menuHelp.addSeparator()
         self.menuHelp.addAction(self.actionVariableSettings)
         self.menuHelp.addAction(self.actionTrendSettings)
@@ -244,4 +248,5 @@ class Ui_MainWindow(object):
         self.actionSetTrend1.setText(_translate("MainWindow", "Classical trends..."))
         self.actionSetGSTATrend.setText(_translate("MainWindow", "GSTA trends..."))
         self.actionBarrierLayers.setText(_translate("MainWindow", "Barrier layer(s)..."))
+        self.actionViewDataSet.setText(_translate("MainWindow", "View data set..."))
 

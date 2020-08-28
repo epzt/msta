@@ -37,12 +37,12 @@ class pyMstaTextFileAnalysisDialog(QtWidgets.QDialog, Ui_msta_text_file_analysis
         self.currentSeparator = ' '
         self.firstLineAsHeader = False
         self.numberLineToSkip = 0
-        self.lineItemsList = []
-        self.variableNameList = []
+        self.lineItemsList = list()
+        self.variableNameList = list()
         self.sampleNameIndex = IDNAME(-1, '')
         self.xCoordinateIndex = IDNAME(-1, '')
         self.yCoordinateIndex = IDNAME(-1, '')
-        self.commaDecimalSeparator = False
+        self.decimalSeparator = '.' # Default is dot
         # Connections definition
         self.radioSpace.toggled.connect(self.spaceToggled)
         self.radioTabulation.toggled.connect(self.tabulationToggled)
@@ -103,7 +103,10 @@ class pyMstaTextFileAnalysisDialog(QtWidgets.QDialog, Ui_msta_text_file_analysis
             self.updateTableView()
         
     def headerToggled(self, _value):
-        self.firstLineAsHeader = _value
+        if self.checkBoxHeader.isChecked():
+            self.firstLineAsHeader = True
+        else:
+            self.firstLineAsHeader = False
         self.updateTableView()
     
     def lineToSkip(self, _value):
@@ -125,7 +128,10 @@ class pyMstaTextFileAnalysisDialog(QtWidgets.QDialog, Ui_msta_text_file_analysis
             self.updateTableView()
 
     def commaSeparatorToggled(self, _value):
-        self.commaDecimalSeparator = _value
+        if self.checkBoxCommaSeparator.isChecked():
+            self.decimalSeparator = ','
+        else:
+            self.decimalSeparator = '.'
         self.updateTableView()
             
     def setXCoord(self, _value):
@@ -187,7 +193,7 @@ class pyMstaTextFileAnalysisDialog(QtWidgets.QDialog, Ui_msta_text_file_analysis
     def getSampleNameIndex(self):
         return self.sampleNameIndex.getID()
 
-    def getSampleNameName(self):
+    def getSampleName(self):
         return self.sampleNameIndex.getNAME()
 
     def setNumberofLinesToRead(self, _value):
@@ -196,11 +202,8 @@ class pyMstaTextFileAnalysisDialog(QtWidgets.QDialog, Ui_msta_text_file_analysis
     def setAllLinesToRead(self):
         self.updateTableView()
 
-    # this retunr the number of line to skip when reading data from text file
-    # if first line contains header, it will b skip during reading by numpy later
+    # this return the number of line to skip when reading data from text file
     def getNumberOfFirstLineToSkip(self):
-        if self.firstLineAsHeader:
-            return self.numberLineToSkip + 1
         return self.numberLineToSkip
         
     #-------------------------------------------------------
@@ -224,13 +227,10 @@ class pyMstaTextFileAnalysisDialog(QtWidgets.QDialog, Ui_msta_text_file_analysis
                 while True:
                     line = textFile.readline()
                     currentFileLineNumber += 1
-
                     if (currentFileLineNumber > self.numberofLinesToRead.value()) and (self.allLinesToRead.isChecked() == False):
                         break
-
                     if self.numberLineToSkip >= currentFileLineNumber:
                         continue
-
                     fields = line.strip().split(self.currentSeparator)
                     # Analysis of the first line
                     if firstLineToTreat:
@@ -258,30 +258,25 @@ class pyMstaTextFileAnalysisDialog(QtWidgets.QDialog, Ui_msta_text_file_analysis
                             self.yCoordComboBox.addItem(f'V{i+1}')
                             self.sampleNameComboBox.addItem(f'V{i+1}')
                             self.variableNameList.append(IDNAME(i,f'V{i+1}'))
-    
                     self.updateXCoord()
                     self.updateYCoord()
                     self.tableAnalysisResult.insertRow(self.tableAnalysisResult.rowCount())
-
                     # Check for the number of fields, it must be the same all along the file
-                    #if len(fields) != self.tableAnalysisResult.columnCount():
-                    #    QtWidgets.QMessageBox.information(self, "Text file analysis", f'Number of fields at line {currentFileLineNumber} is not equal to {self.tableAnalysisResult.columnCount()}')
-                    #    return
-                
+                    if len(fields) != self.tableAnalysisResult.columnCount():
+                        QtWidgets.QMessageBox.warning(self, "Text file analysis", "Number of fields at line {} is not equal to {}".format(currentFileLineNumber, self.tableAnalysisResult.columnCount()))
+                        return
                     # Fill the table view
                     self.lineItemsList = []
                     for f in range(len(fields)):
-                        if self.commaDecimalSeparator:
+                        if self.decimalSeparator == '.':
                             item = QtWidgets.QTableWidgetItem(fields[f].replace(",", "."))
                         else:
                             item = QtWidgets.QTableWidgetItem(fields[f])
                         self.lineItemsList.append(item)
                         self.tableAnalysisResult.setItem(self.tableAnalysisResult.rowCount()-1, f, item)
-
         except IOError:
             QtWidgets.QMessageBox.information(self, "Text file analysis", f'An error occured with file:\n{self.fileName}')
             return
-
         textFile.close()
 
     #----------------------------------------------------
@@ -290,28 +285,20 @@ class pyMstaTextFileAnalysisDialog(QtWidgets.QDialog, Ui_msta_text_file_analysis
     # - Coordinates name
     # - variables ID
     # - Variables name      
-    def getVariableNameList(self):
+    def getDataVarCoordsList(self):
         retListVarNames = []
         retListVarIds = []
         retListCoordsNames = []
         retListCoordsIds = []
         if self.getSampleNameIndex() != -1:
-            self.variableNameList.remove(self.getSampleNameName())
+            self.variableNameList.remove(self.getSampleName())
         if self.getXIndex() == self.getYIndex():
             QtWidgets.QMessageBox.critical(self, "Text file analysis", 'X and Y ccordinates must be different.')
-            return(retListCoordsIds, retListCoordsNames, retListVarIds, retListVarNames)
-        
-        # print(self.variableNameList)
-
+            return retListCoordsIds, retListCoordsNames, retListVarIds, retListVarNames
         for idname in self.variableNameList:
             if idname.getID() != self.getXIndex() and idname.getID() != self.getYIndex():
                 retListVarIds.append(idname.getID())
                 retListVarNames.append(idname.getNAME())
-
         retListCoordsIds = [self.getXIndex(), self.getYIndex()]
         retListCoordsNames = [self.getXName(), self.getYName()]
-
-        #print(retListCoordsIds, retListCoordsNames, retListVarIds, retListVarNames)
-    
-        return(retListCoordsIds, retListCoordsNames, retListVarIds, retListVarNames)
-   
+        return retListCoordsIds, retListCoordsNames, retListVarIds, retListVarNames

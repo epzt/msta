@@ -23,6 +23,7 @@
 """
 
 import os
+#import pandas as pd
 import numpy as np
 
 from PyQt5 import uic, QtWidgets, QtGui, QtCore
@@ -43,22 +44,6 @@ from .mstaCoreClass import mstaVariable as mv
 from .mstaCoreClass import mstaTrendCase, mstaComposedTrendCase, mstaOperand
 from .mstaUtilsClass import *
 from . import config as cfg
-
-CONTEXTINFO = {1:"Variable(s) information",
-               2:"Trend(s) information",
-               3:"GSTA variable information",
-               4:"GSTA trend(s) information",
-               5:"Current selected variable",
-               6:"Points information",
-               7:"__DEBUG__",
-               999:""}
-
-# constante definitions
-UPDATEDB = {'varalias' : 0,
-            'varrange' : 1,
-            'varvalue' : 2,
-            'vartrend' : 3,
-            'varsearch' : 4}
 
 # Change apply 19/11/2019 to work around a problem with resources not manage by uic
 #Ui_MainWindow, _ = uic.loadUiType(os.path.join(os.path.dirname(__file__), 'ui_multi_sediment_trend_analysis_dialog_base.ui'))
@@ -83,6 +68,7 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         self.actionSetWorkingDirectory.triggered.connect(self.SetWorkingDirectory)
         self.actionComputeMSTA.triggered.connect(self.ComputeMSTA)
         self.actionBarrierLayers.triggered.connect(self.BarrierLayers)
+        self.actionViewDataSet.triggered.connect(self.ViewDataSet)
         self.actionClearViewText.triggered.connect(self.SetClearText)
         self.actionCloseDataSet.triggered.connect(self.CloseCurrentDataSet)
         #
@@ -176,26 +162,53 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
             if importDlg.exec_() == QDialog.Rejected:
                 QMessageBox.information(self, "Load data file", "No data imported.")
                 return
-            if not importDlg.getVariableNameList():
+            if not importDlg.getDataVarCoordsList():
                 QMessageBox.information(self, "Load data file", "No data imported.")
                 return
             try:
                 # get the lists of information
-                coordsids,coordsnames,varids,varnames=importDlg.getVariableNameList()
-                # get the data (variables values)
-                dataset = np.recfromtxt(fullPathFileName,
-                                delimiter=importDlg.currentSeparator,
-                                skip_header=importDlg.getNumberOfFirstLineToSkip(),
-                                names=tuple(varnames),
-                                usecols=tuple(varids)
-                                )
-                # get the coordinates
-                coordsset = np.recfromtxt(fullPathFileName,
-                                delimiter=importDlg.currentSeparator,
-                                skip_header=importDlg.getNumberOfFirstLineToSkip(),
-                                names=tuple(coordsnames),
-                                usecols=tuple(coordsids)
-                                )
+                coordsids,coordsnames,varids,varnames=importDlg.getDataVarCoordsList()
+                self.textwidget.append(f"{coordsids} {tuple(coordsnames)} {varids} {tuple(varnames)}")
+                if importDlg.firstLineAsHeader:
+                    dataset = np.genfromtxt(fullPathFileName,
+                                            delimiter=importDlg.currentSeparator,
+                                            skip_header=importDlg.getNumberOfFirstLineToSkip(),
+                                            names=True,
+                                            missing_values=("0", " "),
+                                            filling_values=0.0,
+                                            invalid_raise=True,
+                                            usecols=tuple(varids),
+                                            dtype=None
+                                            )
+                    # get the coordinates
+                    coordsset = np.genfromtxt(fullPathFileName,
+                                            delimiter=importDlg.currentSeparator,
+                                            skip_header=importDlg.getNumberOfFirstLineToSkip(),
+                                            names=True,
+                                            invalid_raise=True,
+                                            usecols=tuple(coordsids),
+                                            dtype=None
+                                            )
+                else:
+                    dataset = np.genfromtxt(fullPathFileName,
+                                            delimiter=importDlg.currentSeparator,
+                                            skip_header=importDlg.getNumberOfFirstLineToSkip(),
+                                            names=tuple(varnames),
+                                            missing_values=("0", " "),
+                                            filling_values=0.0,
+                                            invalid_raise=True,
+                                            usecols=tuple(varids),
+                                            dtype=None
+                                            )
+                    # get the coordinates
+                    coordsset = np.genfromtxt(fullPathFileName,
+                                            delimiter=importDlg.currentSeparator,
+                                            skip_header=importDlg.getNumberOfFirstLineToSkip(),
+                                            names=tuple(coordsnames),
+                                            invalid_raise=True,
+                                            usecols=tuple(coordsids),
+                                            dtype=None
+                                            )
                 # QMessageBox.information(self, "Import data...", f'{dataset.shape[0]} rows have been imported.')
             except ValueError:
                 QMessageBox.critical(self, "Load data file error", "An error occured while reading data file.\nNo data imported")
@@ -204,7 +217,7 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         # Create a temporary layer and add it to the current project
         # Create the database use for computations
         try:
-            self.temporaryLayer = self.CreateTemporaryLayer(dataset, varnames, coordsset, coordsnames, QFileInfo(fullPathFileName).baseName())
+            self.temporaryLayer = self.CreateTemporaryLayer(coordsset, QFileInfo(fullPathFileName).baseName())
         except:
             QMessageBox.critical(self, "Temporary layer error", "An error occured while creating temporary layer.")
             return
@@ -226,12 +239,9 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         return
 
     ###############################################
-    # _dataset: np.array of n samples lines and m variables columns
-    # _varnames: list of the variables names
-    # _coordsnames: list of the two coordinates variables
     # _coordsset: np.array of n samples lines and two coordinates
     # _filename: name of the text file (without extension) which contains the original data
-    def CreateTemporaryLayer(self, _dataset, _varnames, _coordsset, _coordsnames, _filename):
+    def CreateTemporaryLayer(self, _coordsset, _filename):
         # Selection of a reference system eventually different from the current project
         theProj = QgsProjectionSelectionDialog(self)
         theProj.setCrs(QgsProject.instance().crs())
@@ -249,18 +259,19 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         # TODO: define the list of fields to create to store the results
         pr.addAttributes([QgsField("Trends", QVariant.String)])
         pr.addAttributes([QgsField("Scores", QVariant.String)])
-        pr.addAttributes([QgsField("Length", QVariant.Double)])
+        pr.addAttributes([QgsField("Angle", QVariant.Double)])
         pr.addAttributes([QgsField("Module", QVariant.Double)])
         pr.addAttributes([QgsField("Comments", QVariant.String)])
         vl.updateFields() # tell the vector layer to fetch changes from the provider
 
         # add features
-        for i in range(_dataset.shape[0]):
+        i = 0
+        for coords in _coordsset:
             fet = QgsFeature()
             fet.setId(i+1)  # Set the ID doing to way to ensure id is set correctly
-            fet.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(_coordsset[_coordsnames[0]][i],_coordsset[_coordsnames[1]][i])))
+            fet.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(coords[0],coords[1])))
             pr.addFeatures([fet])
-
+            i += 1
         # update layer's extent when new features have been added
         # because change of extent in provider is not propagated to the layer
         vl.updateExtents()
@@ -274,32 +285,34 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
     # _coordnames: list of the two coordinates variables
     # _varnames: list of the variables names
     # The variable names and values are stored at each point location
-    def createPointDB(self, _variables, _varnames, _points, _coordnames):
+    def createPointDB(self, _dataset, _varnames, _coordsset, _coordnames):
         # first loop over the points
-        for i in range(_points.shape[0]):
+        i = 0
+        for coords in _coordsset:
             # mp is mstaPoint
-            newpt = mp(_points[_coordnames[0]][i], _points[_coordnames[1]][i])
+            newpt = mp(coords[0], coords[1])
             newpt.setID(i+1)
-            for j in range(len(_varnames)):
+            j = 0
+            for var in _varnames:
                 # mv is mstaVariable
                 newvar = mv()
-                newvar.setName(_varnames[j])
-                newvar.setAlias(_varnames[j]) # Alias = name by default
+                newvar.setName(var)
+                newvar.setAlias(var) # Alias = name by default
                 newvar.setUnit("%") # By default % unit
-                newvar.setValue(_variables[i][j])
+                newvar.setValue(_dataset[i][j])
                 newvar.setDg(0.0) # By default Dg is null
                 newvar.setRange(0.0) # By default, no range
                 newvar.setSearch(0.0,0.0,0.0) # By default omnidirectional
                 newpt.addVariable(newvar)
+                j += 1
             self.points.append(newpt)
+            i += 1
         # As each point has the same variable list, the object list is equal to the list of the 1st point by default
         self.theVariablesObject = self.points[0].getVariables().copy()
 
     ###############################################
     # Function to update the variables in the points database
-    # _newValue : list of changes to apply in relation with _code
-    # this function make the change(s) only on current selected variables.
-    def updatePointsDB(self, _newValue):
+    def updatePointsDB(self, _newVariables):
         progress = QProgressDialog("Update points...", "Cancel", 0, len(self.points), self)
         progress.setWindowFlags(QtCore.Qt.Dialog | QtCore.Qt.FramelessWindowHint | QtCore.Qt.CustomizeWindowHint)
         progress.setModal(True)
@@ -310,7 +323,7 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         for p in self.points:
             i = i + 1
             progress.setValue(i)
-            for newv in _newValue:
+            for newv in _newVariables:
                 p.updateVariable(newv)
         progress.close()
         return
@@ -324,7 +337,7 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
             QMessageBox.information(self, "Data set", "No data set currently load.")
             return
         if QMessageBox.question(self, "Import data set",
-                                "There is a data set loaded\nDo you want to close it and load a new one ?",
+                                "There is a data set loaded\nDo you want to close it ?",
                                 QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
             # Cleaning of the variables used to manage the data set
             self.theVariablesObject = list()
@@ -342,7 +355,7 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
     # base on _context (see CONTEXTINFO dict definition)
     def updateLogViewPort(self, _context, _text):
         dt = datetime.now()
-        self.textwidget.append(f'\n{dt.strftime("%d %b %Y, %H:%M:%S")}: {CONTEXTINFO[_context]}')
+        self.textwidget.append(f'\n{dt.strftime("%d %b %Y, %H:%M:%S")}: {cfg.CONTEXTINFO[_context]}')
         if not _text:
             self.textwidget.append("\t------")
         if isinstance(_text, list):
@@ -522,7 +535,7 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
             return
         # Get the name of the variable to delete from user
         variable, rep = QInputDialog.getItem(self, 'Delete a variable', 'Select a variable',
-                                             [sv.getName() for sv in self.selectedVariableNames],
+                                             self.selectedVariableNames,
                                              0, False)
         if rep:
             for vol in self.theVariablesObject:
@@ -644,6 +657,14 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         result = dlg.exec_()
         if result:
             self.barrierListLayers = dlg.GetBarrierLIst()
+    ###############################################
+    @pyqtSlot(bool)
+    def ViewDataSet(self):
+        if len(self.points) == 0:
+            QMessageBox.information(self, "Data set", "Load a data set before.\nNothing to view.")
+            return
+        dlg = ViewDataBaseDlg(self.points)
+        result = dlg.exec_()
 
     ###############################################
     @pyqtSlot(bool)
@@ -661,15 +682,28 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         varsListName = [totalVarsList[0].getName()] # The first variable
         varsList = [totalVarsList[0]]               # and it's name
         for v in totalVarsList:
-            if not v.getName() in varsListName: # If the current vraiable name not in the list
+            if not v.getName() in varsListName: # If the current variable name not in the list
                 varsListName.append(v.getName())
                 varsList.append(v)      # Add the variable to the result list
         del totalVarsList, varsListName # No more use of temporary lists
 
-        # Declaration of the dictionary which will containt variables and surrounding point IDs
+        #outf = open("Results-MSTA.txt", 'w')
+
+        # Definition of a progress bar to show computation progression
+        progress = QProgressDialog("Computation in progress...", "Cancel", 0, len(self.points), self)
+        progress.setWindowFlags(QtCore.Qt.Dialog | QtCore.Qt.FramelessWindowHint | QtCore.Qt.CustomizeWindowHint)
+        progress.setModal(True)
+        progress.setMinimumDuration(0)
+        # progress.setCancelButton(None)  # Remove the cancel button.
+        pbCount = 0
+
+        self.updateLogViewPort(999, "Start cumputation...")
+        self.temporaryLayer.startEditing()
+        # Declaration of the dictionary which will containt variable name as key and surrounding point IDs
         surroundingWorkingDict = dict()
         # Loop over the points of the temporary layer
         for point in self.points:
+            #outf.write("\n\nPoint ID: {}".format(point.getID()))
             for v in varsList:
                 nbPoints = v.GetNeiborhoodPoints(self.temporaryLayer, point, self.points)
                 # Continue if no neiboring points
@@ -686,22 +720,80 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
                         for f in barrier.selectedFeatures():
                             if line.geometry().crosses(f.geometry()):
                                 pointsToRemoved.append(nbp.getID())
+                results = mstaResults(v.getName)
+                results.SetNeighborList([rp for rp in nbPoints if not rp.getID() in pointsToRemoved])
                 # store the surrounding points in a dictionnary (keys are variable names)
-                surroundingWorkingDict[v.getName] = [rp for rp in nbPoints if not rp.getID() in pointsToRemoved]
-            # Apply expression for each central point (point)
-            for nbPointsList in surroundingWorkingDict.values():
-                for nbp in nbPointsList:
-                    # DEBUG
-                    print("id: {} versus id {} -> {}".format(point.getID(), nbp.getID(), self.theExpressionObject.result(point, nbp)))
+                surroundingWorkingDict[v.getName] = results
+            # Apply expression for each central point (point) and store results
+            count = 0
+            for varname in surroundingWorkingDict:
+                count = 0
+                result = surroundingWorkingDict[varname]
+                for nbp in result.GetNeighborList():
+                    if self.theExpressionObject.result(point, nbp):
+                        # Expression is True between central point and neighbor -> save vector components
+                        # it just add the new value to a list
+                        D = np.sqrt(point.distanceSquared(nbp))
+                        E = np.cos(np.radians(point.azimuth(nbp))) * (1.0 / D)
+                        N = np.sin(np.radians(point.azimuth(nbp))) * (1.0 / D)
+                        result.SetDistance(D)
+                        result.SetEasting(E)
+                        result.SetNorthing(N)
+                        count += 1
+                # Storage of the number of neighbor points for which trend is True
+                result.SetUsedNeighbor(count)
+                #outf.write(result.__repr__())
+
+            distance = 0.0
+            direction = 0.0
+            for varname in surroundingWorkingDict:
+                distance = surroundingWorkingDict[varname].GetDistance() # Get total distance of vectors as if they were aligned
+                if distance != 0:
+                    N = surroundingWorkingDict[varname].GetNorthing() # Get sum of northing values
+                    E = surroundingWorkingDict[varname].GetEasting()  # get sum of easting values
+                    direction = np.rad2deg(np.arctan2(N, E))
+
+            pf = self.temporaryLayer.getFeature(point.getID())
+            pf["Angle"] = float(direction)
+            pf["Module"] = float(distance)
+            pf["Trends"] = "{}".format(self.theExpressionObject)
+            pf["Comments"] = "Neighbor count : {}".format(surroundingWorkingDict[varname].GetUsedNeighbor())
+            self.temporaryLayer.updateFeature(pf)
+
+            # Update the progress bar
+            pbCount += 1
+            progress.setValue(pbCount)
+            if progress.wasCanceled():
+                break
+
+        progress.close()
+        #outf.close()
+        self.temporaryLayer.commitChanges()
+        self.updateLogViewPort(999, "Computation ended.\nResults are in the temporary layer attributs table")
             # TODO:
             # 1 - construction the ellipse/circle for each variable -> DONE
             # 2 - select all points inside the ellipse/circle for each variable -> DONE
             # 3 - deselect the current central point (working point) -> DONE
             # 4 - deselect eventually points which cross selected barrier layer(s) -> DONE
-            # 5 - apply the expression corresponding to each trend case/variables involved
-
+            # 5 - apply the expression corresponding to each trend case/variables involved -> DONE
+            # 6 - compute vector component E and N taking into account computation settings -> DONE
 
         return
 
     ###############################################
+    # -----------------------------------------------------
+    # Return E and N component of a vector between two sample points
+    # distance is use to perform normalisation of the vector
+    def GetVectorComponent(self, mindist, maxdist, distance, azimuth):
+        # Compute the vector components
+        dNorth = np.sin(np.radians(azimuth))
+        dEast = np.cos(np.radians(azimuth))
+        dDistance = maxdist - mindist
+        if dDistance == 0:
+            N = dNorth
+            E = dEast
+        else:
+            N = dNorth * (1.0 - (distance / dDistance))  # Ponderate by the distance
+            E = dEast * (1.0 - (distance / dDistance))
 
+        return {'easting': E, 'northing': N}
