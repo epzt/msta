@@ -42,7 +42,7 @@ from functools import partial
 from qgis.gui import QgsMapLayerComboBox,QgsMapCanvas
 from qgis.core import QgsMapLayerProxyModel, QgsMapLayerType
 
-from .ui_about_msta import Ui_AboutDlg
+from .ui_about_msta import Ui_AboutDlg as AboutDlg
 from .ui_set_gsta_variables_dialog import Ui_setGSTAVariablesDialog as setGSTAVarDlg
 from .ui_gsta_trend_definition import Ui_setGSTATrendCaseDialog as setGSTATrendDlg
 from .ui_msta_variable_definition import Ui_SetMSTAVarOptionsDlg as setMSTAVariableDlg
@@ -53,7 +53,7 @@ from . import config as cfg
 #############################################################################
 # Just a class to print About information
 #############################################################################
-class aboutMSTA(QDialog, Ui_AboutDlg):
+class aboutMSTA(QDialog, AboutDlg):
     def __int__(self, parent=None):
         super(aboutMSTA,self).__init__(parent)
         self.setupUi(self)

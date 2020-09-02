@@ -74,8 +74,6 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         #
         self.actionVariableListAll.triggered.connect(self.PrintAllVariablesList)
         self.actionVariableListSelected.triggered.connect(self.PrintSelectedVariablesList)
-        self.actionVariableSettings.triggered.connect(self.PrintVariableHelp)
-        self.actionVariableSettings.triggered.connect(self.PrintVariableHelp)
         self.actionModifyVariables.triggered.connect(self.ModifyVariables)
         self.actionDeleteVariables.triggered.connect(self.DeleteOneVariable)
         self.actionGSTALikeVariable.triggered.connect(self.SetGSTAVariables)
@@ -83,14 +81,13 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         self.actionSetGSTATrend.triggered.connect(self.SetGSTATrendCases)
         self.actionListTrend.triggered.connect(self.PrintTrendsList)
         self.actionSetTrend.triggered.connect(self.SetMSTATrendCases)
-        self.actionTrendSettings.triggered.connect(self.PrintTrendHelp)
         self.actionDeleteTrend.triggered.connect(self.DeleteTrends)
         #
         self.actionBuild.triggered.connect(self.ExpressionBuild)
         self.actionDelete.triggered.connect(self.ExpressionDelete)
         self.actionList.triggered.connect(self.ExpressionList)
 
-        self.setGeometry(10, 10, 400, 400)
+        self.setGeometry(10, 10, 500, 400)
         self.setWindowTitle('Multi Sediment Trend Analysis')
 
         self.menuVariables.setEnabled(False)
@@ -102,7 +99,7 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
 
         # Variables
         self.iface = _iface
-        self.workingDir = os.path.expanduser("/home/epoizot/recherche/gaocollins")
+        self.workingDir = os.path.expanduser("~user")
         self.points = list()
         # A list of all the variables names in the current dataset
         self.totalVariablesName = list()
@@ -127,21 +124,9 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
     ###############################################
     @pyqtSlot(bool)
     def DisplayAboutMSTA(self):
-        aboutDlg=aboutMSTA()
-        aboutDlg.exec()
+        dlg=aboutMSTA(self)
+        dlg.exec_()
         #QMessageBox.information(self, "Information", "MSTA plugin")
-
-    ###############################################
-    @pyqtSlot(bool)
-    def PrintVariableHelp(self):
-        self.textwidget.setHtml("<p><strong>Variable\'s settings</strong> </p>\
-        <p>Variables are loaded with the data set. By default, just the name found in the data set is used to access a variable.</p> \
-        <p>In the menu \"Variables\", you can modify the variables setting after selected a variable name.<br> \
-        <em>(\"Variables\" item is enabled only if a data set is loaded with it\'s corresponding variables)</em></p>")
-
-    @pyqtSlot(bool)
-    def PrintTrendHelp(self):
-        return
 
     ###############################################
     @pyqtSlot(bool)
@@ -168,7 +153,6 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
             try:
                 # get the lists of information
                 coordsids,coordsnames,varids,varnames=importDlg.getDataVarCoordsList()
-                self.textwidget.append(f"{coordsids} {tuple(coordsnames)} {varids} {tuple(varnames)}")
                 if importDlg.firstLineAsHeader:
                     dataset = np.genfromtxt(fullPathFileName,
                                             delimiter=importDlg.currentSeparator,
@@ -213,7 +197,9 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
             except ValueError:
                 QMessageBox.critical(self, "Load data file error", "An error occured while reading data file.\nNo data imported")
                 return
-
+        else:
+            QMessageBox.information(self, "Load data file", "No data imported.")
+            return
         # Create a temporary layer and add it to the current project
         # Create the database use for computations
         try:
@@ -313,19 +299,9 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
     ###############################################
     # Function to update the variables in the points database
     def updatePointsDB(self, _newVariables):
-        progress = QProgressDialog("Update points...", "Cancel", 0, len(self.points), self)
-        progress.setWindowFlags(QtCore.Qt.Dialog | QtCore.Qt.FramelessWindowHint | QtCore.Qt.CustomizeWindowHint)
-        progress.setModal(True)
-        progress.setMinimumDuration(0)
-        progress.setCancelButton(None)  # Remove the cancel button.
-        # Changes are operate on all the points
-        i = 0
         for p in self.points:
-            i = i + 1
-            progress.setValue(i)
             for newv in _newVariables:
                 p.updateVariable(newv)
-        progress.close()
         return
 
     ###############################################
@@ -342,7 +318,8 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
             # Cleaning of the variables used to manage the data set
             self.theVariablesObject = list()
             self.theTrendsList = list()
-            #TODO: gérer aussi l'effacement de la couche de la liste des couches du projet courant
+            QgsProject.instance().removeMapLayer(self.temporaryLayer.id())
+            self.iface.mapCanvas().refresh()
             self.temporaryLayer = ""
             self.points = list()
             self.totalVariablesName = list()
@@ -636,6 +613,9 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
     ###############################################
     @pyqtSlot(bool)
     def ExpressionDelete(self):
+        if self.theExpressionObject.getTrendCount() == 0:
+            QMessageBox.information(self, "Trend case", "No expression defined yet.\nNothing to delete")
+            return
         if not QMessageBox.question(self, "Delete current expression",
                                     "Do you realy want to delete current expression\n{}".format(
                                             self.theExpressionObject.__str__())):
@@ -646,7 +626,7 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
     @pyqtSlot(bool)
     def ExpressionList(self):
         if self.theExpressionObject.getTrendCount() == 0:
-            QMessageBox.information(self, "List expression", "No expression defined yet.")
+            QMessageBox.information(self, "List expression", "No expression defined yet.\nNothing to print.")
             return
         self.updateLogViewPort(2, self.theExpressionObject.__str__())
 
@@ -720,6 +700,7 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
                         for f in barrier.selectedFeatures():
                             if line.geometry().crosses(f.geometry()):
                                 pointsToRemoved.append(nbp.getID())
+                    barrier.removeSelection()
                 results = mstaResults(v.getName)
                 results.SetNeighborList([rp for rp in nbPoints if not rp.getID() in pointsToRemoved])
                 # store the surrounding points in a dictionnary (keys are variable names)
@@ -780,20 +761,12 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
 
         return
 
-    ###############################################
-    # -----------------------------------------------------
-    # Return E and N component of a vector between two sample points
-    # distance is use to perform normalisation of the vector
-    def GetVectorComponent(self, mindist, maxdist, distance, azimuth):
-        # Compute the vector components
-        dNorth = np.sin(np.radians(azimuth))
-        dEast = np.cos(np.radians(azimuth))
-        dDistance = maxdist - mindist
-        if dDistance == 0:
-            N = dNorth
-            E = dEast
-        else:
-            N = dNorth * (1.0 - (distance / dDistance))  # Ponderate by the distance
-            E = dEast * (1.0 - (distance / dDistance))
-
-        return {'easting': E, 'northing': N}
+    def norm(_dataset):
+        if isinstance(_dataset, list):
+            norm_list = list()
+            min_value = min(_dataset)
+            max_value = max(_dataset)
+            for value in _dataset:
+                tmp = (value - min_value) / (max_value - min_value)
+                norm_list.append(tmp)
+        return norm_list
