@@ -236,6 +236,9 @@
     </widget>
    </widget>
    <widget class="QGroupBox" name="PreDefinedGroupBox">
+    <property name="enabled">
+     <bool>false</bool>
+    </property>
     <property name="geometry">
      <rect>
       <x>20</x>

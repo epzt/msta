@@ -45,7 +45,7 @@
     </rect>
    </property>
    <property name="title">
-    <string>Options</string>
+    <string>Neighbor selection</string>
    </property>
    <widget class="QGroupBox" name="anysotropyGroup">
     <property name="geometry">
@@ -63,7 +63,7 @@
      </font>
     </property>
     <property name="title">
-     <string>Anysotropy</string>
+     <string>Elliptic search</string>
     </property>
     <property name="checkable">
      <bool>true</bool>
@@ -209,12 +209,12 @@
      <rect>
       <x>10</x>
       <y>30</y>
-      <width>141</width>
-      <height>16</height>
+      <width>84</width>
+      <height>17</height>
      </rect>
     </property>
     <property name="text">
-     <string>Characteristic distance</string>
+     <string>Circular search</string>
     </property>
    </widget>
   </widget>

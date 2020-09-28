@@ -210,6 +210,9 @@
      </item>
      <item row="0" column="6">
       <widget class="QCheckBox" name="checkBoxCommaSeparator">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
        <property name="text">
         <string>Comma decimal separator</string>
        </property>
@@ -288,6 +291,9 @@
    </widget>
   </widget>
   <widget class="QGroupBox" name="sampleNameGroupBox">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="geometry">
     <rect>
      <x>330</x>

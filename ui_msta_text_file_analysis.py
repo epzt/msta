@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'ui_msta_text_file_analysis.ui'
 #
-# Created by: PyQt5 UI code generator 5.10.1
+# Created by: PyQt5 UI code generator 5.9.2
 #
 # WARNING! All changes made in this file will be lost!
 
@@ -69,6 +69,7 @@ class Ui_msta_text_file_analysis(object):
         spacerItem1 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.gridLayout.addItem(spacerItem1, 0, 5, 1, 1)
         self.checkBoxCommaSeparator = QtWidgets.QCheckBox(self.layoutWidget)
+        self.checkBoxCommaSeparator.setEnabled(False)
         self.checkBoxCommaSeparator.setObjectName("checkBoxCommaSeparator")
         self.gridLayout.addWidget(self.checkBoxCommaSeparator, 0, 6, 1, 1)
         self.tableAnalysisResult = QtWidgets.QTableWidget(msta_text_file_analysis)
@@ -92,6 +93,7 @@ class Ui_msta_text_file_analysis(object):
         self.label_4.setGeometry(QtCore.QRect(160, 30, 41, 17))
         self.label_4.setObjectName("label_4")
         self.sampleNameGroupBox = QtWidgets.QGroupBox(msta_text_file_analysis)
+        self.sampleNameGroupBox.setEnabled(False)
         self.sampleNameGroupBox.setGeometry(QtCore.QRect(330, 229, 191, 71))
         self.sampleNameGroupBox.setCheckable(True)
         self.sampleNameGroupBox.setChecked(False)

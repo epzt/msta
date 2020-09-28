@@ -91,6 +91,7 @@ class Ui_setGSTATrendCaseDialog(object):
         self.radioGSTASkewnessNone.setObjectName("radioGSTASkewnessNone")
         self.gridLayout_3.addWidget(self.radioGSTASkewnessNone, 0, 2, 1, 1)
         self.PreDefinedGroupBox = QtWidgets.QGroupBox(self.GSTAGroup)
+        self.PreDefinedGroupBox.setEnabled(False)
         self.PreDefinedGroupBox.setGeometry(QtCore.QRect(20, 280, 271, 101))
         self.PreDefinedGroupBox.setCheckable(True)
         self.PreDefinedGroupBox.setChecked(False)

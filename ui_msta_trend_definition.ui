@@ -115,19 +115,6 @@
     <string>Clear</string>
    </property>
   </widget>
-  <widget class="QSplitter" name="splitter">
-   <property name="geometry">
-    <rect>
-     <x>170</x>
-     <y>160</y>
-     <width>181</width>
-     <height>27</height>
-    </rect>
-   </property>
-   <property name="orientation">
-    <enum>Qt::Horizontal</enum>
-   </property>
-  </widget>
   <widget class="QTextEdit" name="trendCaseTextEdit">
    <property name="enabled">
     <bool>true</bool>
@@ -161,7 +148,7 @@
    </property>
    <widget class="QLabel" name="label">
     <property name="text">
-     <string>Variable A</string>
+     <string>Origin sample</string>
     </property>
    </widget>
    <widget class="QComboBox" name="variableAComboBox"/>
@@ -180,7 +167,7 @@
    </property>
    <widget class="QLabel" name="label_2">
     <property name="text">
-     <string>Variable B</string>
+     <string>Neighbor sample</string>
     </property>
    </widget>
    <widget class="QComboBox" name="variableBComboBox"/>

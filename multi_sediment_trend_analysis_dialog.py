@@ -41,7 +41,7 @@ from datetime import datetime
 from .pyMstaTextFileAnalysisDialog import pyMstaTextFileAnalysisDialog
 from .mstaCoreClass import mstaPoint as mp
 from .mstaCoreClass import mstaVariable as mv
-from .mstaCoreClass import mstaTrendCase, mstaComposedTrendCase, mstaOperand
+from .mstaCoreClass import mstaTrendCase, mstaComposedTrendCase, mstaOperand, mstaResults
 from .mstaUtilsClass import *
 from . import config as cfg
 
@@ -463,7 +463,7 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
                                     QMessageBox.Abort | QMessageBox.Retry) == QMessageBox.Abort:
                     return
 
-        if len(self.selectedVariableNames) == 3: # Three variables must be selected
+        if len(self.selectedVariableNames) >= 3: # Three variables must be selected
             self.updatePointsDB(self.theVariablesObject)  # Update the corresponding variables at each points
             self.updateLogViewPort(5, self.selectedVariableNames)
             # Update menu entries
@@ -701,17 +701,20 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
                             if line.geometry().crosses(f.geometry()):
                                 pointsToRemoved.append(nbp.getID())
                     barrier.removeSelection()
+                # Initialisation of the result object
                 results = mstaResults(v.getName)
                 results.SetNeighborList([rp for rp in nbPoints if not rp.getID() in pointsToRemoved])
                 # store the surrounding points in a dictionnary (keys are variable names)
                 surroundingWorkingDict[v.getName] = results
             # Apply expression for each central point (point) and store results
             count = 0
+            # Loops over the defined variables
             for varname in surroundingWorkingDict:
                 count = 0
                 result = surroundingWorkingDict[varname]
                 for nbp in result.GetNeighborList():
-                    if self.theExpressionObject.result(point, nbp):
+                    res, text = self.theExpressionObject.compute(point, nbp) # Main function into which computation is made
+                    if res:
                         # Expression is True between central point and neighbor -> save vector components
                         # it just add the new value to a list
                         D = np.sqrt(point.distanceSquared(nbp))
@@ -720,15 +723,17 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
                         result.SetDistance(D)
                         result.SetEasting(E)
                         result.SetNorthing(N)
+                        result.SetTrendText(text)
                         count += 1
                 # Storage of the number of neighbor points for which trend is True
                 result.SetUsedNeighbor(count)
+                surroundingWorkingDict[varname] = result  # Backup of the computation
                 #outf.write(result.__repr__())
 
             distance = 0.0
             direction = 0.0
             for varname in surroundingWorkingDict:
-                distance = surroundingWorkingDict[varname].GetDistance() # Get total distance of vectors as if they were aligned
+                distance = surroundingWorkingDict[varname].GetNormalizedDistance() # Get total distance of vectors as if they were aligned
                 if distance != 0:
                     N = surroundingWorkingDict[varname].GetNorthing() # Get sum of northing values
                     E = surroundingWorkingDict[varname].GetEasting()  # get sum of easting values
@@ -737,7 +742,7 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
             pf = self.temporaryLayer.getFeature(point.getID())
             pf["Angle"] = float(direction)
             pf["Module"] = float(distance)
-            pf["Trends"] = "{}".format(self.theExpressionObject)
+            pf["Trends"] = "{}".format(result.GetTrendText())
             pf["Comments"] = "Neighbor count : {}".format(surroundingWorkingDict[varname].GetUsedNeighbor())
             self.temporaryLayer.updateFeature(pf)
 
@@ -758,15 +763,4 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
             # 4 - deselect eventually points which cross selected barrier layer(s) -> DONE
             # 5 - apply the expression corresponding to each trend case/variables involved -> DONE
             # 6 - compute vector component E and N taking into account computation settings -> DONE
-
         return
-
-    def norm(_dataset):
-        if isinstance(_dataset, list):
-            norm_list = list()
-            min_value = min(_dataset)
-            max_value = max(_dataset)
-            for value in _dataset:
-                tmp = (value - min_value) / (max_value - min_value)
-                norm_list.append(tmp)
-        return norm_list

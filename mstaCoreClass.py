@@ -491,17 +491,41 @@ class mstaTrendCase():
         return self.leftVar.isEqual(self.rightVar)
 
     # Get the result of the comparison between centralPoint value and neiborPoint value
-    def result(self, centralPoint, neighborPoint):
+    def compute(self, centralPoint, neighborPoint , result):
         centralPointVariable = centralPoint.getVariableByName(self.getLeftVar().getName())
         neighborPointVariable = neighborPoint.getVariableByName(self.getRightVar().getName())
         if self.getComp() == cfg.COMP['sup']:
-            return centralPointVariable > neighborPointVariable
+            if centralPointVariable > neighborPointVariable:
+                D = np.sqrt(point.distanceSquared(nbp))
+                result.SetDistance(D)
+                result.SetEasting(np.cos(np.radians(point.azimuth(nbp))) * (1.0 / D))
+                result.SetNorthing(np.sin(np.radians(point.azimuth(nbp))) * (1.0 / D))
+                result.SetTrendText(self.__str__())
+                return True, result
+            else:
+                return False, result
         elif self.getComp() == cfg.COMP['inf']:
-            return centralPointVariable < neighborPointVariable
+            if centralPointVariable < neighborPointVariable:
+                D = np.sqrt(point.distanceSquared(nbp))
+                result.SetDistance(D)
+                result.SetEasting(np.cos(np.radians(point.azimuth(nbp))) * (1.0 / D))
+                result.SetNorthing(np.sin(np.radians(point.azimuth(nbp))) * (1.0 / D))
+                result.SetTrendText(self.__str__())
+                return True, result
+            else:
+                return False, result
         elif self.getComp() == cfg.COMP['eq']:
-            return centralPointVariable == neighborPointVariable
+            if centralPointVariable == neighborPointVariable:
+                D = np.sqrt(point.distanceSquared(nbp))
+                result.SetDistance(D)
+                result.SetEasting(np.cos(np.radians(point.azimuth(nbp))) * (1.0 / D))
+                result.SetNorthing(np.sin(np.radians(point.azimuth(nbp))) * (1.0 / D))
+                result.SetTrendText(self.__str__())
+                return True, result
+            else:
+                return False, result
         else:  # Should normally never be the case
-            return False
+            return False, result
 
 #############################################################################
 ## class mstaComposedTrendCase: manage trend case                          ##
@@ -712,19 +736,24 @@ class mstaComposedTrendCase():
         return retValue
 
     # Get the result of the comparison between centralPoint value and neighborPoint value
-    def result(self, centralPoint, neighborPoint):
-        retValue = self.getFirstTrend().result(centralPoint, neighborPoint)
+    # This function is eventualy recursive in case of multiple mstacomposedtrendcase objects
+    def compute(self, centralPoint, neighborPoint, result):
+        testValue, resValue = self.getFirstTrend().compute(centralPoint, neighborPoint, result)
         for op in self.operandList:
             opSettings = op.getOperandSettings()
+            resLoc, resObject = self.getTrendByID(opSettings[2]).compute(centralPoint, neighborPoint, result)
             if opSettings[0] == cfg.OPERAND['et']:
-                retValue &= self.getTrendByID(opSettings[2]).result(centralPoint, neighborPoint)
+                if testValue & resLoc:
+                    result +=  resObject
             elif opSettings[0] == cfg.OPERAND['ou']:
-                retValue |= self.getTrendByID(opSettings[2]).result(centralPoint, neighborPoint)
+                if testValue | resLoc:
+                    result +=  resObject
             elif opSettings[0] == cfg.OPERAND['xou']:
-                retValue ^= self.getTrendByID(opSettings[2]).result(centralPoint, neighborPoint)
-            else:
-                return False
-        return retValue
+                if testValue and not resLoc:
+                    result = resValue
+                elif resLoc and not testValue:
+                    result +=  resObject
+        return testValue, result
 
 #############################################################################
 ## class mstaOperand: manage trend case                                    ##
@@ -818,3 +847,115 @@ class mstaOperand():
     # Return current ID of the operand
     def getID(self):
         return self.ID
+
+#############################################################################
+# Class to store and manage results of MSTA computation
+#############################################################################
+class mstaResults():
+    def __init__(self, _varname=None):
+        if _varname:
+            self.varname = _varname
+        else:
+            self.varname = ""
+        self.usedNeighborPointCount = 0
+        self.neighborPoint = list()
+        self.easting = list()
+        self.northing = list()
+        self.distance = list()
+        self.trend = ""
+
+    def __repr__(self):
+        str = "\nVariable: {}\nNeighbor: {} (used)\nEasting: {}\nNorthing: {}\n" \
+              "Distance: {}".format(self.varname,
+                                    self.usedNeighborPointCount,
+                                    self.easting,
+                                    self.northing,
+                                    self.distance)
+        return str
+
+    def __add__(self, other):
+        self.easting += other.GetEasting()
+        self.northing += other.GetNorthing()
+        self.distance += other.GetDistance()
+
+    def SetVarname(self, _varname):
+        self.varname = _varname
+
+    def GetVarname(self):
+        return self.varname
+
+    def SetEasting(self, _value):
+        assert isinstance(_value, float)
+        self.easting.append(_value)
+
+    def GetEasting(self, *args):
+        if len(args) > 0:
+            _id = args[0]  # args[0] is an integer
+            assert _id < len(self.easting)
+            return self.easting[_id]
+        else:
+            return sum(self.easting)
+
+    def SetNorthing(self, _value):
+        assert isinstance(_value, float)
+        self.northing.append(_value)
+
+    def GetNorthing(self, *args):
+        if len(args) > 0:
+            _id = args[0]  # args[0] is an integer
+            assert _id < len(self.northing)
+            return self.northing[_id]
+        else:
+            return sum(self.northing)
+
+    def GetDistance(self, *args):
+        if len(args) > 0:
+            _id = args[0]  # args[0] is an integer
+            assert _id < len(self.distance)
+            return self.distance[_id]
+        else:
+            return sum(self.distance)
+
+    def GetNormalizedDistance(self):
+        assert isinstance(self.distance, list)
+        if len(self.distance) > 0:
+            return sum(self.normalize(self.distance)) / len(self.distance)
+        else:
+            return 0.0
+
+    def SetDistance(self, _value):
+        assert isinstance(_value, float)
+        self.distance.append(_value)
+
+    def GetNeighborCount(self):
+        return len(self.neighborPoint)
+
+    def SetNeighborList(self, _nb):
+        assert isinstance(_nb, list)
+        self.neighborPoint = _nb
+
+    def GetNeighborList(self):
+        return self.neighborPoint
+
+    def SetUsedNeighbor(self, _nbc):
+        assert isinstance(_nbc, int)
+        self.usedNeighborPointCount = _nbc
+
+    def GetUsedNeighbor(self):
+        return self.usedNeighborPointCount
+
+    def normalize(self, _dataset):
+        if isinstance(_dataset, list):
+            normlist = list()
+            min_value = min(_dataset)
+            max_value = max(_dataset)
+            for value in _dataset:
+                tmp = (value - min_value) / (max_value - min_value)
+                normlist.append(tmp)
+        return normlist
+
+    def SetTrendText(self,_str):
+        self.trend = _str
+
+    def GetTrendText(self):
+        return self.trend

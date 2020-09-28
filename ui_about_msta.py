@@ -64,4 +64,3 @@ class Ui_AboutDlg(object):
         self.label_5.setText(_translate("AboutDlg", "http://www.geoceano.fr"))
         self.label.setText(_translate("AboutDlg", "Mutli-Sediment Trend Analysis"))
         self.label_2.setText(_translate("AboutDlg", "MSTA"))
-
