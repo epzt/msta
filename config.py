@@ -23,8 +23,11 @@
 """
 
 UNIT = dict(percent='%', metric='metre', phi='phi', other='undefined')
+
 OPERAND = dict(ou='OR', et='AND', xou='XOR', none='None')
-COMP = dict(sup='>', inf='<', eq='==', none='')
+
+COMP = dict(sup='>', inf='<', eq='==', diff='!=', none='')
+
 GSTAVAR = ["Mean","Sorting","Skewness","mean","sorting","skewness","m","so","sk"]
 
 CONTEXTINFO = {1:"Variable(s) information",

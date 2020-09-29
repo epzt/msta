@@ -677,13 +677,16 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         # progress.setCancelButton(None)  # Remove the cancel button.
         pbCount = 0
 
-        self.updateLogViewPort(999, "Start cumputation...")
+        self.updateLogViewPort(999, "Start computation...")
         self.temporaryLayer.startEditing()
         # Declaration of the dictionary which will containt variable name as key and surrounding point IDs
         surroundingWorkingDict = dict()
         # Loop over the points of the temporary layer
         for point in self.points:
             #outf.write("\n\nPoint ID: {}".format(point.getID()))
+            # Initialise a list which will content IDs of surrouding points for all the used variables
+            surroundingPointList = list()
+            # Loop over variable to get neighbor points for each variable according the search parameter
             for v in varsList:
                 nbPoints = v.GetNeiborhoodPoints(self.temporaryLayer, point, self.points)
                 # Continue if no neiboring points
@@ -701,49 +704,45 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
                             if line.geometry().crosses(f.geometry()):
                                 pointsToRemoved.append(nbp.getID())
                     barrier.removeSelection()
-                # Initialisation of the result object
-                results = mstaResults(v.getName)
-                results.SetNeighborList([rp for rp in nbPoints if not rp.getID() in pointsToRemoved])
-                # store the surrounding points in a dictionnary (keys are variable names)
-                surroundingWorkingDict[v.getName] = results
-            # Apply expression for each central point (point) and store results
+                surroundPoints = [rp for rp in nbPoints if not rp.getID() in pointsToRemoved]
+                # store the surrounding points in a dictionnary for each variables (keys are variable names)
+                surroundingWorkingDict[v.getName()] = surroundPoints
+                # Update the list of surrounding points of all used variables
+                for pts in surroundPoints:
+                    if not pts in surroundingPointList:
+                        surroundingPointList.append(pts)
+            # Once neighbour points are store for each variable, construct a list with IDs of all surrounding points
+            # to the current central point.
             count = 0
-            # Loops over the defined variables
-            for varname in surroundingWorkingDict:
-                count = 0
-                result = surroundingWorkingDict[varname]
-                for nbp in result.GetNeighborList():
-                    res, text = self.theExpressionObject.compute(point, nbp) # Main function into which computation is made
-                    if res:
-                        # Expression is True between central point and neighbor -> save vector components
-                        # it just add the new value to a list
-                        D = np.sqrt(point.distanceSquared(nbp))
-                        E = np.cos(np.radians(point.azimuth(nbp))) * (1.0 / D)
-                        N = np.sin(np.radians(point.azimuth(nbp))) * (1.0 / D)
-                        result.SetDistance(D)
-                        result.SetEasting(E)
-                        result.SetNorthing(N)
-                        result.SetTrendText(text)
-                        count += 1
-                # Storage of the number of neighbor points for which trend is True
-                result.SetUsedNeighbor(count)
-                surroundingWorkingDict[varname] = result  # Backup of the computation
-                #outf.write(result.__repr__())
-
+            result = mstaResults(point.getID())
+            # Loops over the list of total neighbor's points
+            for nbp in surroundingPointList:
+                # Main function into which computation is made
+                res, text = self.theExpressionObject.compute(point, nbp, surroundingWorkingDict)
+                if res:
+                    # Expression is True between central point and neighbor -> save vector components
+                    # it just add the new value to a list
+                    D = np.sqrt(point.distanceSquared(nbp))
+                    E = np.cos(np.radians(point.azimuth(nbp))) * (1.0 / D)
+                    N = np.sin(np.radians(point.azimuth(nbp))) * (1.0 / D)
+                    result.SetDistance(D)
+                    result.SetEasting(E)
+                    result.SetNorthing(N)
+                    result.SetTrendText(text)
+                    count += 1
             distance = 0.0
             direction = 0.0
-            for varname in surroundingWorkingDict:
-                distance = surroundingWorkingDict[varname].GetNormalizedDistance() # Get total distance of vectors as if they were aligned
-                if distance != 0:
-                    N = surroundingWorkingDict[varname].GetNorthing() # Get sum of northing values
-                    E = surroundingWorkingDict[varname].GetEasting()  # get sum of easting values
-                    direction = np.rad2deg(np.arctan2(N, E))
+            distance = result.GetNormalizedDistance() # Get total distance of vectors as if they were aligned
+            if distance != 0:
+                N = result.GetNorthing() # Get sum of northing values
+                E = result.GetEasting()  # get sum of easting values
+                direction = np.rad2deg(np.arctan2(N, E))
 
             pf = self.temporaryLayer.getFeature(point.getID())
             pf["Angle"] = float(direction)
             pf["Module"] = float(distance)
             pf["Trends"] = "{}".format(result.GetTrendText())
-            pf["Comments"] = "Neighbor count : {}".format(surroundingWorkingDict[varname].GetUsedNeighbor())
+            pf["Comments"] = "Neighbor used : {}".format(count)
             self.temporaryLayer.updateFeature(pf)
 
             # Update the progress bar
