@@ -63,7 +63,9 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         
         # Actions management
         self.actionAppQuit.triggered.connect(self.close)
-        self.actionFileImport.triggered.connect(self.DataFileImport)
+        self.actionImportTextCSVFileDataSet.triggered.connect(self.TextDataFileImport)
+        self.actionImportCurrentSelectedLayer.triggered.connect(self.CurrentLayerFileImport)
+        self.actionImportShapefileDataSet.triggered.connect(self.ShapeLayerFileImport)
         self.actionAbout.triggered.connect(self.DisplayAboutMSTA)
         self.actionSetWorkingDirectory.triggered.connect(self.SetWorkingDirectory)
         self.actionComputeMSTA.triggered.connect(self.ComputeMSTA)
@@ -135,7 +137,7 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
 
     ###############################################
     @pyqtSlot(bool)
-    def DataFileImport(self):
+    def TextDataFileImport(self):
         # Check if a previous data set is loaded
         if self.theVariablesObject:
             self.CloseCurrentDataSet()
@@ -193,22 +195,35 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
                                             usecols=tuple(coordsids),
                                             dtype=None
                                             )
-                # QMessageBox.information(self, "Import data...", f'{dataset.shape[0]} rows have been imported.')
+                QMessageBox.information(self, "Import data...", f'{coordsset.shape} - {dataset.shape}.')
             except ValueError:
                 QMessageBox.critical(self, "Load data file error", "An error occured while reading data file.\nNo data imported")
                 return
         else:
             QMessageBox.information(self, "Load data file", "No data imported.")
             return
-        # Create a temporary layer and add it to the current project
-        # Create the database use for computations
+
+        # get reference system info
+        theProj = QgsProjectionSelectionDialog(self)
+        theProj.setCrs(QgsProject.instance().crs())
+        result = theProj.exec_()
+        referenceSystem = None
+        if result == QDialog.Rejected:
+            QMessageBox.information(self, "Reference system",
+                                    "Layer reference system is set to the same of the project")
+            referenceSystem =gsProject.instance().crs().authid()
+        else:
+            referenceSystem = theProj.crs().authid()
+
         try:
-            self.temporaryLayer = self.CreateTemporaryLayer(coordsset, QFileInfo(fullPathFileName).baseName())
+            # Create a temporary layer and add it to the current project
+            self.temporaryLayer = self.CreateTemporaryLayer(coordsset, QFileInfo(fullPathFileName).baseName(), referenceSystem)
         except:
             QMessageBox.critical(self, "Temporary layer error", "An error occured while creating temporary layer.")
             return
         try:
-            self.createPointDB(dataset, varnames, coordsset, coordsnames)
+            # Create the database use for computations
+            self.createPointDB(dataset, varnames, coordsset)
         except:
             QMessageBox.critical(self, "Database initialisation error", "An error occured during database creation")
             return
@@ -225,20 +240,131 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         return
 
     ###############################################
+    @pyqtSlot(bool)
+    def ShapeLayerFileImport(self):
+        # Get a point layer
+        dlg = SelectVectorLayerDlg()
+        if not dlg.exec():
+            return
+        dataLayer = dlg.GetSeletedLayer()
+        # retreive the name of the variables (fields) from the layer
+        varnames = list()
+        for i in range(dataLayer.fields().count()):
+            if dataLayer.fields().at(i).type() in [QVariant.Int, QVariant.Double] :
+                varnames.append(dataLayer.fields().at(i).name())
+
+        coordsset = np.zeros((dataLayer.featureCount(),2))
+        dataset = np.zeros((dataLayer.featureCount(), len(varnames)))
+        i = 0
+        for feature in dataLayer.getFeatures():
+            # Get feature's coordinates
+            try:
+                coordsset[i] = [feature.geometry().asPoint().x(), feature.geometry().asPoint().y()]
+            except:
+                continue
+            # Get fields value at each feature location
+            featureData = list()
+            for j in varnames:
+                if feature.attribute(j) == None:
+                    featureData.append(0.0)
+                else:
+                    featureData.append(feature.attribute(j))
+            dataset[i] = featureData
+            i += 1
+
+        # Create a temporary layer and add it to the current project
+        # Create the database use for computations
+        try:
+            self.temporaryLayer = self.CreateTemporaryLayer(coordsset, dataLayer.name(), dataLayer.sourceCrs().srsid())
+        except:
+            QMessageBox.critical(self, "Temporary layer error",
+                                 "An error occured while creating temporary layer.")
+            return
+        try:
+            self.createPointDB(dataset, varnames, coordsset)
+        except:
+            QMessageBox.critical(self, "Database initialisation error",
+                                 "An error occured during database creation")
+            return
+
+        # Save information before living, just de names, variables are not created yet
+        self.totalVariablesName = varnames.copy()
+        self.updateLogViewPort(6, f'{len(self.points)} points created')
+        self.updateLogViewPort(1, self.totalVariablesName)
+        # Data set is loaded, variables and trends can be manage
+        self.menuVariables.setEnabled(True)
+        self.actionSetTrend.setEnabled(True)
+        return
+
+    ###############################################
+    @pyqtSlot(bool)
+    def CurrentLayerFileImport(self):
+        dataLayer = self.iface.activeLayer()
+        if not dataLayer:
+            QMessageBox.critical(self,"No layer selected", "Select a point layer from which to import attribute table.")
+            return
+        if not isinstance(dataLayer, QgsVectorLayer):
+            QMessageBox.critical(self,"Error type", "Could not import data from {} type".format(type(dataLayer).__name__))
+            return
+        if dataLayer.geometryType() != QgsWkbTypes.PointGeometry and dataLayer.geometryType() != QgsWkbTypes.Point:
+            QMessageBox.critical(self,"Error type", "Could not import data from vector layer type {}".format(dataLayer.geometryType()))
+            return
+
+        # retreive the name of the variables (fields) from the layer
+        varnames = list()
+        for i in range(dataLayer.fields().count()):
+            if dataLayer.fields().at(i).type() in [QVariant.Int, QVariant.Double] :
+                varnames.append(dataLayer.fields().at(i).name())
+
+        coordsset = np.zeros((dataLayer.featureCount(),2))
+        dataset = np.zeros((dataLayer.featureCount(), len(varnames)))
+        i = 0
+        for feature in dataLayer.getFeatures():
+            # Get feature's coordinates
+            try:
+                coordsset[i] = [feature.geometry().asPoint().x(), feature.geometry().asPoint().y()]
+            except:
+                continue
+            # Get fields value at each feature location
+            featureData = list()
+            for j in varnames:
+                if feature.attribute(j) == None:
+                    featureData.append(0.0)
+                else:
+                    featureData.append(feature.attribute(j))
+            dataset[i] = featureData
+            i += 1
+
+        # Create a temporary layer and add it to the current project
+        # Create the database use for computations
+        try:
+            self.temporaryLayer = self.CreateTemporaryLayer(coordsset, dataLayer.name(), dataLayer.sourceCrs().srsid())
+        except:
+            QMessageBox.critical(self, "Temporary layer error",
+                                 "An error occured while creating temporary layer.")
+            return
+        try:
+            self.createPointDB(dataset, varnames, coordsset)
+        except:
+            QMessageBox.critical(self, "Database initialisation error",
+                                 "An error occured during database creation")
+            return
+
+        # Save information before living, just de names, variables are not created yet
+        self.totalVariablesName = varnames.copy()
+        self.updateLogViewPort(6, f'{len(self.points)} points created')
+        self.updateLogViewPort(1, self.totalVariablesName)
+        # Data set is loaded, variables and trends can be manage
+        self.menuVariables.setEnabled(True)
+        self.actionSetTrend.setEnabled(True)
+        return
+
+    ###############################################
     # _coordsset: np.array of n samples lines and two coordinates
     # _filename: name of the text file (without extension) which contains the original data
-    def CreateTemporaryLayer(self, _coordsset, _filename):
-        # Selection of a reference system eventually different from the current project
-        theProj = QgsProjectionSelectionDialog(self)
-        theProj.setCrs(QgsProject.instance().crs())
-        result = theProj.exec_()
-        if result == QDialog.Rejected:
-            QMessageBox.information(self, "Reference system", "Layer reference system is the same to the current project")
-            URI=f'point?crs={QgsProject.instance().crs().authid()}'
-        else:
-            URI=f'point?crs={theProj.crs().authid()}'
+    def CreateTemporaryLayer(self, _coordsset, _filename, _referenceSystem):
         # create the temporary layer
-        vl = QgsVectorLayer(URI, f'msta_{_filename}_Layer', "memory")
+        vl = QgsVectorLayer(f'point?crs={_referenceSystem}', f'msta_{_filename}_Layer', "memory")
         pr = vl.dataProvider()
         
         # create fields
@@ -266,31 +392,28 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         return vl
 
     ###############################################
-    # _points: np.array of n samples lines and two coordinates
-    # _variables: np.array of n samples lines and m variables columns
-    # _coordnames: list of the two coordinates variables
+    # _dataset: np.array of n samples lines and m variables columns
+    # _coordnames: list of the two coordinates variable names
     # _varnames: list of the variables names
     # The variable names and values are stored at each point location
-    def createPointDB(self, _dataset, _varnames, _coordsset, _coordnames):
+    def createPointDB(self, _dataset, _varnames, _coordsset):
         # first loop over the points
         i = 0
         for coords in _coordsset:
             # mp is mstaPoint
             newpt = mp(coords[0], coords[1])
             newpt.setID(i+1)
-            j = 0
             for var in _varnames:
                 # mv is mstaVariable
                 newvar = mv()
                 newvar.setName(var)
                 newvar.setAlias(var) # Alias = name by default
                 newvar.setUnit("%") # By default % unit
-                newvar.setValue(_dataset[i][j])
+                newvar.setValue(_dataset[i][_varnames.index(var)])
                 newvar.setDg(0.0) # By default Dg is null
                 newvar.setRange(0.0) # By default, no range
                 newvar.setSearch(0.0,0.0,0.0) # By default omnidirectional
                 newpt.addVariable(newvar)
-                j += 1
             self.points.append(newpt)
             i += 1
         # As each point has the same variable list, the object list is equal to the list of the 1st point by default
@@ -704,11 +827,15 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
                             if line.geometry().crosses(f.geometry()):
                                 pointsToRemoved.append(nbp.getID())
                     barrier.removeSelection()
-                surroundPoints = [rp for rp in nbPoints if not rp.getID() in pointsToRemoved]
                 # store the surrounding points in a dictionnary for each variables (keys are variable names)
-                surroundingWorkingDict[v.getName()] = surroundPoints
-                # Update the list of surrounding points of all used variables
-                for pts in surroundPoints:
+                if len(pointsToRemoved) > 0:
+                    surroundingWorkingDict[v.getName()] = [rp for rp in nbPoints if not rp.getID() in pointsToRemoved]
+                else:
+                    surroundingWorkingDict[v.getName()] = nbPoints
+                # store the surrounding points in a dictionnary for each variables (keys are variable names)
+                #urroundingWorkingDict[v.getName()] = surroundPoints
+                # Update the list of surrounding points of all used variables to get list of unique points
+                for pts in surroundingWorkingDict[v.getName()]:
                     if not pts in surroundingPointList:
                         surroundingPointList.append(pts)
             # Once neighbour points are store for each variable, construct a list with IDs of all surrounding points
