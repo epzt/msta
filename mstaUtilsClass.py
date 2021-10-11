@@ -1046,6 +1046,8 @@ class SetMSTAExpressionDlg(QDialog):
                 trendCases.append(tc)
         # Create a new composed trend case from the chosen ID trend case list
         newComposedTrend = mstaComposedTrendCase(trendCases, linkOP)
+        # Set the new trend case as a main one so that it could be trace in the case of XOR operand use
+        newComposedTrend.setMainTrend(True)
         # add the new trend case to the main (global) composed trend case
         self.mstaExpressionTrendCase.addTrendCase(newComposedTrend)
         if self.mstaExpressionOperand: # if a first trend case has been set for the current operand
@@ -1078,6 +1080,8 @@ class SetMSTAExpressionDlg(QDialog):
         for tc in self.trendList:
             if tc.getID() == self.checkedTrendIDList[0]:
                 newTrend = tc
+        # Set the new trend case as a main one so that it could be trace in the case of XOR operand use
+        newTrend.setMainTrend(True)
         # add the new trend case to the main (global) composed trend case
         self.mstaExpressionTrendCase.addTrendCase(newTrend)
         if self.mstaExpressionOperand: # if a first trend case has been set previously for the current operand
@@ -1213,3 +1217,23 @@ class ViewDataBaseDlg(QDialog):
         self.gridLayout.addWidget(self.buttonBox, 1, 0)
         self.setLayout(self.gridLayout)
         self.buttonBox.accepted.connect(self.accept)
+
+#############################################################################
+# Class to visualize the value of the variables stored at each point
+#############################################################################
+class SelectVectorLayerDlg(QDialog):
+    def __init__(self, parent=None):
+        super(SelectVectorLayerDlg, self).__init__(parent)
+        self.setWindowTitle("Select a vector layer")
+        self.gridLayout = QGridLayout()
+        self.vectorLayersComboBox = QgsMapLayerComboBox()
+        self.vectorLayersComboBox.setFilters(QgsMapLayerProxyModel.PointLayer)
+        self.gridLayout.addWidget(self.vectorLayersComboBox, 0, 0)
+        self.buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        self.gridLayout.addWidget(self.buttonBox, 1, 0)
+        self.setLayout(self.gridLayout)
+        self.buttonBox.accepted.connect(self.accept)
+        self.buttonBox.rejected.connect(self.reject)
+
+    def GetSeletedLayer(self):
+        return self.vectorLayersComboBox.currentLayer()

@@ -338,7 +338,7 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         # Create a temporary layer and add it to the current project
         # Create the database use for computations
         try:
-            self.temporaryLayer = self.CreateTemporaryLayer(coordsset, dataLayer.name(), dataLayer.sourceCrs().srsid())
+            self.temporaryLayer = self.CreateTemporaryLayer(coordsset, dataLayer.name(), dataLayer.sourceCrs().authid())
         except:
             QMessageBox.critical(self, "Temporary layer error",
                                  "An error occured while creating temporary layer.")
@@ -484,10 +484,10 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
     @pyqtSlot(bool)
     def PrintSelectedVariablesList(self):
         if not self.selectedVariableNames:
-            QMessageBox.information(self, "Variable", "No variables used yet.")
+            QMessageBox.information(self, "Variable", "No variables modified yet.")
             return
         if len(self.theVariablesObject) == 0:
-            QMessageBox.information(self, "Variable", "No variables defined yet.")
+            QMessageBox.information(self, "Variable", "No variables available yet.")
             return
         # Print the current selected variables
         self.updateLogViewPort(1, [v for v in self.theVariablesObject if v.getName() in self.selectedVariableNames])
@@ -508,34 +508,35 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         # Verification if previous definition of GSTA variables exist
         theVariableNumber = sum([1 for v in self.theVariablesObject if v.getAlias() in cfg.GSTAVAR])
         if theVariableNumber == 3:
-            if QMessageBox.question(self, "GSTA variable definition", "There are still 3 variables defined for GSTA.\nDo you want to defined a set of GSTA variables ?", \
-                                    QMessageBox.Yes | QMessageBox.No) == QMessageBox.No:
+            if QMessageBox.question(self, "GSTA variable definition", "There are still 3 variables defined for GSTA.\n \
+            A reason could be that GSTA variables rae present initialy on your data set.\nThen, you should accept to following proposal.\n \
+            Do you want to defined a set of GSTA variables ?", QMessageBox.Yes | QMessageBox.No) == QMessageBox.No:
                 return
             else:
                 # Erase previous definition of GSTA variables
                 for v in self.theVariablesObject:
                     v.setAlias(v.getName())
-        # Before defined new set of GSTA variables, verify that enough variable are still available
+        # Before defined new set of GSTA variables, verify that enough variable are still available and retreive unused variables
         theVariablesList = [v for v in self.theVariablesObject if not v.getName() in self.selectedVariableNames]
         if len(theVariablesList) < 3:
             QMessageBox.information(self, "GSTA variable definition",
-                                    "There are not enough variable available.\n Need "
-                                    "at least 3 variables, only {} available.".format(
-                                        len(theVariablesList)))
+                                        "There are not enough variable available.\n \
+                                        Need at least 3 variables, only {} available.".format(
+                                          len(theVariablesList)))
             return
         # Use to fill the variable combobox of the dialog
-        tmpVarObjectsList = self.theVariablesObject.copy()
+        # tmpVarObjectsList = self.theVariablesObject.copy()
         #self.selectedVariableNames.clear()
         # Open dialog of variables settings for MEAN variable
-        dlg = setMSTAVariableOptionDlg(tmpVarObjectsList)
+        dlg = setMSTAVariableOptionDlg(theVariablesList)   #tmpVarObjectsList
         dlg.setVariableAlias("Mean")
         while True:
             result = dlg.exec()
             if result == QDialog.Accepted:
                 newVar = dlg.getVariableDefinition()
-                for i,v in enumerate(tmpVarObjectsList):
+                for i,v in enumerate(theVariablesList):
                     if v.getName() == newVar.getName():
-                        del tmpVarObjectsList[i]
+                        del theVariablesList[i]
                         self.selectedVariableNames.append(newVar.getName())
                 for i,v in enumerate(self.theVariablesObject):
                     if v.getName() == newVar.getName():
@@ -547,15 +548,15 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
                     return
 
         # Open dialog of variables settings for SORTING variable
-        dlg = setMSTAVariableOptionDlg(tmpVarObjectsList)
+        dlg = setMSTAVariableOptionDlg(theVariablesList)
         dlg.setVariableAlias("Sorting")
         while True:
             result = dlg.exec()
             if result:
                 newVar = dlg.getVariableDefinition()
-                for i,v in enumerate(tmpVarObjectsList):
+                for i,v in enumerate(theVariablesList):
                     if v.getName() == newVar.getName():
-                        del tmpVarObjectsList[i]
+                        del theVariablesList[i]
                         self.selectedVariableNames.append(newVar.getName())
                 for i, v in enumerate(self.theVariablesObject):
                     if v.getName() == newVar.getName():
@@ -567,15 +568,15 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
                     return
 
         # Open dialog of variables settings for SKEWNESS variable
-        dlg = setMSTAVariableOptionDlg(tmpVarObjectsList)
+        dlg = setMSTAVariableOptionDlg(theVariablesList)
         dlg.setVariableAlias("Skewness")
         while True:
             result = dlg.exec()
             if result:
                 newVar = dlg.getVariableDefinition()
-                for i,v in enumerate(tmpVarObjectsList):
+                for i,v in enumerate(theVariablesList):
                     if v.getName() == newVar.getName():
-                        del tmpVarObjectsList[i]
+                        del theVariablesList[i]
                         self.selectedVariableNames.append(newVar.getName())
                 for i, v in enumerate(self.theVariablesObject):
                     if v.getName() == newVar.getName():
@@ -596,13 +597,20 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
             self.actionSetGSTATrend.setEnabled(True)
             self.actionSetTrend.setEnabled(True)
         else:
-            QMessageBox.information(self, "GSTA variable definition", "3 variables must defined for a GSTA analysis\nOnly {} actually defined".format(len(self.selectedVariableNames)))
-            #self.selectedVariableNames.clear()
             self.actionClearSelect.setEnabled(False)
-            #self.actionVariableListSelected.setEnabled(False)
-            # GSTA variables are defined, trends can be manage
+            if len(self.selectedVariableNames) == 0:
+                self.actionVariableListSelected.setEnabled(False)
+                self.actionSetTrend.setEnabled(False)
+                QMessageBox.information(self, "GSTA variable definition",
+                                        "3 variables must defined for a GSTA analysis.\nNone defined yet")
+            else:
+                QMessageBox.information(self, "GSTA variable definition",
+                                        "3 variables must defined for a GSTA analysis\nOnly {} actually defined".format(
+                                            len(self.selectedVariableNames)))
+                self.actionVariableListSelected.setEnabled(True)
+                self.actionSetTrend.setEnabled(True)
+            # GSTA variables are not defined, GSTA trends can not be manage
             self.actionSetGSTATrend.setEnabled(False)
-            self.actionSetTrend.setEnabled(True)
 
     ###############################################
     @pyqtSlot(bool)
@@ -618,7 +626,10 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
                     if newVar.getName() == v.getName():
                         QMessageBox.warning(self, "Trend definition", "The variable {} is used in a trend case.\nDelete the corresponding trend case before modifying the variable.".format(v.getName()))
                         return
-            # Update the list of the mstaVariable
+            # Update the list of selected variable names
+            if  not newVar.getName() in self.selectedVariableNames:
+                self.selectedVariableNames.append(newVar.getName())
+            # Update the object list of the mstaVariable
             for i,v in enumerate(self.theVariablesObject):
                 if v.getName() == newVar.getName():
                     self.theVariablesObject[i] = newVar
@@ -638,17 +649,18 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
                                              self.selectedVariableNames,
                                              0, False)
         if rep:
-            for vol in self.theVariablesObject:
-                if vol.getName() == variable:
+            for varname in self.selectedVariableNames:
+                if varname == variable:
                     for tc in self.theTrendsList:
                         for var in tc.getVars():
                             if var.getName() == variable:
-                                QMessageBox.information(self, "Delete variable", "variable {} is used in a trend case. Delete according trend case first before deleting {}".fomrat(variable,variable))
+                                QMessageBox.information(self, "Delete variable", "variable {} is used in a trend case. Delete according trend case first before deleting {}".format(variable,variable))
                                 return
                     if QMessageBox.question(self, "Variable", "Are you sure you want to delete variable {} ?".format(variable)) == QMessageBox.Yes:
                         # Delete the variable name only from selected variable name list, variableObjectsList is not modified
-                        del self.selectedVariableNames[self.selectedVariableNames.index(variable)]
-                        self.updateLogViewPort(1, "Variable {} has been delete.".format(variable))
+                        # del self.selectedVariableNames[self.selectedVariableNames.index(variable)]
+                        self.selectedVariableNames.remove(variable)
+                        self.updateLogViewPort(1, "Variable {} has been delete from selected list.".format(variable))
                     break
 
     ###############################################
@@ -674,12 +686,13 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
     ###############################################
     @pyqtSlot(bool)
     def SetMSTATrendCases(self):
-        # Construction of the list of variables that are NOT used by GSTA
-        theVariablesList = [v for v in self.theVariablesObject if not v.getName() in self.selectedVariableNames]
+        # Construction of the list of variables that are NOT eventually used by GSTA
+        # theVariablesList = [v for v in self.theVariablesObject if not v.getName() in self.selectedVariableNames]
+        theVariablesList = [v for v in self.theVariablesObject if (not v.getAlias() in cfg.GSTAVAR) and (v.getName() in self.selectedVariableNames)]
         # Construction of the list of available variables, i.e. those which are not used yet
         #theVariablesList = [v for v in self.theVariablesObject if not v.getName() in self.selectedVariableNames]
         if len(theVariablesList) == 0:
-            QMessageBox.information(self, "MSTA trend definition", "All variables are used.\n \
+            QMessageBox.information(self, "MSTA trend definition", "No variable selected yet.\n \
                                                       Delete one or more trends to release variables.")
             return
         dlg = setMSTATrendCasesDlg(theVariablesList, self.theTrendsList) # Variable definition is the same for all points
@@ -687,7 +700,7 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         if result:
             if len(dlg.getTrendCases()) > 0:
                 self.theTrendsList = dlg.getTrendCases()
-                self.selectedVariableNames = dlg.getSelectedMSTAVarnames()
+                # self.selectedVariableNames = dlg.getSelectedMSTAVarnames()
                 self.computeMSTA.setEnabled(True)
                 return
 

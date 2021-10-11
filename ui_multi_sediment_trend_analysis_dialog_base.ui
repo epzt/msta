@@ -14,8 +14,8 @@
    <string>MainWindow</string>
   </property>
   <property name="windowIcon">
-   <iconset>
-    <normaloff>icon.png</normaloff>icon.png</iconset>
+   <iconset resource="resources.qrc">
+    <normaloff>:/icon/icon.png</normaloff>:/icon/icon.png</iconset>
   </property>
   <widget class="QWidget" name="centralwidget"/>
   <widget class="QMenuBar" name="menubar">
@@ -31,8 +31,16 @@
     <property name="title">
      <string>File</string>
     </property>
+    <widget class="QMenu" name="menuImport_dataset">
+     <property name="title">
+      <string>Import dataset...</string>
+     </property>
+     <addaction name="actionImportTextCSVFileDataSet"/>
+     <addaction name="actionImportShapefileDataSet"/>
+     <addaction name="actionImportCurrentSelectedLayer"/>
+    </widget>
     <addaction name="actionSetWorkingDirectory"/>
-    <addaction name="actionFileImport"/>
+    <addaction name="menuImport_dataset"/>
     <addaction name="actionCloseDataSet"/>
     <addaction name="separator"/>
     <addaction name="actionAppQuit"/>
@@ -107,11 +115,6 @@
    <addaction name="menuHelp"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
-  <action name="actionFileImport">
-   <property name="text">
-    <string>Import dataset...</string>
-   </property>
-  </action>
   <action name="actionModifyVariablesName">
    <property name="text">
     <string>Name...</string>
@@ -354,6 +357,24 @@
   <action name="actionViewDataSet">
    <property name="text">
     <string>View data set...</string>
+   </property>
+  </action>
+  <action name="actionImportTextCSVFileDataSet">
+   <property name="text">
+    <string>Text/CSV...</string>
+   </property>
+  </action>
+  <action name="actionImportShapefileDataSet">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Shapefile...</string>
+   </property>
+  </action>
+  <action name="actionImportCurrentSelectedLayer">
+   <property name="text">
+    <string>Current selected layer</string>
    </property>
   </action>
  </widget>

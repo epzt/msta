@@ -28,7 +28,7 @@ OPERAND = dict(ou='OR', et='AND', xou='XOR', none='None')
 
 COMP = dict(sup='>', inf='<', eq='==', diff='!=', none='')
 
-GSTAVAR = ["Mean","Sorting","Skewness","mean","sorting","skewness","m","so","sk"]
+GSTAVAR = ["Mean","Sorting","Skewness","mean","sorting","skewness","m","so","sk","M","SO","SK"]
 
 CONTEXTINFO = {1:"Variable(s) information",
                2:"Trend(s) information",

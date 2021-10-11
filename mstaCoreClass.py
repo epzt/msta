@@ -386,6 +386,7 @@ class mstaTrendCase():
         self.ID = next(mstaTrendCase.mTC)
         # Normally one case should be defined for same variable but
         # it is eventually possible to manage 2 different variables
+        self.mainTrend = False  # use to manage XOR operand to trace if it is a main case
         if isinstance(_variables, list): # Two different variables
             assert len(_variables) == 2
             assert _comp in cfg.COMP.keys()
@@ -420,6 +421,14 @@ class mstaTrendCase():
             return True
         else:
             return False
+
+    # Set the main tred characteristic of the trend
+    def setMainTrend(self, _bool):
+        assert _bool == True or _bool == False
+        self.mainTrend = _bool
+    # Return Tru or False according the current state
+    def isMainTrend(self):
+        return self.mainTrend
 
     # Convenient to test if a case is of type GSTA. mstaTrendCase are never of type GSTA -> always False
     def isGSTATrend(self):
@@ -498,6 +507,7 @@ class mstaTrendCase():
     def compute(self, centralPoint, neighborPoint, surroundingDict):
         centralPointVariable = centralPoint.getVariableByName(self.getLeftVar().getName())
         neighborPointVariable = neighborPoint.getVariableByName(self.getRightVar().getName())
+        print(centralPointVariable, neighborPointVariable)
         # Check if neighborPoint is in surrounding list of variables points
         if not (neighborPoint in surroundingDict[centralPointVariable.getName()] and neighborPoint in surroundingDict[neighborPointVariable.getName()]):
             return False, ""
@@ -530,6 +540,7 @@ class mstaComposedTrendCase():
         self.ID = next(mstaComposedTrendCase.mCTC)
         """Constructor for trend case"""
         self.composedGSTATrend = False # by default it is false, can be change through dedicated function
+        self.mainTrend = False  # use to manage XOR operand to trace if it is a main case
         if isinstance(_trendCase, list): # list of trend cases, minimum 2 trends
             assert isinstance(_op, list) or isinstance(_op, mstaOperand) # At least one operand object must be defined
             if isinstance(_op, list):
@@ -575,6 +586,14 @@ class mstaComposedTrendCase():
                 retValue += " {} {}".format(op.__str__(), op.getRightTrend(self.trendsList).__str__())
             retValue += ")"
         return retValue
+
+    # Set the main tred characteristic of the trend
+    def setMainTrend(self, _bool):
+        assert _bool == True or _bool == False
+        self.mainTrend = _bool
+    # Return Tru or False according the current state
+    def isMainTrend(self):
+        return self.mainTrend
 
     # For convenience and to be homogeneous with mstaTrendCase class
     def getGSTATrendText(self):
@@ -723,7 +742,7 @@ class mstaComposedTrendCase():
     # Get the result of the comparison between centralPoint value and neighborPoint value
     # This function is eventualy recursive in case of multiple mstacomposedtrendcase objects
     def compute(self, centralPoint, neighborPoint, surroudingDict):
-        testValue, textValue = self.getFirstTrend().compute(centralPoint, neighborPoint,surroudingDict)
+        testValue, textValue = self.getFirstTrend().compute(centralPoint, neighborPoint, surroudingDict)
         for op in self.operandList:
             opSettings = op.getOperandSettings()
             test, text = self.getTrendByID(opSettings[2]).compute(centralPoint, neighborPoint, surroudingDict)
@@ -734,7 +753,7 @@ class mstaComposedTrendCase():
             elif opSettings[0] == cfg.OPERAND['xou']:
                 testValue ^= test
             if testValue:
-                textValue += "{} {}".format(opSettings[0], text)
+                textValue += " {} {}".format(opSettings[0], text)
         return testValue, textValue
 
 #############################################################################
