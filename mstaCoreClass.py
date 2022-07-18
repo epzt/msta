@@ -139,10 +139,9 @@ class mstaPoint(QgsPoint):
 
     def getVariableByName(self, _varname):
         variablesNames = [v.getName() for v in self.variables]
+        assert len(variablesNames) > 0
         assert _varname in variablesNames
-        for vn in self.variables:
-            if vn.getName() == _varname:
-                return vn
+        return variablesNames[variablesNames.index(_varname)]
 
     def getVariableByID(self, _varid):
         variablesID = [v.getID() for v in self.variables]
@@ -370,6 +369,7 @@ class mstaVariable():
         # Select in the bounding box of the ellipse/circle geometry to restrict the list of points to look at
         request = QgsFeatureRequest()
         request.setFilterRect(ellipse.boundingBox()).setFlags(QgsFeatureRequest.ExactIntersect)
+        print(ellipse.boundingBox())
         # Loop over the select points inside the box if any
         for f in temporaryLayer.getFeatures(request):
             if QgsGeometry(ellipse.toPolygon()).contains(f.geometry()) and f.id() != centralPoint.getID():
@@ -507,9 +507,8 @@ class mstaTrendCase():
     def compute(self, centralPoint, neighborPoint, surroundingDict):
         centralPointVariable = centralPoint.getVariableByName(self.getLeftVar().getName())
         neighborPointVariable = neighborPoint.getVariableByName(self.getRightVar().getName())
-        print(centralPointVariable, neighborPointVariable)
         # Check if neighborPoint is in surrounding list of variables points
-        if not (neighborPoint in surroundingDict[centralPointVariable.getName()] and neighborPoint in surroundingDict[neighborPointVariable.getName()]):
+        if not (neighborPoint in surroundingDict[centralPointVariable] and neighborPoint in surroundingDict[neighborPointVariable]):
             return False, ""
         if self.getComp() == cfg.COMP['sup']:
             if centralPointVariable > neighborPointVariable:

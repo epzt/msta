@@ -486,7 +486,7 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         if not self.selectedVariableNames:
             QMessageBox.information(self, "Variable", "No variables modified yet.")
             return
-        if len(self.theVariablesObject) == 0:
+        if len(self.selectedVariableNames) == 0:
             QMessageBox.information(self, "Variable", "No variables available yet.")
             return
         # Print the current selected variables
@@ -587,7 +587,7 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
                                     QMessageBox.Abort | QMessageBox.Retry) == QMessageBox.Abort:
                     return
 
-        if len(self.selectedVariableNames) >= 3: # Three variables must be selected
+        if len(self.selectedVariableNames) >= 3: # At least, three variables must be selected
             self.updatePointsDB(self.theVariablesObject)  # Update the corresponding variables at each points
             self.updateLogViewPort(5, self.selectedVariableNames)
             # Update menu entries
@@ -616,7 +616,7 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
     @pyqtSlot(bool)
     def ModifyVariables(self):
         # Open dialog of variables settings
-        dlg = setMSTAVariableOptionDlg(self.theVariablesObject)
+        dlg = setMSTAVariableOptionDlg([v for v in self.theVariablesObject if not v.getAlias() in cfg.GSTAVAR])
         ok = dlg.exec()
         if ok:
             newVar = dlg.getVariableDefinition()
@@ -668,7 +668,7 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
     @pyqtSlot(bool)
     def SetGSTATrendCases(self):
         # Verification that the three needed GSTA variables are sets
-        theVariableNumber = sum([1 for v in self.theVariablesObject if v.getAlias() in ["Mean","Sorting","Skewness"]])
+        theVariableNumber = sum([1 for v in self.theVariablesObject if v.getAlias() in cfg.GSTAVAR])
         if theVariableNumber < 3:
             QMessageBox.information(self, "GSTA trend definition", "There are not enough variable available.\n Need "
                                                                    "at least 3 variables, only {} set.".format(
@@ -783,27 +783,28 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         result = dlg.exec_()
 
     ###############################################
+    # 1 - construction the ellipse/circle for each variable -> DONE
+    # 2 - select all points inside the ellipse/circle for each variable -> DONE
+    # 3 - deselect the current central point (working point) -> DONE
+    # 4 - deselect eventually points which cross selected barrier layer(s) -> DONE
+    # 5 - apply the expression corresponding to each trend case/variables involved -> DONE
+    # 6 - compute vector component E and N taking into account computation settings -> DONE
     @pyqtSlot(bool)
     def ComputeMSTA(self):
-        assert len(self.theTrendsList) > 0 # Must have at least one trend to study
-        assert len(self.theVariablesObject) > 0 # Must have at least one variable in the current selected list
         assert self.temporaryLayer # Check the temporary layer is set
-
         if self.theExpressionObject.getTrendCount() == 0:
             QMessageBox.information(self, "Expression", "No expression defined yet.\nMust be set before computing any trend.")
             return
 
         # Get list of the unique variables used
         totalVarsList = self.theExpressionObject.getVars() # All variables in flatten list, but with multiple
-        varsListName = [totalVarsList[0].getName()] # The first variable
-        varsList = [totalVarsList[0]]               # and it's name
+        varsListName = [totalVarsList[0].getName()] # The first name
+        varsList = [totalVarsList[0]]               # and the first variable object
         for v in totalVarsList:
             if not v.getName() in varsListName: # If the current variable name not in the list
                 varsListName.append(v.getName())
                 varsList.append(v)      # Add the variable to the result list
         del totalVarsList, varsListName # No more use of temporary lists
-
-        #outf = open("Results-MSTA.txt", 'w')
 
         # Definition of a progress bar to show computation progression
         progress = QProgressDialog("Computation in progress...", "Cancel", 0, len(self.points), self)
@@ -819,7 +820,6 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         surroundingWorkingDict = dict()
         # Loop over the points of the temporary layer
         for point in self.points:
-            #outf.write("\n\nPoint ID: {}".format(point.getID()))
             # Initialise a list which will content IDs of surrouding points for all the used variables
             surroundingPointList = list()
             # Loop over variable to get neighbor points for each variable according the search parameter
@@ -854,6 +854,8 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
             # Once neighbour points are store for each variable, construct a list with IDs of all surrounding points
             # to the current central point.
             count = 0
+            if count == 0:
+                print(surroundingWorkingDict)
             result = mstaResults(point.getID())
             # Loops over the list of total neighbor's points
             for nbp in surroundingPointList:
@@ -869,6 +871,7 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
                     result.SetEasting(E)
                     result.SetNorthing(N)
                     result.SetTrendText(text)
+                    print(D,E,N)
                     count += 1
             distance = 0.0
             direction = 0.0
@@ -884,7 +887,6 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
             pf["Trends"] = "{}".format(result.GetTrendText())
             pf["Comments"] = "Neighbor used : {}".format(count)
             self.temporaryLayer.updateFeature(pf)
-
             # Update the progress bar
             pbCount += 1
             progress.setValue(pbCount)
@@ -895,11 +897,4 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         #outf.close()
         self.temporaryLayer.commitChanges()
         self.updateLogViewPort(999, "Computation ended.\nResults are in the temporary layer attributs table")
-            # TODO:
-            # 1 - construction the ellipse/circle for each variable -> DONE
-            # 2 - select all points inside the ellipse/circle for each variable -> DONE
-            # 3 - deselect the current central point (working point) -> DONE
-            # 4 - deselect eventually points which cross selected barrier layer(s) -> DONE
-            # 5 - apply the expression corresponding to each trend case/variables involved -> DONE
-            # 6 - compute vector component E and N taking into account computation settings -> DONE
         return
