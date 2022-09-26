@@ -305,7 +305,7 @@
     <rect>
      <x>10</x>
      <y>60</y>
-     <width>291</width>
+     <width>331</width>
      <height>80</height>
     </rect>
    </property>
@@ -318,39 +318,44 @@
    <property name="title">
     <string>Range</string>
    </property>
-   <widget class="QSplitter" name="splitter_2">
+   <widget class="QWidget" name="">
     <property name="geometry">
      <rect>
-      <x>10</x>
-      <y>40</y>
-      <width>261</width>
-      <height>24</height>
+      <x>11</x>
+      <y>41</y>
+      <width>221</width>
+      <height>29</height>
      </rect>
     </property>
-    <property name="orientation">
-     <enum>Qt::Horizontal</enum>
-    </property>
-    <widget class="QLabel" name="label_4">
-     <property name="font">
-      <font>
-       <pointsize>10</pointsize>
-      </font>
-     </property>
-     <property name="text">
-      <string>VALUE</string>
-     </property>
-    </widget>
-    <widget class="QLabel" name="label_5">
-     <property name="font">
-      <font>
-       <pointsize>14</pointsize>
-      </font>
-     </property>
-     <property name="text">
-      <string>+ / -</string>
-     </property>
-    </widget>
-    <widget class="QLineEdit" name="pmVariableRangeLineEdit"/>
+    <layout class="QHBoxLayout" name="horizontalLayout_2">
+     <item>
+      <widget class="QLabel" name="label_4">
+       <property name="font">
+        <font>
+         <pointsize>10</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>VALUE</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="label_5">
+       <property name="font">
+        <font>
+         <pointsize>14</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>+ / -</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="pmVariableRangeLineEdit"/>
+     </item>
+    </layout>
    </widget>
   </widget>
   <widget class="QComboBox" name="variableNameComboBox">
@@ -364,7 +369,9 @@
    </property>
   </widget>
  </widget>
- <resources/>
+ <resources>
+  <include location="resources.qrc"/>
+ </resources>
  <connections>
   <connection>
    <sender>buttonBox</sender>

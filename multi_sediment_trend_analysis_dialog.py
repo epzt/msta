@@ -97,6 +97,7 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         self.actionSetTrend.setEnabled(False)
         self.computeMSTA.setEnabled(False)
         self.actionClearSelect.setEnabled(False)
+        self.actionGetStatistics.setEnabled(False)
         #self.actionVariableListSelected.setEnabled(False)
 
         # Variables
@@ -236,6 +237,7 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         # Data set is loaded, variables and trends can be manage
         self.menuVariables.setEnabled(True)
         self.actionSetTrend.setEnabled(True)
+        self.actionGetStatistics.setEnabled(True)
         # Save current directory in a variable
         self.workingDir = os.path.dirname(fullPathFileName)
         return
@@ -295,6 +297,7 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         # Data set is loaded, variables and trends can be manage
         self.menuVariables.setEnabled(True)
         self.actionSetTrend.setEnabled(True)
+        self.actionGetStatistics.setEnabled(True)
         return
 
     ###############################################
@@ -358,6 +361,7 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         # Data set is loaded, variables and trends can be manage
         self.menuVariables.setEnabled(True)
         self.actionSetTrend.setEnabled(True)
+        self.actionGetStatistics.setEnabled(True)
         return
 
     ###############################################
@@ -434,7 +438,7 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         if not self.theVariablesObject:
             QMessageBox.information(self, "Data set", "No data set currently load.")
             return
-        if QMessageBox.question(self, "Import data set",
+        if QMessageBox.question(self, "Close data set",
                                 "There is a data set loaded\nDo you want to close it ?",
                                 QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
             # Cleaning of the variables used to manage the data set
@@ -446,6 +450,14 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
             self.points = list()
             self.totalVariablesName = list()
             self.selectedVariableNames = list()
+            # Refresh some menu entry
+            self.menuVariables.setEnabled(False)
+            self.actionSetGSTATrend.setEnabled(False)
+            self.actionSetTrend.setEnabled(False)
+            self.computeMSTA.setEnabled(False)
+            self.actionClearSelect.setEnabled(False)
+            self.actionGetStatistics.setEnabled(False)
+            self.actionGetStatistics.setEnabled(False)
         else:
             return
 

@@ -14,7 +14,7 @@
    <string>MainWindow</string>
   </property>
   <property name="windowIcon">
-   <iconset resource="resources.qrc">
+   <iconset>
     <normaloff>:/icon/icon.png</normaloff>:/icon/icon.png</iconset>
   </property>
   <widget class="QWidget" name="centralwidget"/>
@@ -71,6 +71,7 @@
     <addaction name="actionClearViewText"/>
     <addaction name="separator"/>
     <addaction name="actionViewDataSet"/>
+    <addaction name="actionGetStatistics"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -375,6 +376,11 @@
   <action name="actionImportCurrentSelectedLayer">
    <property name="text">
     <string>Current selected layer</string>
+   </property>
+  </action>
+  <action name="actionGetStatistics">
+   <property name="text">
+    <string>Get statistics...</string>
    </property>
   </action>
  </widget>

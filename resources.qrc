@@ -1,8 +1,8 @@
 <RCC>
   <qresource prefix="icon">
-    <file>icon.png</file>
+    <file>icons/icon.png</file>
   </qresource>
   <qresource prefix="geoceano">
-    <file>logogeoceano.png</file>
+    <file>icons/logogeoceano.png</file>
   </qresource>
 </RCC>
