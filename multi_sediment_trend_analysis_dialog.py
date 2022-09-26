@@ -154,7 +154,7 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
                 return
             try:
                 # get the lists of information
-                coordsids,coordsnames,varids,varnames=importDlg.getDataVarCoordsList()
+                coordsids, coordsnames, varids, varnames = importDlg.getDataVarCoordsList()
                 if importDlg.firstLineAsHeader:
                     dataset = np.genfromtxt(fullPathFileName,
                                             delimiter=importDlg.currentSeparator,
@@ -173,7 +173,7 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
                                             names=True,
                                             invalid_raise=True,
                                             usecols=tuple(coordsids),
-                                            dtype=None
+                                            dtype=[('x','f8'),('y','f8')]
                                             )
                 else:
                     dataset = np.genfromtxt(fullPathFileName,
@@ -193,14 +193,14 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
                                             names=tuple(coordsnames),
                                             invalid_raise=True,
                                             usecols=tuple(coordsids),
-                                            dtype=None
+                                            dtype=[('x','f8'),('y','f8')]
                                             )
                 QMessageBox.information(self, "Import data...", f'{coordsset.shape} - {dataset.shape}.')
             except ValueError:
                 QMessageBox.critical(self, "Load data file error", "An error occured while reading data file.\nNo data imported")
                 return
         else:
-            QMessageBox.information(self, "Load data file", "No data imported.")
+            self.updateLogViewPort(6, f'No points imported')
             return
 
         # get reference system info
@@ -217,6 +217,7 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
 
         try:
             # Create a temporary layer and add it to the current project
+            self.updateLogViewPort(7, f'{coordsset}')
             self.temporaryLayer = self.CreateTemporaryLayer(coordsset, QFileInfo(fullPathFileName).baseName(), referenceSystem)
         except:
             QMessageBox.critical(self, "Temporary layer error", "An error occured while creating temporary layer.")
@@ -408,15 +409,13 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
                 newvar = mv()
                 newvar.setName(var)
                 newvar.setAlias(var) # Alias = name by default
-                newvar.setUnit("%") # By default % unit
                 newvar.setValue(_dataset[i][_varnames.index(var)])
-                newvar.setDg(0.0) # By default Dg is null
-                newvar.setRange(0.0) # By default, no range
-                newvar.setSearch(0.0,0.0,0.0) # By default omnidirectional
                 newpt.addVariable(newvar)
             self.points.append(newpt)
             i += 1
-        # As each point has the same variable list, the object list is equal to the list of the 1st point by default
+        if len(self.points) == 0:
+            return
+        # As each point has the same variable list, the variables list is equal to the list of the 1st point by default
         self.theVariablesObject = self.points[0].getVariables().copy()
 
     ###############################################
@@ -841,12 +840,12 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
                                 pointsToRemoved.append(nbp.getID())
                     barrier.removeSelection()
                 # store the surrounding points in a dictionnary for each variables (keys are variable names)
-                if len(pointsToRemoved) > 0:
+                if len(pointsToRemoved) != 0:
                     surroundingWorkingDict[v.getName()] = [rp for rp in nbPoints if not rp.getID() in pointsToRemoved]
                 else:
                     surroundingWorkingDict[v.getName()] = nbPoints
                 # store the surrounding points in a dictionnary for each variables (keys are variable names)
-                #urroundingWorkingDict[v.getName()] = surroundPoints
+                #surroundingWorkingDict[v.getName()] = surroundPoints
                 # Update the list of surrounding points of all used variables to get list of unique points
                 for pts in surroundingWorkingDict[v.getName()]:
                     if not pts in surroundingPointList:
@@ -854,8 +853,6 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
             # Once neighbour points are store for each variable, construct a list with IDs of all surrounding points
             # to the current central point.
             count = 0
-            if count == 0:
-                print(surroundingWorkingDict)
             result = mstaResults(point.getID())
             # Loops over the list of total neighbor's points
             for nbp in surroundingPointList:
@@ -871,7 +868,6 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
                     result.SetEasting(E)
                     result.SetNorthing(N)
                     result.SetTrendText(text)
-                    print(D,E,N)
                     count += 1
             distance = 0.0
             direction = 0.0

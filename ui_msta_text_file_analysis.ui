@@ -292,7 +292,7 @@
   </widget>
   <widget class="QGroupBox" name="sampleNameGroupBox">
    <property name="enabled">
-    <bool>false</bool>
+    <bool>true</bool>
    </property>
    <property name="geometry">
     <rect>
@@ -312,6 +312,9 @@
     <bool>false</bool>
    </property>
    <widget class="QComboBox" name="sampleNameComboBox">
+    <property name="enabled">
+     <bool>false</bool>
+    </property>
     <property name="geometry">
      <rect>
       <x>10</x>

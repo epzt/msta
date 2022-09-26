@@ -2,11 +2,13 @@
 
 # Form implementation generated from reading ui file 'ui_msta_text_file_analysis.ui'
 #
-# Created by: PyQt5 UI code generator 5.9.2
+# Created by: PyQt5 UI code generator 5.14.1
 #
 # WARNING! All changes made in this file will be lost!
 
+
 from PyQt5 import QtCore, QtGui, QtWidgets
+
 
 class Ui_msta_text_file_analysis(object):
     def setupUi(self, msta_text_file_analysis):
@@ -93,12 +95,13 @@ class Ui_msta_text_file_analysis(object):
         self.label_4.setGeometry(QtCore.QRect(160, 30, 41, 17))
         self.label_4.setObjectName("label_4")
         self.sampleNameGroupBox = QtWidgets.QGroupBox(msta_text_file_analysis)
-        self.sampleNameGroupBox.setEnabled(False)
+        self.sampleNameGroupBox.setEnabled(True)
         self.sampleNameGroupBox.setGeometry(QtCore.QRect(330, 229, 191, 71))
         self.sampleNameGroupBox.setCheckable(True)
         self.sampleNameGroupBox.setChecked(False)
         self.sampleNameGroupBox.setObjectName("sampleNameGroupBox")
         self.sampleNameComboBox = QtWidgets.QComboBox(self.sampleNameGroupBox)
+        self.sampleNameComboBox.setEnabled(False)
         self.sampleNameComboBox.setGeometry(QtCore.QRect(10, 30, 161, 25))
         self.sampleNameComboBox.setObjectName("sampleNameComboBox")
         self.groupBox_4 = QtWidgets.QGroupBox(msta_text_file_analysis)
@@ -142,4 +145,3 @@ class Ui_msta_text_file_analysis(object):
         self.sampleNameGroupBox.setTitle(_translate("msta_text_file_analysis", "Sample name field"))
         self.groupBox_4.setTitle(_translate("msta_text_file_analysis", "Lines to read"))
         self.allLinesToRead.setText(_translate("msta_text_file_analysis", "All"))
-

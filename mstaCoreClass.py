@@ -141,7 +141,7 @@ class mstaPoint(QgsPoint):
         variablesNames = [v.getName() for v in self.variables]
         assert len(variablesNames) > 0
         assert _varname in variablesNames
-        return variablesNames[variablesNames.index(_varname)]
+        return self.variables[variablesNames.index(_varname)]
 
     def getVariableByID(self, _varid):
         variablesID = [v.getID() for v in self.variables]
@@ -151,7 +151,7 @@ class mstaPoint(QgsPoint):
                 return vid
 
     def getVariableValueByName(self, _varname):
-        assert _varname in self.variables
+        assert _varname in [v.getName() for v in self.variables]
         return self.getVariableByName(_varname).getValue()
 
     def getVariableValueByID(self, _varid):
@@ -168,7 +168,7 @@ class mstaVariable():
         self.ID = next(mstaVariable.mVR)
         self.name = ""
         self.alias = ""
-        self.unit = self.setUnit("%") #Default value, i.e. percent
+        self.unit = cfg.UNIT['percent'] #Default value, i.e. percent
         self.value = 0.0
         self.dg = 0.0
         self.range = 0.0 # +/- range centred around value
@@ -369,7 +369,6 @@ class mstaVariable():
         # Select in the bounding box of the ellipse/circle geometry to restrict the list of points to look at
         request = QgsFeatureRequest()
         request.setFilterRect(ellipse.boundingBox()).setFlags(QgsFeatureRequest.ExactIntersect)
-        print(ellipse.boundingBox())
         # Loop over the select points inside the box if any
         for f in temporaryLayer.getFeatures(request):
             if QgsGeometry(ellipse.toPolygon()).contains(f.geometry()) and f.id() != centralPoint.getID():
@@ -505,11 +504,11 @@ class mstaTrendCase():
 
     # Get the result of the comparison between centralPoint value and neiborPoint value
     def compute(self, centralPoint, neighborPoint, surroundingDict):
-        centralPointVariable = centralPoint.getVariableByName(self.getLeftVar().getName())
-        neighborPointVariable = neighborPoint.getVariableByName(self.getRightVar().getName())
+        centralPointVariable = centralPoint.getVariableValueByName(self.getLeftVar().getName())
+        neighborPointVariable = neighborPoint.getVariableValueByName(self.getRightVar().getName())
         # Check if neighborPoint is in surrounding list of variables points
-        if not (neighborPoint in surroundingDict[centralPointVariable] and neighborPoint in surroundingDict[neighborPointVariable]):
-            return False, ""
+        #if not (neighborPoint in surroundingDict[centralPointVariable] and neighborPoint in surroundingDict[neighborPointVariable]):
+        #    return False, ""
         if self.getComp() == cfg.COMP['sup']:
             if centralPointVariable > neighborPointVariable:
                 return True, self.__str__()

@@ -56,7 +56,7 @@ class pyMstaTextFileAnalysisDialog(QtWidgets.QDialog, Ui_msta_text_file_analysis
         self.yCoordComboBox.currentTextChanged.connect(self.setYCoord)
         self.spinBoxSkipLine.valueChanged.connect(self.lineToSkip)
         self.lineEditOther.textChanged.connect(self.separatorOther)
-        self.sampleNameComboBox.currentIndexChanged.connect(self.sampleNameGroupToggled)
+        self.sampleNameComboBox.currentIndexChanged.connect(self.sampleNameToggled)
         self.sampleNameGroupBox.toggled.connect(self.sampleNameGroupToggled)
         self.numberofLinesToRead.valueChanged.connect(self.setNumberofLinesToRead)
         self.allLinesToRead.toggled.connect(self.setAllLinesToRead)
@@ -185,10 +185,15 @@ class pyMstaTextFileAnalysisDialog(QtWidgets.QDialog, Ui_msta_text_file_analysis
                     break
 
     def sampleNameGroupToggled(self, _value):
-        if _value:
-            self.sampleNameIndex = IDNAME(self.sampleNameComboBox.currentIndex(),self.sampleNameComboBox.currentText())
-        else:
-            self.sampleNameIndex = IDNAME(-1,'')
+        self.sampleNameComboBox.setEnabled(_value)
+        # if not self.sampleNameComboBox.isEnabled():
+        #     self.sampleNameIndex = IDNAME(-1, '')
+
+    def sampleNameToggled(self, _index):
+        if not self.sampleNameComboBox.isEnabled():
+            self.sampleNameIndex = IDNAME(-1, '')
+            return
+        self.sampleNameIndex = IDNAME(self.sampleNameComboBox.currentIndex(),self.sampleNameComboBox.currentText())
 
     def getSampleNameIndex(self):
         return self.sampleNameIndex.getID()
@@ -291,7 +296,9 @@ class pyMstaTextFileAnalysisDialog(QtWidgets.QDialog, Ui_msta_text_file_analysis
         retListCoordsNames = []
         retListCoordsIds = []
         if self.getSampleNameIndex() != -1:
-            self.variableNameList.remove(self.getSampleName())
+            for idname in self.variableNameList:
+                if idname.getNAME() == self.getSampleName():
+                    self.variableNameList.pop(self.variableNameList.index(idname))
         if self.getXIndex() == self.getYIndex():
             QtWidgets.QMessageBox.critical(self, "Text file analysis", 'X and Y ccordinates must be different.')
             return retListCoordsIds, retListCoordsNames, retListVarIds, retListVarNames
