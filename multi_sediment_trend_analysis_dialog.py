@@ -73,6 +73,7 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
         self.actionViewDataSet.triggered.connect(self.ViewDataSet)
         self.actionClearViewText.triggered.connect(self.SetClearText)
         self.actionCloseDataSet.triggered.connect(self.CloseCurrentDataSet)
+        self.actionGetStatistics.triggered.connect(self.PrintVariableStatistics)
         #
         self.actionVariableListAll.triggered.connect(self.PrintAllVariablesList)
         self.actionVariableListSelected.triggered.connect(self.PrintSelectedVariablesList)
@@ -479,6 +480,21 @@ class mstaDialog(QMainWindow, Ui_MainWindow):
     @pyqtSlot(bool)
     def SetClearText(self):
         self.textwidget.clear()
+
+    @pyqtSlot(bool)
+    def PrintVariableStatistics(self):
+        varName, done = QInputDialog.getItem(self, 'Variable statistics', 'Select a variable:', [v.getName() for v in self.points[0].getVariables()])
+        if not done:
+            return
+        dataset = list()
+        for pt in self.points:
+            dataset.append(pt.getVariableValueByName(varName))
+        self.updateLogViewPort(1, [f'Statistics for variable {varName}', f'mean: {np.nanmean(dataset)}', \
+                                    f'mediane: {np.nanmedian(dataset)}', \
+                                    f'min: {np.nanmin(dataset)}', \
+                                    f'max: { np.nanmax(dataset)}', \
+                                    f'std. dev.: {np.nanstd(dataset)}'])
+
 
     ###############################################
     # Print the current defined variable(s)

@@ -21,6 +21,7 @@
  *                                                                         *
  ***************************************************************************/
 """
+import numpy as np
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import  (QRadioButton,
                               QMessageBox,
@@ -47,7 +48,6 @@ from .ui_set_gsta_variables_dialog import Ui_setGSTAVariablesDialog as setGSTAVa
 from .ui_gsta_trend_definition import Ui_setGSTATrendCaseDialog as setGSTATrendDlg
 from .ui_msta_variable_definition import Ui_SetMSTAVarOptionsDlg as setMSTAVariableDlg
 from .ui_msta_trend_definition import Ui_mstaTrendDefinitionDialog as setMSTATrendDlg
-from .ui_msta_variable_statistics import Ui_mstaVariableStatisticsDialog as getMSTAVariableStatisticsDlg
 
 from .mstaCoreClass import mstaTrendCase, mstaComposedTrendCase, mstaVariable, mstaOperand
 from . import config as cfg
@@ -58,14 +58,6 @@ from . import config as cfg
 class aboutMSTA(QDialog, AboutDlg):
     def __int__(self, parent=None):
         super(aboutMSTA,self).__init__(parent)
-        self.setupUi(self)
-
-#############################################################################
-# MSTA variable statistics
-#############################################################################
-class getMSTAVariableStatisticsDlg(QDialog, getMSTAVariableStatisticsDlg):
-    def __init__(self, _dataset, parent=None):
-        super(setGSTAVariablesDlg,self).__init__(parent)
         self.setupUi(self)
 
 #############################################################################
